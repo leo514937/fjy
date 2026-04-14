@@ -1,0 +1,29 @@
+preprocess:
+  config_path: "../preprocess/config.yaml"
+
+ner:
+  provider: "hanlp"
+  model_name: "MSRA_NER_BERT_BASE_ZH"
+  use_llm: true
+
+llm:
+  enabled: true
+  api_key_env: "OPENROUTER_API_KEY"
+  base_url: "https://openrouter.ai/api/v1"
+  model_env: "OPENROUTER_MODEL"
+  model: "openai/gpt-4o-mini"
+  timeout_s: 60
+
+dls:
+  config_path: "../dls/config/ontology_negotiator.toml"
+  artifact_root: ""
+  max_concurrency: 1
+
+output:
+  root_dir: "outputs"
+  enable_cooccurrence_edges: false
+  max_entities_for_classification: 24
+
+storage:
+  enabled: true
+  database_path: "../storage/data/classification_store.sqlite3"

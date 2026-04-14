@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KnowledgeMapper | The Digital Cartographer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Design System Tokens from DESIGN.md */
+            --surface: #f9f9f9;
+            --surface-container-low: #f3f3f3;
+            --surface-container-low-alt: #ececec;
+            --surface-container-lowest: #ffffff;
+            --surface-bright: #ffffff;
+            --on-surface: #1a1c1c;
+
+            --primary: #000666;
+            --primary-container: #1a237e;
+            --primary-fixed: #e2e1ff;
+            --on-primary-fixed: #000666;
+
+            --secondary: #4a5d67;
+            --tertiary: #6750a4;
+
+            --outline-variant: rgba(198, 197, 212, 0.15);
+            /* Ghost Border Fallback */
+
+            --radius-xl: 0.75rem;
+            --radius-full: 9999px;
+
+            --shadow-ambient: 0 4px 24px rgba(26, 28, 28, 0.04);
+
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', sans-serif;
+
+            --layer-achieve: #5b66f1;
+            --layer-private: #10b981;
+            --layer-category: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--surface);
+            color: var(--on-surface);
+            font-family: var(--font-body);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 240px;
+            background-color: var(--surface-container-low);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+            z-index: 10;
+        }
+
+        .sidebar-section {
+            padding: 0 24px;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-title {
+            font-family: var(--font-display);
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            opacity: 0.6;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.6875rem;
+            opacity: 0.4;
+            margin-top: -4px;
+            margin-bottom: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin: 4px 12px;
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background-color: var(--surface-container-lowest);
+        }
+
+        .nav-item.active {
+            background-color: var(--surface-container-lowest);
+            color: var(--primary);
+            box-shadow: var(--shadow-ambient);
+        }
+
+        .nav-icon {
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            opacity: 0.7;
+        }
+
+        .layer-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        .dot-achieve {
+            background-color: var(--layer-achieve);
+        }
+
+        .dot-private {
+            background-color: var(--layer-private);
+        }
+
+        .dot-category {
+            background-color: var(--layer-category);
+        }
+
+        .btn-add-node {
+            margin-top: auto;
+            margin-left: 12px;
+            margin-right: 12px;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-container));
+            color: white;
+            border: none;
+            border-radius: var(--radius-xl);
+            font-family: var(--font-display);
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 6, 102, 0.2);
+            transition: transform 0.2s ease;
+        }
+
+        .btn-add-node:hover {
+            transform: translateY(-2px);
+        }
+
+        .sidebar-footer {
+            padding: 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            opacity: 0.6;
+        }
+
+        .footer-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Top Header */
+        header {
+            height: 64px;
+            background-color: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 5;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-right: 48px;
+        }
+
+        .top-nav {
+            display: flex;
+            gap: 24px;
+        }
+
+        .top-nav-item {
+            font-family: var(--font-display);
+            font-size: 0.875rem;
+            font-weight: 500;
+            opacity: 0.5;
+            cursor: pointer;
+            padding-bottom: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .top-nav-item:hover,
+        .top-nav-item.active {
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        .top-nav-item.active {
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .search-bar {
+            background-color: var(--surface-container-low);
+            border-radius: var(--radius-xl);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            width: 300px;
+            margin: 0 24px;
+        }
+
+        .search-bar input {
+            background: none;
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 0.875rem;
+            color: var(--on-surface);
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .toolbar-icon {
+            opacity: 0.6;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .toolbar-icon:hover {
+            opacity: 1;
+        }
+
+        .user-profile {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #fce4ec;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #d81b60;
+        }
+
+        /* View Content Wrapper */
+        .content-view {
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .content-view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Dashboard View Specifics */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 32px;
+        }
+
+        .canvas-area {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .canvas-header h1 {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .canvas-header p {
+            opacity: 0.6;
+            font-size: 0.875rem;
+        }
+
+        .graph-hero {
+            background-color: var(--surface-container-low);
+            border-radius: 24px;
+            height: 400px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* SVG Graph Simulation */
+        .svg-graph {
+            width: 100%;
+            height: 100%;
+        }
+
+        .hero-stats-overlay {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 16px 24px;
+            border-radius: var(--radius-xl);
+            display: flex;
+            justify-content: space-between;
+            box-shadow: var(--shadow-ambient);
+        }
+
+        .latency-badge {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.625rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .dashboard-side-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .stat-card {
+            background-color: var(--surface-container-lowest);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            box-shadow: var(--shadow-ambient);
+            position: relative;
+        }
+
+        .stat-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            opacity: 0.5;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .trend-up {
+            color: #10b981;
+            font-size: 0.6875rem;
+            position: absolute;
+            top: 24px;
+            right: 24px;
+        }
+
+        .trend-down {
+            color: #ef4444;
+            font-size: 0.6875rem;
+            position: absolute;
+            top: 24px;
+            right: 24px;
+        }
+
+        .layer-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 32px;
+        }
+
+        .layer-card {
+            background-color: var(--surface-container-lowest);
+            padding: 20px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-ambient);
+        }
+
+        .layer-card-title {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .progress-container {
+            height: 4px;
+            background: var(--surface-container-low);
+            border-radius: 2px;
+            margin: 12px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        /* Classifier View Specifics */
+        .classifier-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 40px;
+        }
+
+        .table-area {
+            background-color: var(--surface-container-lowest);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--shadow-ambient);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-filter {
+            background: var(--surface-container-low);
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius-xl);
+            font-size: 0.8125rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 0.75rem;
+            opacity: 0.5;
+            padding-bottom: 16px;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 20px 0;
+            border-top: 1px solid var(--outline-variant);
+        }
+
+        .entity-cell {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .entity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .entity-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .entity-type {
+            font-size: 0.75rem;
+            opacity: 0.5;
+        }
+
+        .confidence-bar {
+            width: 80px;
+            height: 4px;
+            background: var(--surface-container-low);
+            border-radius: 2px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: #10b981;
+            border-radius: 2px;
+        }
+
+        .inspector-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .layer-preview {
+            background: radial-gradient(circle at center, #ffffff, #f1f3f9);
+            border-radius: 24px;
+            height: 280px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-node {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 6, 102, 0.3);
+            z-index: 2;
+        }
+
+        .stat-pills {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .stat-pill {
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-pill .val {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .stat-pill .lbl {
+            font-size: 0.625rem;
+            opacity: 0.6;
+        }
+
+        .pill-achieve {
+            background-color: #eef2ff;
+            color: var(--layer-achieve);
+        }
+
+        .pill-private {
+            background-color: #ecfdf5;
+            color: var(--layer-private);
+        }
+
+        .pill-category {
+            background-color: #f5f3ff;
+            color: var(--layer-category);
+        }
+
+        .active-inspector-card {
+            background-color: var(--surface-container-lowest);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: var(--shadow-ambient);
+        }
+
+        .inspector-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .unassigned-badge {
+            background-color: #fee2e2;
+            color: #ef4444;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.625rem;
+            font-weight: 700;
+        }
+
+        .inspector-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8125rem;
+        }
+
+        .inspector-detail .lbl {
+            opacity: 0.5;
+        }
+
+        .inspector-detail .val {
+            font-weight: 600;
+        }
+
+        .btn-confirm {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+
+        /* SVG Graph Lines */
+        .edge {
+            stroke: var(--outline-variant);
+            stroke-width: 1.5;
+            stroke-dasharray: 4 2;
+        }
+
+        .node {
+            fill: white;
+            stroke: var(--outline-variant);
+            stroke-width: 1;
+        }
+
+        .node-primary {
+            fill: var(--primary);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <h2 class="sidebar-title">分类层</h2>
+            <p class="sidebar-subtitle">机构情报</p>
+
+            <div class="nav-item active">
+                <div class="layer-dot dot-achieve"></div>
+                <span>达层</span>
+            </div>
+            <div class="nav-item">
+                <div class="layer-dot dot-category"></div>
+                <span>类层</span>
+            </div>
+            <div class="nav-item">
+                <div class="layer-dot dot-private"></div>
+                <span>私层</span>
+            </div>
+        </div>
+
+        <button class="btn-add-node">
+            <svg style="margin-right: 8px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            分类新节点
+        </button>
+
+        <div class="sidebar-footer">
+            <div class="footer-item">
+                <svg width="14" height="14" style="margin-right: 8px;" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                帮助
+            </div>
+            <div class="footer-item">
+                <svg width="14" height="14" style="margin-right: 8px;" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                日志
+            </div>
+        </div>
+    </aside>
+
+    <div class="main-container">
+        <!-- Header -->
+        <header>
+            <div class="logo">KnowledgeMapper</div>
+            <nav class="top-nav">
+                <div class="top-nav-item" onclick="switchView('dashboard')" id="nav-dashboard">仪表盘</div>
+                <div class="top-nav-item active" onclick="switchView('classifier')" id="nav-classifier">分类器</div>
+            </nav>
+            <div class="search-bar">
+                <svg width="16" height="16" style="margin-right: 12px; opacity: 0.4;" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" placeholder="搜索待分类节点...">
+            </div>
+            <div class="toolbar">
+                <div class="toolbar-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                </div>
+                <div class="toolbar-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="user-profile">U</div>
+            </div>
+        </header>
+
+        <!-- Classifier View -->
+        <main id="classifier-view" class="content-view active">
+            <div class="classifier-layout">
+                <div class="left-section">
+                    <div class="canvas-header" style="margin-bottom: 32px;">
+                        <span style="font-size: 0.75rem; color: var(--layer-achieve); font-weight: 600;">队列: 24
+                            个节点</span>
+                        <h1>待分类情报节点</h1>
+                        <p>将发现的实体和潜在关系分配到各自的治理层级，以维护结构完整性。</p>
+                    </div>
+
+                    <div class="table-area">
+                        <div class="table-header">
+                            <div class="filter-group">
+                                <button class="btn-filter">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                                        <line x1="2" y1="14" x2="6" y2="14"></line>
+                                        <line x1="10" y1="8" x2="14" y2="8"></line>
+                                        <line x1="18" y1="16" x2="22" y2="16"></line>
+                                    </svg>
+                                    所有类型
+                                </button>
+                                <button class="btn-filter">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    最近添加
+                                </button>
+                            </div>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>节点实体</th>
+                                    <th>来源</th>
+                                    <th>置信度</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="entity-cell">
+                                            <div class="entity-icon" style="background-color: #f3e8ff;">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                    stroke="#8b5cf6" stroke-width="2">
+                                                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="entity-name">Consumer Behavior Cluster_04</div>
+                                                <div class="entity-type">实体 • 行为细分</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="entity-type">Synthesized_Crawler_V4</td>
+                                    <td>
+                                        <div class="confidence-bar">
+                                            <div class="confidence-fill" style="width: 84%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="entity-cell">
+                                            <div class="entity-icon" style="background-color: #e0e7ff;">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                    stroke="#4f46e5" stroke-width="2">
+                                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="entity-name">Cross-Region Latency Map</div>
+                                                <div class="entity-type">关系 • 网络基础设施</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="entity-type">System_Log_Export</td>
+                                    <td>
+                                        <div class="confidence-bar">
+                                            <div class="confidence-fill" style="width: 72%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="entity-cell">
+                                            <div class="entity-icon" style="background-color: #d1fae5;">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                    stroke="#059669" stroke-width="2">
+                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="entity-name">Regulatory Compliance_EU_2024</div>
+                                                <div class="entity-type">实体 • 治理文档</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="entity-type">Legal_Archive_Ingest</td>
+                                    <td>
+                                        <div class="confidence-bar">
+                                            <div class="confidence-fill" style="width: 95%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="text-align: right; margin-top: 24px;">
+                            <span
+                                style="color: var(--primary); font-size: 0.8125rem; font-weight: 600; cursor: pointer;">批量处理已选
+                                (12)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inspector-panel">
+                    <h3 style="font-family: var(--font-display); font-size: 1.125rem;">图层预览</h3>
+                    <div class="layer-preview">
+                        <!-- Simulated Grid Background -->
+                        <div
+                            style="position: absolute; inset: 0; background-image: radial-gradient(var(--outline-variant) 1px, transparent 1px); background-size: 20px 20px; opacity: 0.5;">
+                        </div>
+
+                        <svg width="200" height="200" style="position: absolute; z-index: 1;">
+                            <circle cx="100" cy="100" r="40" fill="none" stroke="var(--primary)" stroke-width="1"
+                                stroke-dasharray="2 4" opacity="0.3"></circle>
+                            <line class="edge" x1="100" y1="100" x2="60" y2="60"></line>
+                            <line class="edge" x1="100" y1="100" x2="140" y2="80"></line>
+                            <line class="edge" x1="100" y1="100" x2="110" y2="150"></line>
+
+                            <circle class="node" cx="60" cy="60" r="6"></circle>
+                            <circle class="node" cx="140" cy="80" r="6"></circle>
+                            <circle class="node" cx="110" cy="150" r="6"></circle>
+                        </svg>
+
+                        <div class="preview-node">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
+                        </div>
+
+                        <div
+                            style="position: absolute; bottom: 0; left: 0; right: 0; height: 100px; background: linear-gradient(to top, white, transparent);">
+                        </div>
+                    </div>
+
+                    <div
+                        style="background: white; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-ambient);">
+                        <p style="font-size: 0.75rem; font-weight: 600; margin-bottom: 12px; opacity: 0.6;">实时映射统计 <span
+                                style="color: #10b981; float: right;">● 活跃</span></p>
+                        <div class="stat-pills">
+                            <div class="stat-pill pill-achieve">
+                                <div class="val">08</div>
+                                <div class="lbl">达层</div>
+                            </div>
+                            <div class="stat-pill pill-category">
+                                <div class="val">02</div>
+                                <div class="lbl">类层</div>
+                            </div>
+                            <div class="stat-pill pill-private">
+                                <div class="val">14</div>
+                                <div class="lbl">私层</div>
+                            </div>
+                        </div>
+                        <button class="btn-confirm">确认分类结果</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Dashboard View -->
+        <main id="dashboard-view" class="content-view">
+            <div class="dashboard-grid">
+                <div class="canvas-area">
+                    <div class="canvas-header">
+                        <h1>情报画布</h1>
+                        <p>本体工厂知识图谱的架构。</p>
+                    </div>
+
+                    <div class="graph-hero">
+                        <div class="latency-badge">实时视图 • 6ms 延迟</div>
+
+                        <!-- Graph Canvas Visualization -->
+                        <canvas id="graphCanvas" style="width: 100%; height: 100%;"></canvas>
+
+                        <div class="hero-stats-overlay">
+                            <div>
+                                <div style="font-size: 0.625rem; opacity: 0.5; font-weight: 600;">活跃集群</div>
+                                <div style="font-family: var(--font-display); font-weight: 700; font-size: 1.125rem;">
+                                    12,842 节点</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.625rem; opacity: 0.5; font-weight: 600;">平均连接度</div>
+                                <div style="font-family: var(--font-display); font-weight: 700; font-size: 1.125rem;">
+                                    4.2 链接数/节点</div>
+                            </div>
+                            <div style="display: flex; gap: 4px; align-items: center;">
+                                <div
+                                    style="width: 24px; height: 24px; border-radius: 4px; background: #eef2ff; font-size: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center; color: var(--layer-achieve);">
+                                    DL</div>
+                                <div
+                                    style="width: 24px; height: 24px; border-radius: 4px; background: #f5f3ff; font-size: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center; color: var(--layer-category);">
+                                    LL</div>
+                                <div
+                                    style="width: 24px; height: 24px; border-radius: 4px; background: #ecfdf5; font-size: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center; color: var(--layer-private);">
+                                    PL</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layer-summary-grid">
+                        <div class="layer-card">
+                            <div class="layer-card-title">
+                                <div class="layer-dot dot-achieve"></div>
+                                <span>达层</span>
+                            </div>
+                            <div style="font-size: 0.75rem; opacity: 0.5;">外延规模</div>
+                            <div style="font-family: var(--font-display); font-weight: 700;">14.2 GB</div>
+                            <div class="progress-container">
+                                <div class="progress-fill" style="width: 65%; background: var(--layer-achieve);"></div>
+                            </div>
+                            <p style="font-size: 0.75rem; opacity: 0.6;">达名：极普遍概念，外延最大。</p>
+                        </div>
+                        <div class="layer-card">
+                            <div class="layer-card-title">
+                                <div class="layer-dot dot-category"></div>
+                                <span>类层</span>
+                            </div>
+                            <div style="font-size: 0.75rem; opacity: 0.5;">外延规模</div>
+                            <div style="font-family: var(--font-display); font-weight: 700;">32.1 GB</div>
+                            <div class="progress-container">
+                                <div class="progress-fill" style="width: 88%; background: var(--layer-category);"></div>
+                            </div>
+                            <p style="font-size: 0.75rem; opacity: 0.6;">类名：普遍概念，外延居中。</p>
+                        </div>
+                        <div class="layer-card">
+                            <div class="layer-card-title">
+                                <div class="layer-dot dot-private"></div>
+                                <span>私层</span>
+                            </div>
+                            <div style="font-size: 0.75rem; opacity: 0.5;">外延规模</div>
+                            <div style="font-family: var(--font-display); font-weight: 700;">4.8 GB</div>
+                            <div class="progress-container">
+                                <div class="progress-fill" style="width: 32%; background: var(--layer-private);"></div>
+                            </div>
+                            <p style="font-size: 0.75rem; opacity: 0.6;">私名：单独概念，外延最小。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-side-cards">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <button class="btn-filter" style="width: 48%;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
+                            </svg>
+                            过滤视图
+                        </button>
+                        <button class="btn-filter" style="width: 48%;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            导出图谱
+                        </button>
+                    </div>
+
+                    <!-- Architecture Diagnostics Panel -->
+                    <div style="margin-bottom: 24px;">
+                        <h3
+                            style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.1em; opacity: 0.4; margin-bottom: 16px;">
+                            架构诊断 / DIAGNOSTICS</h3>
+
+                        <div class="stat-card" style="margin-bottom: 16px;">
+                            <div class="stat-label">平均置信度 • AVG CONFIDENCE</div>
+                            <div class="stat-value">92.8%</div>
+                            <div class="trend-up">+0.4%</div>
+                            <div style="margin-top: 12px; font-size: 0.75rem; line-height: 1.4;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="opacity: 0.5;">置信区间稳定性</span>
+                                    <span style="color: #10b981; font-weight: 600;">稳定 / STABLE</span>
+                                </div>
+                                <div class="progress-container" style="height: 2px; margin: 0;">
+                                    <div class="progress-fill" style="width: 92%; background: #10b981;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card" style="margin-bottom: 16px;">
+                            <div class="stat-label">平均判断时间 • AVG DECISION TIME</div>
+                            <div class="stat-value">428ms</div>
+                            <div
+                                style="position: absolute; top: 24px; right: 24px; font-size: 0.625rem; font-weight: 700; color: #10b981;">
+                                优 / FAST</div>
+                            <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px; opacity: 0.6;">
+                                <div style="width: 4px; height: 4px; border-radius: 50%; background: #10b981;"></div>
+                                <span style="font-size: 0.7rem;">当前响应延迟稳定在优化区间。</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cost Statistics Section -->
+                    <div>
+                        <h3
+                            style="font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.1em; opacity: 0.4; margin-bottom: 16px;">
+                            Token统计 / COST STATS</h3>
+
+                        <div style="background: var(--surface-container-low); border-radius: 20px; padding: 20px;">
+                            <div
+                                style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; font-weight: 600; opacity: 0.7;">Input Tokens</span>
+                                <span
+                                    style="font-family: var(--font-display); font-weight: 700; font-size: 0.875rem;">85,31M</span>
+                            </div>
+                            <div
+                                style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; font-weight: 600; opacity: 0.7;">Output Tokens</span>
+                                <span
+                                    style="font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; color: var(--primary);">12,42M</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; font-weight: 600; opacity: 0.7;">Cached Tokens</span>
+                                <span
+                                    style="font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; color: #10b981;">4.2M</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function switchView(viewName) {
+            // Update active state in nav
+            document.querySelectorAll('.top-nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + viewName).classList.add('active');
+
+            // Switch content
+            document.querySelectorAll('.content-view').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewName + '-view').classList.add('active');
+
+            if (viewName === 'dashboard') {
+                initGraph();
+            }
+        }
+
+        // Simple particle/graph animation for Dashboard View
+        let animationId;
+        function initGraph() {
+            if (animationId) cancelAnimationFrame(animationId);
+
+            const canvas = document.getElementById('graphCanvas');
+            const ctx = canvas.getContext('2d');
+            let w, h;
+
+            const resize = () => {
+                w = canvas.width = canvas.offsetWidth;
+                h = canvas.height = canvas.offsetHeight;
+            };
+            window.addEventListener('resize', resize);
+            resize();
+
+            const points = [];
+            for (let i = 0; i < 30; i++) {
+                points.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    r: Math.random() * 2 + 1
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, w, h);
+
+                // Draw connections
+                ctx.strokeStyle = 'rgba(0, 6, 102, 0.05)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < points.length; i++) {
+                    for (let j = i + 1; j < points.length; j++) {
+                        const dist = Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y);
+                        if (dist < 150) {
+                            ctx.beginPath();
+                            ctx.moveTo(points[i].x, points[i].y);
+                            ctx.lineTo(points[j].x, points[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                // Draw points
+                points.forEach(p => {
+                    ctx.fillStyle = 'rgba(0, 6, 102, 0.2)';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0 || p.x > w) p.vx *= -1;
+                    if (p.y < 0 || p.y > h) p.vy *= -1;
+                });
+
+                animationId = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // Initialize default view logic
+        window.onload = () => {
+            // Set initial state
+            switchView('classifier');
+        };
+    </script>
+</body>
+
+</html>

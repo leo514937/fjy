@@ -1,0 +1,11 @@
+README.md
+setup.py
+src/wikimg/__init__.py
+src/wikimg/__main__.py
+src/wikimg/cli.py
+src/wikimg/core.py
+src/wikimg.egg-info/PKG-INFO
+src/wikimg.egg-info/SOURCES.txt
+src/wikimg.egg-info/dependency_links.txt
+src/wikimg.egg-info/entry_points.txt
+src/wikimg.egg-info/top_level.txt

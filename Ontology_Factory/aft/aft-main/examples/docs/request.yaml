@@ -1,0 +1,5 @@
+user_request: "Audit the project documentation against the ontology."
+audit_mode: document
+ontology_path: examples/minimal/ontology.yaml
+document_paths:
+  - examples/docs/requirements.md

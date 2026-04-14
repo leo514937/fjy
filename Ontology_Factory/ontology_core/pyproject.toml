@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ontology-factory-core"
+version = "0.1.0"
+description = "Canonical ontology alignment and reconciliation logic."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.10.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ontology_core"]

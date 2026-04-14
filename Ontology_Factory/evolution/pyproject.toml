@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ontology-factory-evolution"
+version = "0.1.0"
+description = "Evolution engine for canonical ontology reclassification and versioning."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.10.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/evolution"]

@@ -1,0 +1,25 @@
+preprocess:
+  config_path: ../preprocess/config.yaml
+ner:
+  provider: hanlp
+  model_name: MSRA_NER_BERT_BASE_ZH
+  use_llm: true
+llm:
+  enabled: false
+  api_key_env: OPENROUTER_API_KEY
+  model_env: OPENROUTER_MODEL
+  base_url: https://openrouter.ai/api/v1
+  ontology_model_env: ONTOLOGY_OPENAI_MODEL
+  ontology_base_url: https://openrouter.ai/api/v1
+  timeout_s: 60
+dls:
+  config_path: ../dls/config/ontology_negotiator.env.toml
+  artifact_root: ''
+  max_concurrency: 4
+output:
+  root_dir: outputs
+  enable_cooccurrence_edges: false
+  max_entities_for_classification: 24
+storage:
+  enabled: true
+  database_path: ../storage/data/classification_store.sqlite3

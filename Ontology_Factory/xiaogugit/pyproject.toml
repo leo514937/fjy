@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xiaogugit"
+version = "0.2.0"
+description = "Git-backed structured data version management service and CLI."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "fastapi",
+  "gitpython",
+  "pydantic",
+  "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+]
+
+[project.scripts]
+xiaogugit = "xiaogugit.cli:main"
+
+[tool.setuptools]
+packages = ["xiaogugit"]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+xiaogugit = "."
+
+[tool.setuptools.package-data]
+xiaogugit = ["frontend*.html"]
+
+[tool.pytest.ini_options]
+pythonpath = [".."]
+testpaths = ["tests"]
+cache_dir = "../.test-artifacts/xiaogugit/.pytest_cache"
+addopts = "--basetemp=../.test-artifacts/xiaogugit/tmp"

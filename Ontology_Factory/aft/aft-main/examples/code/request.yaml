@@ -1,0 +1,5 @@
+user_request: "Audit the Python validator implementation against the ontology and generate pytest."
+audit_mode: code
+ontology_path: examples/code/ontology.yaml
+code_paths:
+  - examples/code/src/broken_payment.py

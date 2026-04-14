@@ -1,0 +1,57 @@
+
+## EagleEye-HPC 工业级高速异构视觉感知系统：工程化本体文档
+
+### 一、 达层（L3: Universal - 通用公理层）
+> **定义：** 物理与计算科学的底层不可违背准则。
+
+* **香农定理（信道容量极限）：** 任何物理链路（如 PCIe Gen4, MIPI CSI-2）的数据传输速率 $C$ 受限于带宽 $B$ 与信噪比 $S/N$，即 $C = B \log_2(1 + S/N)$。这决定了高分辨率工业相机（如 120fps, 4K）的链路选型必须超过 $20 \text{ Gbps}$。
+* **确定性公理（时钟域映射）：** 在高频数字电路中，没有绝对的“同时”。所有跨时钟域（CDC）的数据交互必须通过格雷码转换或异步 FIFO 消除亚稳态。
+* **热力学约束：** 系统计算功耗与散热能力的平衡决定了工作频率的上限。
+
+---
+
+### 二、 类层（L2: Class - 领域标准层）
+> **定义：** 电子信息工程、嵌入式视觉与异构计算的行业标准。
+
+#### 1. 硬件抽象与互连类 (Hardware Abstraction & Interconnect)
+* **异构总线标准：** 定义 AXI4 (Advanced eXtensible Interface) 总线矩阵，用于 FPGA 逻辑内核、ARM 处理系统（PS）与 DDR4 存储器之间的高带宽、低延迟数据调度。
+* **信号完整性标准：** 针对 10Gbps 以上的高速差分对（SerDes），遵循 PCIE/SFP+ 的阻抗匹配（$90\Omega \pm 10\%$）与眼图交叉点规范。
+
+#### 2. 实时计算与流处理类 (Real-time Computing & Stream Processing)
+* **并行加速范式：** 定义基于 **OpenCL** 或 **HLS (High-Level Synthesis)** 的流水线加速模型。
+* **RTOS 调度策略：** 采用 **FreeRTOS** 或 **RT-Linux** 的抢占式调度，任务抖动（Jitter）必须控制在 $\mu s$ 级别。
+
+#### 3. 视觉与 AI 推理类 (Vision & AI Inference)
+* **算子标准：** 符合 **TensorRT** 或 **Vitis-AI** 的量化标准（INT8/FP16），定义从卷积层到全连接层的硬件映射规则。
+
+---
+
+### 三、 私层（L1: Individual - 具体项目实例）
+> **定义：** EagleEye-HPC 项目特有的核心实现细节（基于 Xilinx Zynq UltraScale+ MPSoC）。
+
+#### 1. 节点实例：Heterogeneous_Compute_Engine (核心处理器)
+* **PL（可编程逻辑）端：**
+    * 实现一个自定义的 **ISP (Image Signal Processor)** 算子组。
+    * **逻辑资源占用：** LUT 65%, DSP 80% (用于实时 FFT 滤波)。
+    * **时钟约束：** 系统主频 $300\text{ MHz}$，关键路径经过多级流水线优化以满足时序。
+* **PS（处理系统）端：**
+    * 运行定制化的 **PetaLinux** 操作系统。
+    * 负责驱动 PCIe DMA 控制器，将 PL 端处理后的特征向量高速传输至内存。
+
+
+#### 2. 节点实例：High_Speed_Interface_Module (接口模块)
+* **硬件实例：** 4路 MIPI CSI-2 接口，单路速率 $2.5\text{ Gbps}$。
+* **数据对齐：** 使用 FPGA 内部的 `IDELAYE3` 原语进行位对齐校准，确保 4K 图像数据的采样窗口稳定。
+
+#### 3. 节点实例：Edge_AI_Model_Deployment (算法部署)
+* **模型架构：** 剪枝后的 **MobileNet-V3-Large**，针对缺陷检测任务进行了迁移学习。
+* **部署参数：** 采用 **DPU (Deep-learning Processor Unit)** 核心。
+* **性能指标：** 单帧推理延迟 $\le 8\text{ ms}$，系统整体端到端时延（从光子捕获到触发执行器）控制在 $20\text{ ms}$ 以内。
+
+#### 4. 节点实例：System_Verification_Suite (实验记录与验证)
+* **仿真环境：** 使用 **Vivado XSIM** 进行信号行为级仿真。
+* **物理测试：** 记录在 `Oscilloscope_Captures/` 目录下的高速信号眼图测试报告。
+* **代码仓库结构：**
+    * `/hdl`: Verilog/SystemVerilog 源代码。
+    * `/vitis`: C++ 驱动与 AI 模型量化脚本。
+    * `/petalinux`: 操作系统内核配置文件。

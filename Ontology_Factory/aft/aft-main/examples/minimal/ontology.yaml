@@ -1,0 +1,26 @@
+version: "1.0"
+entities:
+  - name: Payment
+    description: A payment transaction in the billing domain.
+    attributes:
+      - payment_id
+      - amount
+      - status
+    constraints:
+      required_fields:
+        - payment_id
+        - amount
+        - status
+  - name: Invoice
+    description: A generated invoice linked to a payment.
+    attributes:
+      - invoice_id
+      - payment_id
+relations:
+  - source: Payment
+    target: Invoice
+    type: generates
+constraints:
+  - entity: Payment
+    rule: amount_must_be_positive
+    description: Payment amounts must be strictly positive.

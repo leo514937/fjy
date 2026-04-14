@@ -1,0 +1,7 @@
+user_request: "Run a full ontology-driven QA audit across ontology, documentation, and code."
+audit_mode: full
+ontology_path: examples/minimal/ontology.yaml
+document_paths:
+  - examples/minimal/docs/requirements.md
+code_paths:
+  - examples/minimal/src/billing.py

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ontology-factory-storage"
+version = "0.1.0"
+description = "Standalone SQL storage layer for ontology factory."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ontology_store"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "../ner/src"]
+testpaths = ["tests"]
+cache_dir = "../.test-artifacts/storage/.pytest_cache"
+addopts = "--basetemp=../.test-artifacts/storage/tmp"

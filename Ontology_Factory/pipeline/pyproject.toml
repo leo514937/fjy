@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ontology-factory-pipeline"
+version = "0.1.0"
+description = "End-to-end preprocess -> NER -> ontology negotiation pipeline."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.10.0",
+  "python-dotenv>=1.0.1",
+  "pyyaml>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pipeline"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "../ner/src", "../relation/src", "../storage/src", "../ontology_core/src", "../evolution/src", "../dls/src", "../preprocess"]
+testpaths = ["tests"]
+cache_dir = "../.test-artifacts/pipeline/.pytest_cache"
+addopts = "--basetemp=../.test-artifacts/pipeline/tmp"

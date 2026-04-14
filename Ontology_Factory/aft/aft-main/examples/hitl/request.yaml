@@ -1,0 +1,5 @@
+user_request: "Audit the payment validator code and ask me if the binding is ambiguous."
+audit_mode: code
+ontology_path: examples/hitl/ontology.yaml
+code_paths:
+  - examples/hitl/src/ambiguous_payment.py

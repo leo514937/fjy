@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ontology-factory-ner"
+version = "0.1.0"
+description = "Standalone NER package for Ontology Factory."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "hanlp>=2.1.0b57",
+  "httpx>=0.27.0",
+  "pydantic>=2.10.0",
+  "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ner"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+cache_dir = "../.test-artifacts/ner/.pytest_cache"
+addopts = "--basetemp=../.test-artifacts/ner/tmp"

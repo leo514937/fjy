@@ -1,0 +1,3 @@
+selected_option_id: "Payment:validate_payment"
+response_value: "validate_payment"
+notes: "Use the validator-style function."

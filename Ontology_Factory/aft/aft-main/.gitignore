@@ -1,0 +1,10 @@
+.pytest_cache/
+__pycache__/
+.ruff_cache/
+.mypy_cache/
+*.pyc
+.venv/
+.env
+artifacts/
+artifacts/generated_tests/
+

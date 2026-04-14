@@ -1,0 +1,1244 @@
+# 鱼家——智能养鱼系统 CDIO 项目流程
+## 一、Conceive（构想）
+### （一）项目目标
+由生活出发，我们组想要实现远距离网络测量并调节鱼缸的温度，充氧，饲料的添加，改变鱼缸环境的光线，给播放舒缓的音乐等。
+冯韵菱第一次注意到宿舍角落的鱼缸，是在 2018 年 11 月初的一个周末。那几天期中考试临近，大家连吃饭都常常忘记，更别说照顾鱼了。鱼缸里的一条小红斑鱼在水面附近急促换气，像是在无声地求救。温度下降、光照不足，再加上朋友忘记投喂，鱼缸的环境正在悄悄恶化，而宿舍里没有人能意识到这些变化。
+
+“如果我们可以在手机上看到它们的状态就好了。”
+那天晚上，在活动中心的桌子旁，五个人开始第一次讨论这个想法。他们发现，身边很多同学都有类似的经历：
+有人买了热带鱼，却因为周末回家两天，回来时发现几条鱼已经翻肚；
+有人实验室的鱼缸周末无人照看，温度骤降导致一缸实验鱼全部死亡；
+还有人虽然很喜欢养鱼，但因为忙于课程或社团，经常忘记喂食或开灯。
+这些看似小事，却不断重复发生。于是，一个朴素但强烈的需求逐渐被所有人感受到：
+能不能让鱼缸“自己照顾自己”？至少在我们忙不过来时，它能保持最基本的稳定和安全。
+
+小组成员开始回想更具象的情境：
+冯昕澳说，他爸妈春节外出三天内，家里的金鱼因为连续低温冻死了；
+刘晃伸则分享，他同学养的斗鱼曾因为夜里氧泵停了一个小时，第二天就没了；
+张靖鸿回忆，自己刚入坑养鱼时，总是搞不清楚到底该投多少食、什么时候该开灯。
+这些并非遥远的案例，而是“真实且反复发生”的需求场景。这些故事让他们意识到，这不是单纯的课程作业，而是一个真正能改善日常生活的小系统。
+
+就在 11 月 10 日购买完硬件的那天夜里，小组成员重新明确了项目愿景：
+做一个让即使三天不在宿舍、手机也打不开鱼缸、甚至忘了鱼的存在，鱼也能安然活着的系统。
+
+现实中，养鱼爱好者在长时间外出或工作繁忙时，经常出现以下痛点：
+水质无人监控（pH/TDS 波动、温度骤变、硝酸盐积累）；
+投喂不规律（过量/不足，经常导致鱼类应激或死亡）；
+增氧不足或夜间缺氧（如氧泵停止、溶氧下降）；
+新手缺乏经验，不懂判断水质/设备异常；
+多个设备难以统一控制（加热棒、增氧泵、灯光、投喂器分散）。
+随着 ESP8266、Onenet 平台、Arduino、传感器模组的成熟，本项目提供了可行的智能养殖方案。
+
+2. 产品目标（V1）
+
+基础生存保障：远程稳定完成投喂、增氧、温控，保障无人值守期间鱼只存活。
+环境透明化：采集并远程查看温度、光照等数据，后续可扩展更多水质参数。
+预警可控：当设备反馈异常（如温度低于阈值、光照骤变），可远程介入操作。
+稳定系统与闭环体验：软硬件可协同运行，数据上传与指令下发可靠。
+
+1. 用户画像（新增且具体化）
+
+以下用户均为真实合理且足够具体的“需求期典型角色”。
+用户 A：科研型养鱼者（如实验室助理）
+年龄：27
+场景：实验室水生实验需要稳定环境，偶尔周末无人值守
+需求：远程查看温度变化曲线；设备异常需在 3 分钟内收到告警；投喂需严格定量。
+用户 B：工作繁忙的城市白领
+年龄：31
+职业：互联网运营
+痛点：加班频繁，投喂容易忘记
+场景：晚上10点回到家，希望能通过手机随时查看鱼缸状态
+需求：一键“夜间模式”（降光、轻微增氧）；APP 提醒“今天未投喂”。
+用户 C：中年资深玩家（热带鱼繁育）
+年龄：43
+痛点：换季温差导致鱼缸温度波动
+场景：期待根据温度变化自动启停加热棒
+需求：设备冗余与故障保护（加热棒离水断电——已在原始实现中体现，保持一致）。
+用户 D：刚入坑的新手
+年龄：22
+场景：刚买入小型鱼缸，不会判断光照/投喂量
+需求：直观的数据（温度、光照），后续希望能扩展为“新手饲养辅助”。
+
+2. 核心场景（新增）
+
+（1）外出/出差无人照看场景：自动投喂 + 自动增氧 + 温度采集。
+（2）日常定时场景：
+	每日固定两次少量投喂
+	夜间降低光照
+	温度低于 24℃ 自动加热
+（3）预警场景（基于原项目可实现的温度与光照波动）
+	温度异常（过高/过低）预警
+	光照异常（持续黑暗或持续过亮）
+（4）设备风险场景（真实实现匹配）
+	加热棒离水断电
+	投喂装置卡顿
+
+核心功能：
+
+自动投食（基于舵机 + Onenet 命令控制）
+温度监测
+光照监测
+加热棒控制与离水断电保护
+远程控制（继电器开关）
+小程序查看数据、执行控制
+
+配套能力：
+
+Wifi 配网与 Onenet 云端数据通路
+控制台界面（按原小程序代码保持一致）
+基础控制命令（0/1、切换灯光、投喂触发）
+
+Out of Scope（未来版本）
+
+pH/TDS/硝酸盐实时监控
+视频流、AI 鱼类病害识别
+自动换水系统
+新手教学模式（后续）
+
+五、价值主张与成功度量（新增）
+
+与真实实现能力一致。
+可靠性：在出差三天无人值守情况下，鱼缸环境能持续正常。
+透明性：用户随时查看温度/光照，不会焦虑。
+可控性：任意时间通过微信小程序调节设备。
+
+KPI（V1）：
+
+数据上传成功率 ≥ 95%（基于 ESP8266 与 Onenet）
+远程命令下发成功率 ≥ 95%
+投喂装置工作成功率 ≥ 95%
+用户每日打开小程序查看数据 ≥ 1 次（活跃度指标）
+
+
+## 二、Design（设计）
+### （一）功能设计方案
+系统需实现三个核心目标：
+（1）基础生存保障功能（温控、光照代理环境、投喂）
+（2）远程可观测与可控功能（数据可视化、操作下发、故障提示）
+（3）安全可依赖功能（加热棒离水断电保护、控制冗余机制）
+1. 硬件端功能设计：温度传感器、光敏传感器数据采集，通过ESP8266上传至Onenet；继电器控制开关、小圣诞树、LED时钟；鱼食添加装置、加热棒离水断电装置设计；彩色LED呼吸灯、蜂鸣器音乐伴随彩灯闪烁功能设计。
+2. 软件端功能设计：微信小程序界面及整体框架设计，包含主页、获取信息、控制台、关于我们等模块；小程序调用Onenet数据、跳转页面查看数据、发送数据到Onenet功能设计；项目网站初步设计，包含开关灯控制等交互功能。
+
+###（二）系统总体架构
+（1）设备层（Device Layer）
+Arduino Uno：核心控制逻辑执行。
+传感器：温度（A3）、光照（A0）。
+执行器：继电器（控制灯/加热棒等）、舵机（投喂）、LED 灯、蜂鸣器。
+ESP8266：负责 WiFi 连接与上/下行通信。
+（2）网络层（Connectivity Layer）
+HTTP（上传温度/光照至 Onenet）
+TCP + EDP 协议（接收 Onenet 下行控制指令）
+（3）云平台层（Onenet）
+数据流（datastream）：Temperature / Light
+控制命令：switch0 / switch1
+EDP 指令推送与解析
+（4）应用层（Application Layer）
+微信小程序：数据展示（图表）、设备控制
+Web 页面：简易灯光开关界面
+
+（三）核心功能设计
+1. 传感采集功能（Sensor Acquisition）
+Arduino 周期采集两项数据：
+温度 sensor_tem（来自 A3）
+光照 sensor_lux（来自 A0）
+1、数据上传机制
+1）Arduino 采样
+生成 JSON：
+{
+  "Temperature":"xx.xx",
+  "Light":"xx.xx"
+}
+2）通过 ESP8266 发送 HTTP POST：
+POST /devices/{DEVICEID}/datapoints?type=3
+api-key:{APIKEY}
+Onenet 存储数据流，供小程序读取。
+传输间隔：INTERVAL_NET = 10000 ms（代码中明确）
+
+2. 设备控制系统（Actuator Control）
+（1）下行控制方式：EDP 协议
+【新增：来自解析代码的真实格式】
+Onenet 下发指令格式（示例）：
+switch0:1
+Arduino 使用 sscanf 分解命令，并根据 value 控制继电器端口：
+value = 1 → HIGH
+value = 0 → LOW
+switch1:2 / switch1:3 → 控制 JDQ5（代码中存在）
+这是系统唯一可信赖的远程控制链路。
+
+（2）可控制对象
+小灯 / 圣诞树灯（JDQ6）
+加热棒电源（通过继电器控制）
+投喂舵机（由命令触发）
+
+3. 自动投喂功能（Feeding Mechanism）
+使用圆柱形料仓开孔 + 舵机旋转。
+投喂动作由小程序→Onenet datapoint（switch 类命令）触发
+Arduino 根据命令驱动舵机转动一个固定角度
+料仓开口对准鱼缸完成投喂
+
+4. 加热棒离水断电机制（Heater Safety）
+物理/机械结构实现离水即断电。
+此保护不依赖传感器，而是通过机械触发 + 继电器断电实现
+
+5. 可视化与控制界面设计
+
+微信小程序功能（来自原文软件端实现）：
+获取数据（温度/光照）
+绘制折线图（wxcharts.js）
+发送控制命令（开/关灯、投喂等）
+页面导航栏（主页、信息、控制台、关于我们）
+小程序 → Onenet → ESP8266 → Arduino → 执行器
+是完整的控制链路。
+
+
+
+## 三、Implement（实现）
+
+### （一）小组分工计划
+每名组员计划负责内容，比如：
+- 冯韵菱：项目框架构思，ArduinoUno硬件端搭建，ArduinoUno硬件代码调试 其他硬件组件搭建，微信小程序协助
+- 刘晃伸：微信小程序设计
+- 张靖鸿：学习服务器和js的知识，为微信小程序逻辑部分和服务器的使用做准备
+- 冯昕澳：负责构想硬件端实现方案，搭建硬件端，协助代码调试。
+- 田宇航：负责硬件器材的实施与搭建方案，纸质及电子版海报以及后期的软硬件美化效果。
+
+### （二）初步构想参考资料
+- 冯韵菱：2018/11/12 参考了火花空间上彩色LED的使用（https://www.oursparkspace.cn/?yada_wiki=%E5%BD%A9%E8%89%B2led%E7%9A%84%E6%8E%A7%E5%88%B6），对LED的控制加以改进，实现了彩色呼吸灯效果；参考了CSDN蜂鸣器制作音乐（https://blog.csdn.net/u011481047/article/details/53257685），并加以改进，实现了彩色LED伴随音乐闪动。
+- 刘晃伸：2018/11/12 参考微信小程序开发者手册（https://developers.weixin.qq.com/miniprogram/dev/index.html），对微信小程序进行了初步设计；参考小程序下方导航栏的设计（https://blog.csdn.net/champion0324/article/details/78070468）；参考小程序导航栏图标（http://www.iconfont.cn/）。
+- 张靖鸿：2018/11/12 参考了火花空间上彩色LED的使用（https://www.oursparkspace.cn/?yada_wiki=%E5%BD%A9%E8%89%B2led%E7%9A%84%E6%8E%A7%E5%88%B6），对LED的控制加以改进，实现了彩色呼吸灯效果；参考了CSDN蜂鸣器制作音乐（https://blog.csdn.net/u011481047/article/details/53257685），并加以改进，实现了彩色LED伴随音乐闪动。
+- 冯昕澳：2018/11/12 参考网络智能鱼缸的方案（https://www.so.com/s?ie=utf-8&src=hao_360so_a1004&shb=1&hsid=c16a4f7be58ab529&q=%E6%99%BA%E8%83%BD%E5%85%BB%E9%B1%BC%E7%B3%BB%E7%BB%9F），形成初步构想。
+- 田宇航：2018/11/8 参考了极客工坊关于智能养鱼的初步构想，并加以改进补充（https://www.so.com/s?ie=utf-8&src=hao_360so_a1004&shb=1&hsid=c16a4f7be58ab529&q=%E6%99%BA%E8%83%BD%E5%85%BB%E9%B1%BC%E7%B3%BB%E7%BB%9F）。
+
+
+
+### （三）小组讨论情况
+- 2018/11/9：通过线下学生活动中心面对面交流，讨论了项目名称，基本设计理念，实施所用的器材，整体规划实施方案，实际参与人数5人，讨论时长1.5小时；
+- 2018/11/10：通过线上在教室面对面交流，讨论了器材，服务器，域名的选购，最后购买了大部分实验器材以及购买了云服务器及域名，实际参与人数3人，讨论时长两小时；
+- 2018/11/18：通过线下寝室面对面交流，讨论硬件端搭建，微信小程序代码调节，最后成功实现代码修改，实际参与人数3人，讨论时长2小时。
+- 2018/11/19：通过线下寝室面对面交流，讨论硬件实现方案，最后想出3D打印解决方案，实际参与人数3人，讨论时长1小时。
+- 2018/11/25：通过创客马拉松活动面对面交流，讨论硬件端搭建，网络端连接，实际参与人数4人，讨论时长4小时。
+
+### （四）初期参考与初步行动（第一周进度）
+本周完成内容占最终完成目标10%，完成本周目标；
+- 冯韵菱实际贡献：参与组内讨论，选购项目所需器材，搭建了Arduino彩色呼吸灯，搭建了Arduino蜂鸣器音乐伴随彩灯闪烁硬件。贡献度：2。
+- 刘晃伸实际贡献：参与组内讨论，选购项目所需器材，制作微信小程序界面和整体框架。贡献度：3。
+- 张靖鸿实际贡献：参与组内讨论，选购项目所需器材，搭建了Arduino彩色呼吸灯，搭建了Arduino蜂鸣器音乐伴随彩灯闪烁硬件。贡献度：2。
+- 冯昕澳实际贡献：参与组内讨论，提供实现一些功能的思路。记录所需要的器材。贡献度：2。
+- 田宇航实际贡献：参与组内讨论，查阅资料后就硬件端功能如何实现功能提出构思设计；选购项目所需器材。贡献度：2
+
+### （五）技术参考资料
+- 冯韵菱：2018/11/19 参考了火花空间上wifi气象站的搭建（https://www.oursparkspace.cn/?yada_wiki=1541300633-7）；2018/11/20 参考了ESP8266基础功能调试（https://blog.csdn.net/xiaohupashu/article/details/53575097）；2018/11/25 参考了Onenet社区利用edp协议连接（http://microchip.eefocus.com/article/id-328598）；2018/11/26 参考了继电器的使用说明（http://www.51hei.com/bbs/dpj-78793-1.html）。
+- 刘晃伸：2018/11/19 模仿火花空间wifi气象站的代码（https://www.oursparkspace.cn/?yada_wiki=1510129291-2），构建调用Onenet信息；2018/11/25 参考微信小程序开发文档关于api请求部分（https://developers.weixin.qq.com/miniprogram/dev/api/）；参考onenet数据上传格式文档（开发者文档）（https://open.iot.10086.cn/doc/art454.html#107）。
+- 冯昕澳：2018/11/19 参考了火花空间数字温度计（https://www.oursparkspace.cn/?yada_wiki=%e6%95%b0%e5%ad%97%e6%b8%a9%e5%ba%a6%e8%ae%a1）；参考了关于温度传感器的代码（https://blog.csdn.net/qq_35177575/article/details/72784584）。
+
+
+### （六）设计阶段问题及解决方案
+- 冯韵菱：
+  - 2018/11/2 问题一：彩色LED呼吸出现突然强光；解决方案一：更改3组变色顺序，让亮度255的放在一组进行衔接。
+  - 问题二：彩灯无法伴随蜂鸣器闪动；解决方案二：使用if() {} else{}语句进行控制。
+  - 2018/11/15 问题三：Arduino库文件不存在；解决方案三：利用Arduino cookie环境进行移植。
+- 张靖鸿：问题一：彩色led灯呼吸效果不连续，出现闪烁；解决方案一：改变颜色变换顺序（2018/11/12）。
+- 刘晃伸：
+  - 问题一：设计微信小程序中导航栏无法显现，多次显示错误；解决方案一：重新按照教程以及开发者手册进行编辑。
+  - 2018/11/19 问题二：微信小程序中点击按钮跳转查看Onenet报错；解决方案二：更改api以及设备Id，对原有代码进行修改，去除不需要的数据。
+- 冯昕澳：
+  - 2018/11/12 问题一：怎么解决鱼食的投放问题？；解决方案一：采用螺杆；解决方案二：采用传送带和滑轮；解决方案三：采用圆形轨道和挡板配合电机。
+- 田宇航：问题一：关于鱼食投料系统的可行化细节；解决方案一：框架初步定为采用PVC管或薄钢管打孔；解决方案二：使用螺杆推进鱼食，初步定为使用3D打印；解决方案三：借助淘宝找到合适的驱动源--慢速步进电机，通过简单焊接接入电路，构想应用端到端控制电路通断来控制鱼食的投喂量。
+
+### （七）硬件端实现（第二、三周进度）
+1. 第二周硬件实现：
+- 冯韵菱实际贡献：实现Aruino Uno板硬件端温度传感器以及光敏传感器通过ESP8266上传数据到Onenet，焊接完成装饰圣诞树电子器件以及彩灯LED时钟器件，购买所需器件。贡献度：4。
+- 冯昕澳实际贡献：硬件端进行温度传感器的测量调试，ruino Uno板硬件端温度传感器以及光敏传感器通过ESP8266上传数据到Onenet的代码调试，购买所需器件，改进鱼缸功能设计及外观构想。贡献度：3。
+- 田宇航实际贡献：参与了硬件设施的讨论和搭建，选购项目所需元器件，初步确定了养鱼系统的结构模型。贡献度：2。
+2. 第三周硬件实现：
+- 冯韵菱实际贡献：实现了硬搭建继电器控制开关小圣诞树，LED时钟。协助完成Esp8266连接onenet。配合完成了利用onenet向Arduino硬件端发出指令并控制通断。设计鱼食添加装置。贡献度：5。
+- 冯昕澳实际贡献度：搭建了整个鱼缸框架。设计并制作成功了投食装置，加热棒离水断电装置，各硬件端均可正常工作并实现最终的效果。协助宣传海报的绘制。贡献度：5。
+- 田宇航实际贡献：搭建了整个鱼缸框架。由于计划的更改，临时重新设计并制作成功了投食装置、加热棒离水断电装置，各硬件端均可正常工作并实现最终的效果。绘制完成了初版宣传海报。贡献度：5。
+
+### （八）软件端实现（第二、三周进度）
+1. 第二周软件实现：
+- 张靖鸿实际贡献：参与wifi模块的使用研究，合作完成了微信小程序调用Onenet收集到的数据并模仿导论课实验打印图标。贡献度：3。
+- 刘晃伸实际贡献：合作完成了微信小程序调用Onenet收集的数据，实现了跳转页面查看Onenet数据。贡献度：3。
+2. 第三周软件实现：
+- 刘晃伸实际贡献：完成了Esp8266连接onenet并利用EDP协议从onenet向Arduino硬件端发出指令并控制。实现了利用微信小程序发送数据到onenet。
+- 张靖鸿实际贡献：划水。贡献度：2。
+
+### （九）实现阶段问题及解决方案
+- 冯韵菱：2018/11/15 问题四：数据无法上传到Onenet；解决方案四：修改报文格式，使其符合Onenet要求。2018/11/23 问题五：继电器无法控制电路开关；解决方案五：利用资料正确给继电器单独供电。问题六：Onenet无法控制硬件；解决方案六：添加开关应用，并配置相应的0，1数据流。
+- 刘晃伸：2018/11/25 问题：ESP8266-01模块无法连接网络（正常使用）；解决方案：参考了相关的引脚定义，了解到除了需要正常连接VCC GND RX TX之外，还需要连接一个GPIO16口，使之处于工作状态。问题：小程序无法上传数据到onenet；解决：需要参照onenet上的格式进行编写代码，也可以通过修改wifi气象站中请求onenet数据部分的代码进行修改（参考代码部分）。
+- 冯昕澳：2018/11/19 问题二：代码中serial1报错；解决方案一：把serial1改为serial。2018/11/27 问题三：如何实现加热棒离水断电；解决方案三：自己设计了一套机械装置，完成了提起加热棒。问题四：如何实现自动投食；解决方案四：自己设计机械装置，在一个圆柱形容器上开一个小口，并用舵机与0，1数据流配合。
+
+### （十）实现类代码
+1. Arduino Uno板上传传感器数据到Onenet代码（冯韵菱，2018/11/18）：
+```cpp
+#define SSID        "fyl" //改为你的Wi-Fi名称
+#define PASSWORD "fylfylfyl"//Wi-Fi密码
+#define HOST_NAME   "api.heclouds.com"
+#define DEVICEID    "503071333" //OneNet上的设备ID
+#define PROJECTID   "175861" //OneNet上的产品ID
+#define HOST_PORT   (80)
+String apiKey="g81xoJ5mSA4t=vQLvEDIaUKkZ60=";//与你的设备绑定的APIKey
+#define INTERVAL_SENSOR   10000          //定义传感器采样时间间隔  597000
+#define INTERVAL_NET 10000 //定义发送时间
+//传感器部分================================   
+#include <Wire.h>                                      //调用库   
+#include <ESP8266.h>
+#include <I2Cdev.h>
+#include <Microduino_SHT2x.h>
+#define  sensorPin_1  A0
+#define  sensorPin_2  A3
+#define IDLE_TIMEOUT_MS  3000          // Amount of time to wait (in milliseconds) with no data 
+                                        // received before closing the connection.  If you know the server
+// you're accessing is quick to respond, you can reduce this value.
+//WEBSITE    
+char buf[10];
+
+#define INTERVAL_sensor 2000
+unsigned long sensorlastTime = millis();
+
+float tempOLED,lightnessOLED;
+
+#define INTERVAL_OLED 1000
+
+String mCottenData;
+String jsonToSend;
+
+//3,传感器值的设置 
+float sensor_lux;                                 //传感器温度、湿度、光照   
+double sensor_tem; 
+char  sensor_tem_c[7],sensor_lux_c[7] ;        //换成char数组传输
+#include <SoftwareSerial.h>
+#define EspSerial mySerial
+#define UARTSPEED 9600
+SoftwareSerial mySerial(2, 3); /* RX:D3, TX:D2 */
+ESP8266 wifi(&mySerial);
+unsigned long net_time1 = millis();                                      //数据上传服务器时间
+unsigned long sensor_time = millis();                                      //传感器采样时间计时器
+
+//int SensorData;                                                          //用于存储传感器数据
+String postString;                                                         //用于存储发送数据的字符串
+//String jsonToSend;                                                         //用于存储发送的json格式参数
+
+Tem_Hum_S2 TempMonitor;
+void setup(void) {
+  Wire.begin();
+  Serial.begin(115200);
+  while (!Serial); // wait for Leonardo enumeration, others continue immediately
+  Serial.print(F("setup begin\r\n"));
+  delay(100);
+  pinMode(sensorPin_1, INPUT);
+  pinMode(sensorPin_2, INPUT);
+  WifiInit(EspSerial, UARTSPEED);
+
+  Serial.print(F("FW Version:"));
+  Serial.println(wifi.getVersion().c_str());
+
+  if (wifi.setOprToStationSoftAP()) {
+    Serial.print(F("to station + softap ok\r\n"));
+  } else {
+    Serial.print(F("to station + softap err\r\n"));
+  }
+
+  if (wifi.joinAP(SSID, PASSWORD)) {
+    Serial.print(F("Join AP success\r\n"));
+
+    Serial.print(F("IP:"));
+    Serial.println( wifi.getLocalIP().c_str());
+  } else {
+    Serial.print(F("Join AP failure\r\n"));
+  }
+
+  if (wifi.disableMUX()) {
+    Serial.print(F("single ok\r\n"));
+  } else {
+    Serial.print(F("single err\r\n"));
+  }
+
+Serial.print(F("setup end\r\n"));
+
+}
+
+
+void loop(void) {
+
+
+  if (sensor_time > millis())  sensor_time = millis(); 
+
+  if(millis() - sensor_time > INTERVAL_SENSOR)         //传感器采样时间间隔   
+  { 
+    getSensorData();                                                          //读串口中的传感器数据
+    sensor_time = millis();
+  } 
+
+  
+  if (net_time1 > millis())  net_time1 = millis();
+  
+  if (millis() - net_time1 > INTERVAL_NET)                                  //发送数据时间间隔
+  {       
+    updateSensorData();                                                         //将数据上传到服务器的函数
+    net_time1 = millis();
+}
+}
+void getSensorData(){ 
+  double analogVotage = 5*(double)analogRead(A3)/1024.0;
+  double temp = 50*analogVotage; //计算温度
+    sensor_tem = temp; 
+    //获取光照
+    sensor_lux = analogRead(A0);    
+    delay(1000);
+    dtostrf(sensor_tem, 2, 1, sensor_tem_c);
+    dtostrf(sensor_lux, 3, 1, sensor_lux_c);
+}
+void updateSensorData() {
+  if (wifi.createTCP(HOST_NAME, HOST_PORT)) { //建立TCP连接，如果失败，不能发送该数据
+    Serial.print("create tcp ok\r\n");
+
+
+    jsonToSend="{\"Temperature\":";
+    dtostrf(sensor_tem,1,2,buf);
+    jsonToSend+="\""+String(buf)+"\"";
+    jsonToSend+=",\"Light\":";
+    dtostrf(sensor_lux,1,2,buf);
+    jsonToSend+="\""+String(buf)+"\"";
+    jsonToSend+="}";
+
+
+
+    postString="POST /devices/";
+    postString+=DEVICEID;
+    postString+="/datapoints?type=3 HTTP/1.1";
+    postString+="\r\n";
+    postString+="api-key:";
+    postString+=apiKey;
+    postString+="\r\n";
+    postString+="Host:api.heclouds.com\r\n";
+    postString+="Connection:close\r\n";
+    postString+="Content-Length:";
+    postString+=jsonToSend.length();
+    postString+="\r\n";
+    postString+="\r\n";
+    postString+=jsonToSend;
+    postString+="\r\n";
+    postString+="\r\n";
+    postString+="\r\n";
+
+  const char *postArray = postString.c_str();                                  //将str转化为char数组
+  Serial.println(postArray);
+  wifi.send((const uint8_t*)postArray, strlen(postArray));                    //send发送命令，参数必须是这两种格式，尤其是(const uint8_t*)
+  Serial.println("send success");  
+
+    if (wifi.releaseTCP()) {                                                  //释放TCP连接
+        Serial.print("release tcp ok\r\n");
+      } 
+    else {
+        Serial.print("release tcp err\r\n");
+      }
+      postArray = NULL;                                                        //清空数组，等待下次传输数据
+  
+  } else {
+    Serial.print("create tcp err\r\n");
+  }
+}
+```
+2. 微信小程序查看数据代码（刘晃伸，2018/11/19）：
+```javascript
+// 获取信息（information.js）：
+getTem: function () {
+const requestTask = wx.request({
+url: 'https://api.heclouds.com/devices/xxxxxxxxx/datapoints?datastream_id=Light,Temperature&limit=15',
+header: {
+'content-type': 'application/json',
+'api-key': 'xxxxxxxxxxxxxxxxxx'
+},
+success: function (res) {
+//console.log(res.data)
+var app = getApp()
+app.globalData.temperature = res.data.data.datastreams[0]
+app.globalData.light = res.data.data.datastreams[1]
+console.log(app.globalData.light)
+wx.navigateTo({
+url: "tem/tem",
+})
+},
+fail: function (res) {
+console.log("fail!!!")
+},
+
+complete: function (res) {
+console.log("end")
+}
+})
+},
+```
+```javascript
+// 描绘图像页面的逻辑层代码
+var myCharts = require("../../../utils/wxcharts.js")//引入一个绘图的插件
+var lineChart_light = null
+var lineChart_tempe = null
+var app = getApp()
+Page({
+data: {
+},
+onPullDownRefresh: function () {
+console.log('onPullDownRefresh', new Date())
+},
+convert: function () {
+var categories = [];
+var light = [];
+var tempe = [];
+var length = app.globalData.light.datapoints.length
+for (var i = 0; i < length; i++) {
+categories.push(app.globalData.light.datapoints[i].at.slice(11, 19));
+light.push(app.globalData.light.datapoints[i].value);
+tempe.push(app.globalData.temperature.datapoints[i].value);
+}
+return {
+categories: categories,
+light: light,
+tempe: tempe
+}
+},
+onLoad: function () {
+var wheatherData = this.convert();
+var windowWidth = 320;
+try {
+var res = wx.getSystemInfoSync();
+windowWidth = res.windowWidth;
+} catch (e) {
+console.error('getSystemInfoSync failed!');
+}
+var wheatherData = this.convert();
+lineChart_tempe = new myCharts({
+canvasId: 'tempe',
+type: 'column',
+categories: wheatherData.categories,
+animation: true,
+background: '#f5f5f5',
+series: [{
+name: 'temperature',
+data: wheatherData.tempe,
+format: function (val, name) {
+return val.toFixed(2);
+}
+}],
+xAxis: {
+disableGrid: true
+},
+yAxis: {
+title: 'temperature (摄氏度)',
+format: function (val) {
+return val.toFixed(2);
+},
+min: 24
+},
+width: windowWidth,
+height: 200,
+dataLabel: false,
+dataPointShape: true,
+extra: {
+lineStyle: 'curve'
+}
+});
+},
+})
+```
+3. 继电器与更新后的Arduino连接Onenet代码（冯韵菱，2018/11/23）：
+```cpp
+/*
+  采用外接电源单独供电，2 3口作为软串口接PC机作为调试端
+  1 0为串口，连接WIFI模块
+*/
+#include <SoftwareSerial.h>
+#include "edp.c"
+#include <Wire.h>
+#include<Arduino.h>
+#include<math.h>
+
+#define JDQ1 8 
+#define JDQ2 9 
+#define JDQ3 10 
+#define JDQ4 11 
+#define JDQ5 12 
+#define JDQ6 13 
+
+#define KEY  "s1XeGJPJSFgZslYpXCnFPG81V1w="        //APIkey 
+#define ID   "504877625"                              //设备ID
+//#define PUSH_ID "680788"
+#define PUSH_ID NULL
+
+// 串口
+#define _baudrate   9600
+#define _rxpin      3
+#define _txpin      2
+#define WIFI_UART   mySerial
+#define DBG_UART    Serial      //调试打印串口
+
+SoftwareSerial mySerial( _txpin, _rxpin ); // 软串口，调试打印
+edp_pkt *pkt;
+/*
+* doCmdOk
+* 发送命令至模块，从回复中获取期待的关键字
+* keyword: 所期待的关键字
+* 成功找到关键字返回true，否则返回false
+*/
+bool doCmdOk(String data, char *keyword)
+{
+  bool result = false;
+  if (data != "")    //对于tcp连接命令，直接等待第二次回复
+  {
+    WIFI_UART.println(data);  //发送AT指令
+    DBG_UART.print("SEND: ");
+    DBG_UART.println(data);
+    DBG_UART.println(WIFI_UART.readStringUntil('\n'));
+  }
+  if (data == "AT")    //检查模块存在
+  {
+    delay(2000);
+  }
+  else{
+    while (!WIFI_UART.available());  // 等待模块回复
+  }
+  
+  delay(200);
+  
+  if (WIFI_UART.find(keyword))    //返回值判断
+  {
+    DBG_UART.println("do cmd OK");
+    result = true;
+  }
+  else
+  {
+    
+    DBG_UART.println("do cmd ERROR");
+    result = false;
+  }
+  while (WIFI_UART.available()) WIFI_UART.read();    //清空串口接收缓存
+  delay(500); //指令时间间隔
+  return result;
+}
+
+
+void setup()
+{
+  pinMode(JDQ1,OUTPUT);
+  pinMode(JDQ2,OUTPUT); 
+  pinMode(JDQ3,OUTPUT); 
+  pinMode(JDQ4,OUTPUT); 
+  pinMode(JDQ5,OUTPUT); 
+  pinMode(JDQ6,OUTPUT);
+  char buf[100] = {0};
+  int tmp;
+  pinMode(JDQ1,OUTPUT);  //用于连接EDP控制的发光二极管
+
+  WIFI_UART.begin( _baudrate );
+  DBG_UART.begin( _baudrate );
+  WIFI_UART.setTimeout(3000);        //设置find超时时间
+  delay(3000);
+  DBG_UART.println("hello world!");
+
+  delay(2000);
+  //while (!doCmdOk("AT", "OK"));
+  while (!doCmdOk("AT+CWMODE=3", "OK"));            //工作模式
+  while (!doCmdOk("AT+CWJAP=\"fyl\",\"fylfylfyl\"", "OK")); //wifi名称，wifi密码
+  while (!doCmdOk("AT+CIPSTART=\"TCP\",\"183.230.40.39\",876", "CONNECT"));//CONNECT,Linked
+  while (!doCmdOk("AT+CIPMODE=1", "OK"));            //透传模式
+  while (!doCmdOk("AT+CIPSEND", ">"));               //开始发送
+}
+
+void loop()
+{
+  static int edp_connect = 0;
+  bool trigger = false;
+  edp_pkt rcv_pkt;
+  unsigned char pkt_type;
+  int i, tmp;
+  char num[10];
+  /* EDP 连接 */
+  if (!edp_connect)
+  {
+    while (WIFI_UART.available()) WIFI_UART.read(); //清空串口接收缓存
+    packetSend(packetConnect(ID, KEY));              //发送EPD连接包
+    while (!WIFI_UART.available());                  //等待EDP连接应答
+    if ((tmp = WIFI_UART.readBytes(rcv_pkt.data, sizeof(rcv_pkt.data))) > 0 )
+    {
+      rcvDebug(rcv_pkt.data, tmp);
+      if (rcv_pkt.data[0] == 0x20 && rcv_pkt.data[2] == 0x00 && rcv_pkt.data[3] == 0x00)
+      {
+        edp_connect = 1;
+        DBG_UART.println("EDP connected.");
+      }
+      else
+        DBG_UART.println("EDP connect error.");
+    }
+    packetClear(&rcv_pkt);
+  }
+
+  while (WIFI_UART.available())
+  {
+    readEdpPkt(&rcv_pkt);
+    if (isEdpPkt(&rcv_pkt))
+    {
+      pkt_type = rcv_pkt.data[0];
+      switch (pkt_type)
+      {
+        case CMDREQ:
+          char edp_command[50];
+          char edp_cmd_id[40];
+          long id_len, cmd_len, rm_len;
+          char datastr[20];
+          char val[10];
+          char val2[10];
+          int value=1;
+          memset(edp_command, 0, sizeof(edp_command));
+          memset(edp_cmd_id, 0, sizeof(edp_cmd_id));
+          edpCommandReqParse(&rcv_pkt, edp_cmd_id, edp_command, &rm_len, &id_len, &cmd_len);
+          DBG_UART.print("rm_len: ");
+          DBG_UART.println(rm_len, DEC);
+          delay(10);
+          DBG_UART.print("id_len: ");
+          DBG_UART.println(id_len, DEC);
+          delay(10);
+          DBG_UART.print("cmd_len: ");
+          DBG_UART.println(cmd_len, DEC);
+          delay(10);
+          DBG_UART.print("id: ");
+          DBG_UART.println(edp_cmd_id);
+          delay(10);
+          DBG_UART.print("cmd: ");
+          DBG_UART.println(edp_command);
+
+          //数据处理与应用中EDP命令内容对应
+          //本例中格式为  datastream:[1/0] 
+          sscanf(edp_command, "%[^:]:%s", datastr, val);
+          if (atoi(val) == 1){
+          digitalWrite(JDQ6, HIGH);
+          }   
+          else if(atoi(val)==0){
+          digitalWrite(JDQ6, LOW);
+          }
+          sscanf(edp_command, "%[^:]:%s", datastr, val2);
+          if (atoi(val2) == 2){
+            digitalWrite(JDQ5, HIGH);
+          }   
+          else if(atoi(val2)==3){
+          digitalWrite(JDQ5, LOW);
+          }
+          packetSend(packetDataSaveTrans(NULL, datastr, val)); //将新数据值上传至数据流
+          break;
+        default:
+          DBG_UART.print("unknown type: ");
+          DBG_UART.println(pkt_type, HEX);
+          break;
+      }
+    }
+    //delay(4);
+  }
+  if (rcv_pkt.len > 0)
+    packetClear(&rcv_pkt);
+  delay(150);
+}
+
+/*
+* readEdpPkt
+* 从串口缓存中读数据到接收缓存
+*/
+bool readEdpPkt(edp_pkt *p)
+{
+  int tmp;
+  if ((tmp = WIFI_UART.readBytes(p->data + p->len, sizeof(p->data))) > 0 )
+  {
+    rcvDebug(p->data + p->len, tmp);
+    p->len += tmp;
+  }
+  return true;
+}
+
+/*
+* packetSend
+* 将待发数据发送至串口，并释放到动态分配的内存
+*/
+void packetSend(edp_pkt* pkt)
+{
+  if (pkt != NULL)
+  {
+    WIFI_UART.write(pkt->data, pkt->len);    //串口发送
+    WIFI_UART.flush();
+    free(pkt);                //回收内存
+  }
+}
+
+void rcvDebug(unsigned char *rcv, int len)
+{
+  int i;
+
+  DBG_UART.print("rcv len: ");
+  DBG_UART.println(len, DEC);
+  for (i = 0; i < len; i++)
+  {
+    DBG_UART.print(rcv[i], HEX);
+    DBG_UART.print(" ");
+  }
+  DBG_UART.println("");
+}
+```
+4. 小程序发送数据上传onenet代码（刘晃伸，2018/11/25）：
+```javascript
+opentree: function () {
+wx.request({
+method: 'POST',
+url: 'http://api.heclouds.com/devices/**************/datapoints?datastream_id=switch0',
+header: {
+'api-key': '*****************'
+},
+data:{
+"datastreams":[{
+"id":"switch0",
+"datapoints":[{
+"at":"",
+"value":1,
+}]
+}]
+},
+success: function (res) {
+console.log(res)
+},
+fail: function (res) {
+console.log("fail!!!")
+},
+
+complete: function (res) {
+console.log("end")
+}
+})
+},
+```
+
+### （四）设计类代码
+1. 蜂鸣器音乐并伴随彩灯闪烁代码（冯韵菱以及张靖鸿，2018/11/12）：
+```cpp
+#define NTD0 -1
+#define NTD1 294
+#define NTD2 330
+#define NTD3 350
+#define NTD4 393
+#define NTD5 441
+#define NTD6 495
+#define NTD7 556
+
+#define NTDL1 147
+#define NTDL2 165
+#define NTDL3 175
+#define NTDL4 196
+#define NTDL5 221
+#define NTDL6 248
+#define NTDL7 278
+
+#define NTDH1 589
+#define NTDH2 661
+#define NTDH3 700
+#define NTDH4 786
+#define NTDH5 882
+#define NTDH6 990
+#define NTDH7 1120
+#define WHOLE 1
+#define HALF 0.5
+#define QUARTER 0.25
+#define EIGHTH 0.25
+#define SIXTEENTH 0.625
+int tune[]=
+{
+NTDL5,
+NTD3,NTD3,NTD3,NTD3,NTD4,NTD5,
+NTD2,NTDL5,
+NTD2,NTD2,NTD2,NTD2,NTD3,NTD4,
+NTD3,NTD1,
+NTD6,NTD6,NTD6,NTD6,NTD7,NTDH1,
+NTD5,NTD4,NTD3,NTDL6,
+NTD4,NTD4,NTD4,NTD4,NTD5,NTD6,
+NTD5,NTD2,NTDL5,
+NTD3,NTD3,NTD3,NTD3,NTD4,NTD5,
+NTD2,NTDL5,
+NTD2,NTD2,NTD2,NTD2,NTD3,NTD4,
+NTD3,NTD1,
+NTD6,NTD6,NTD6,NTD6,NTD7,NTDH1,
+NTD5,NTD4,NTD3,NTDL6,
+NTD2,NTD2,NTD2,NTD0,NTD3,NTD2,NTD1,
+NTDL6,NTD1,NTD1,
+NTDL6,NTD1,NTD6,
+NTD5,NTD4,NTD3,
+NTD2,NTD2,NTD1,NTD2,
+NTD3,NTD1,
+NTD6,NTD7,NTDH1,
+NTD5,NTD1,NTD1,
+NTD6,NTD6,NTD7,NTDH1,
+NTDH2,NTD3,NTD4,
+NTD5,NTD1,NTD3,NTD4,
+NTD5,NTD1,NTD1,
+NTD6,NTD6,NTD7,NTDH1,
+NTD5,NTD6,NTD7,
+NTDH1,NTDH1,NTDH1,NTD7,NTD5,
+NTD6,NTD4,NTD5,
+NTD6,NTD5,NTD4,NTD5,
+NTD2,NTD3,NTD4,
+NTD5,NTDH1,NTD3,NTD4,
+NTD5,NTD1,NTD1,
+NTD6,NTD6,NTD7,NTDH1,
+NTD5,NTD4,NTD5,
+NTD6,NTD1,NTD4,NTD5,
+NTD6,NTD6,NTD7,
+NTDH1,NTDH1,NTDH1,NTD7,NTD5,
+NTD6,NTD4,NTD5,
+NTD6,
+NTD7,NTD7,NTD6,NTD7,NTDH1,
+};
+float durt[]=
+{
+1,
+1.5,0.5,0.75,0.25,0.75,0.25,
+3,1,
+1.5,0.5,0.75,0.25,0.75,0.25,
+3,1,
+1.5,0.5,1,0.33,0.33,0.33,
+1,1,1.5,0.5,
+1.5,0.5,1,0.33,0.33,0.33,
+1,2,1,
+1.5,0.5,0.75,0.25,0.75,0.25,
+3,1,
+1.5,0.5,0.75,0.25,0.75,0.25,
+3,1,
+1.5,0.5,1,0.33,0.33,0.33,
+1,1,1.5,0.5,
+1.5,0.5,0.5,0.5,0.33,0.33,0.33,
+1,2,1,
+3,1.5,0.5,
+3,0.5,0.5,
+1.5,0.5,1,1,
+3,1,
+3,0.75,0.25,
+3,0.5,0.5,
+1.5,0.5,1,1,
+3,0.75,0.25,
+2.5,0.5,0.75,0.25,
+3,0.5,0.5,
+2.5,0.5,0.5,0.5,
+3,0.5,0.5,
+0.5,2,0.5,0.5,0.5,
+3,0.5,0.5,
+2.5,0.5,0.5,0.5,
+3,0.75,0.25,
+2.5,0.5,0.75,0.25,
+3,0.5,0.5,
+2.5,0.5,0.5,0.5,
+3,0.75,0.25,
+2.5,0.5,0.75,0.25,
+3,0.5,0.5,
+0.5,2,0.5,0.5,0.5,
+3,0.5,0.5,
+4,
+1,1,0.5,1.5,
+4,
+};
+int length;
+int tonepin=A3;
+void setup()
+{
+pinMode(tonepin,OUTPUT);
+length=sizeof(tune)/sizeof(tune[0]); //计算长度
+pinMode(11, OUTPUT); //发红色光
+pinMode(10, OUTPUT); //发蓝色光
+pinMode(9, OUTPUT); //发绿色光
+length=sizeof(tune)/sizeof(tune[0]);
+}
+void loop()
+{
+for(int x=0;x<length;x++)
+{
+int y=x%3;
+tone(tonepin,tune[x]);
+if(y==0)
+{
+digitalWrite(11,LOW); digitalWrite(10,LOW); digitalWrite(9,HIGH);
+delay(500*durt[x]);
+}
+else if(y==1)
+{
+digitalWrite(11,LOW); digitalWrite(10,HIGH); digitalWrite(9,LOW);
+delay(500*durt[x]);
+}
+else if(y==2)
+{
+digitalWrite(11,HIGH); digitalWrite(10,LOW); digitalWrite(9,LOW);
+delay(500*durt[x]);
+}
+noTone(tonepin);
+}
+delay(2000);
+}
+```
+2. 彩色LED呼吸代码（冯韵菱以及张靖鸿，2018/11/12）：
+```cpp
+void setup ()
+{
+Serial.begin(115200); //设置串口波特率
+pinMode(10,OUTPUT); //设置输出口
+}
+void loop()
+{ 
+double n=0;
+double liangdu1;
+while(n<=1023)
+{
+n++;
+liangdu1=n/4;
+analogWrite(10,0);
+analogWrite(11,liangdu1);
+analogWrite(9,255-liangdu1);
+delay(2);
+Serial.println(liangdu1);
+}
+while(n>=0)
+{
+n--;
+liangdu1=n/4;
+analogWrite(10,0);
+analogWrite(11,liangdu1);
+analogWrite(9,255-liangdu1);
+delay(2);
+Serial.println(liangdu1);
+}
+
+while(n<=1023)
+{
+n++;
+liangdu1=n/4;
+analogWrite(11,0);
+analogWrite(10,liangdu1);
+analogWrite(9,255-liangdu1);
+delay(2);
+Serial.println(liangdu1);
+}
+while(n>=0)
+{
+n--;
+liangdu1=n/4;
+analogWrite(9,0);
+analogWrite(10,liangdu1);
+analogWrite(11,255-liangdu1);
+delay(2);
+Serial.println(liangdu1);
+}
+
+while(n<=1023)
+{
+n++;
+liangdu1=n/4;
+analogWrite(9,liangdu1);
+analogWrite(11,255-liangdu1);
+analogWrite(10,0);
+delay(2);
+Serial.println(liangdu1);
+}
+while(n>=0)
+{
+n--;
+liangdu1=n/4;
+analogWrite(10,255-liangdu1);
+analogWrite(11,0);
+analogWrite(9,liangdu1);
+delay(2);
+Serial.println(liangdu1);
+}
+
+Serial.println(n); // 用于IDE串口观察窗
+delay(2); //防止串口写入速度过快
+}
+```
+3. 小程序导航栏程序（刘晃伸，2018/11/12）：
+```json
+{
+"pages":[
+"pages/index/index",
+"pages/logs/logs",
+"pages/TEM/TEM",
+"pages/others/others",
+"pages/control/control",
+"pages/information/information"
+],
+"window":{
+"backgroundTextStyle":"light",
+"navigationBarBackgroundColor":"#F0F8FF",
+"navigationBarTitleText": "鱼家",
+"navigationBarTextStyle":"black"
+},
+"tabBar": {
+"backgroundColor": "#F0F8FF",
+"list": [{
+"pagePath": "pages/index/index",
+"text": "主页",
+"iconPath": "pages/img/首页.png",
+"selectedIconPath": "pages/img/首页.png"
+},
+{
+"pagePath": "pages/information/information",
+"text": "获取信息",
+"iconPath": "pages/img/系统菜单.png",
+"selectedIconPath": "pages/img/系统菜单.png"
+},
+{
+"pagePath": "pages/control/control",
+"text": "控制台",
+"iconPath": "pages/img/解锁.png",
+"selectedIconPath": "pages/img/解锁.png"
+},
+{
+"pagePath": "pages/others/others",
+"text": "关于我们",
+"iconPath": "pages/img/信息.png",
+"selectedIconPath": "pages/img/信息.png"
+}]
+}
+}
+```
+4. 小程序主界面代码（刘晃伸，2018/11/12）：
+```xml
+<!--index.wxml-->
+<view class="userinfo">
+<buttonwx:if="{{!hasUserInfo && canIUse}}"open-type="getUserInfo"bindgetuserinfo="getUserInfo"class="btn"> 登录程序 </button>
+<blockwx:else>
+<imagebindtap="bindViewTap"class="userinfo-avatar"src="{{userInfo.avatarUrl}}"mode="cover"></image>
+<textclass="userinfo-nickname">{{userInfo.nickName}}</text>
+</block>
+</view>
+<view class="welcome">
+欢迎使用鱼家
+</view>
+```
+5. 鱼家网站初步设计代码（冯韵菱，2018/11/19）：
+```html
+<!DOCTYPE html><html class=''>
+<head>
+<meta charset="utf-8">
+<h1 style="font-family:STXingkai;color:#ADD8E6">欢迎来到鱼家————你的智能养鱼系统</h1>
+<style class="cp-pen-styles">
+*{
+  margin: 0px;
+  padding: 0px;
+}
+body {
+  background-color: #F08080;
+}
+
+input[type="checkbox"] {
+  position: absolute;
+  top: 10%;
+  left: 15%;
+  margin: 0;
+  margin-top: -40px;
+  margin-left: -80px;
+  -webkit-appearance: none;
+    -moz-appearance: none;
+        appearance: none;
+  cursor: pointer;
+  -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+  -webkit-transition: all 0.5s cubic-bezier(0.85, 0.1, 0.05, 0.75);
+  transition: all 0.5s cubic-bezier(0.85, 0.1, 0.05, 0.75);
+  width: 80px;
+  height: 40px;
+  outline: 40px solid #fff;
+  outline-offset: -40px;
+  box-shadow: 0 0 0 4px #dfdfdf, 80px 0 0 4px #dfdfdf, 0 0 0 4px #dfdfdf, 80px 0 0 4px #dfdfdf;
+}
+input[type="checkbox"]:checked {
+  -webkit-transform: translateX(100%);
+        transform: translateX(100%);
+  outline-color: #5d6aba;
+  box-shadow: 0 0 0 4px #dfdfdf, -80px 0 0 4px #dfdfdf, -80px 0 0 4px #dfdfdf, 0 0 0 4px #dfdfdf;
+}
+input[type="checkbox"]:checked + .backgroundAnimation {
+  background-color: #000000;
+}
+.backgroundAnimation {
+  width: 100vw;
+  height: 100vh;
+  -webkit-transition: background-color 0.5s ease;
+  transition: background-color 0.5s ease;
+}
+.box{ font-size:50px} 
+</style></head>
+<div class="box"> 
+开关灯
+</div> 
+<body>
+<input type="checkbox"/>
+<!-- option-->
+<div class="backgroundAnimation"></div>
+</body>
+<P style="font-family:STXingkai;color:#ADD8E6;">
+<font size="6">鱼儿该睡觉了</font></P>
+<img src="helloworld.jpg" width="700" height="800">
+</html>
+```
+6. 微信小程序跳转网站代码（冯韵菱，2018/11/19）：
+```xml
+<!--pages/others/others.wxml-->
+<text>关于我们</text>
+<viewclass='wrapper'>
+<buttonclass='wepay'bindtap='tiaozhuan'>进入我们的网站~</button>
+</view>
+```
+```javascript
+// pages/others/others.js
+Page({
+tiaozhuan: function () {
+wx.navigateTo({
+url: '../out/out', //
+success: function () {
+
+}, //成功后的回调；
+fail: function () { }, //失败后的回调；
+complete: function () { } //结束后的回调(成功，失败都会执行)
+})
+}
+})
+```
+
+## 四、Operate（运作）
+### （一）项目运作效果
+项目最终实现了远距离网络测量并调节鱼缸的温度、充氧、饲料添加、环境光线改变、播放舒缓音乐等功能。各硬件端（温度传感器、光敏传感器、继电器、投食装置、加热棒离水断电装置等）均可正常工作；软件端（微信小程序、项目网站）实现了数据查看、指令发送、页面跳转等功能，Onenet平台成功实现数据上传与硬件控制。
+
+### （二）项目经验总结
+1. 第一周项目经验总结
+本周，我们组整体完成情况尚可，因为考虑到临近半期以及购买的器材并未送达只能先做一些能完成的工作，所以进展并没有想象中的大，其中：
+- 冯韵菱：这周还是遇到了很多问题，比如我们构想的强电的使用，网络端对硬件端的调用，硬件端的使用，机械装置的实施，前端页面、逻辑的设计，服务器、数据库的使用，都还存在很多的问题，需要大家不断地学习和努力才才能解决。不过很开心的是，我们在团队协作中学到了许多，很多我们一个人几乎很难完成的事情，在小组的协作中都慢慢解决了，希望大家继续加油~
+- 张靖鸿：我真nb
+- 刘晃伸：到现在为止感觉还是比较容易，但是对于界面设计还是很懵懂，感觉直男审美限制了自己的想象力。看来还是需要投入精力去学习。希望接下来能够顺利进行
+- 冯昕澳：在起初的设计硬件端功能的时候，遇到了一些不方便解决的问题，在小组的共同讨论下，提出了很多种方案，在多种选择下经过讨论选择出了最优的方案。在实现硬件端功能时代码与硬件端的配合也需要一起努力攻克一些困难！希望继续加油~
+- 田宇航：硬件实施的雏形已有，希望做出来不要太丑（手动滑稽）
+
+2. 第二周项目经验总结
+- 冯韵菱：这周解决了ESP8266使用的问题，还有很多很多奇奇怪怪的上传问题等等，这都得益于团队合作，有些自己改的代码可能有细微的错误（如中文逗号....）都能被同伴很好发现，希望大家保持下去，继续努力~
+- 冯昕澳：这周主要集中在代码的修改上，过程中遇到了许多问题，在团队合作中得以解决。其次在硬件端的构想也在逐渐细化，争取让作品更加精美。接下来在硬件端的搭建中将会遇到别的问题，希望大家继续努力。
+- 刘晃伸：这周感觉我还是相当咸鱼，只负责更改了比较简单的代码部分，还是要投入更多的精力研究好设计小程序页面以及网站吧。（dalao们加油，我给你们打call！）躺）
+
+3. 第三周项目经验总结
+第三周大家都积极参与创客马拉松~使我们组进展很大~大家都很做得很好（除了某张姓男子...）
+- 冯韵菱：这周我们组有了重大突破，很多都是在创客马拉松活动中有所突破的，这个活动不仅让我们都学到了很多，而且也让团队凝聚力更强了~虽然很多难题目前已经克服，但项目还有许多细节需要完善，目前还有一个难关等着我们克服，大家加油~
+- 冯昕澳：这周和大家一起参加了创客马拉松，我和组员一起负责了硬件端的设计和海报的制作，在硬件段方面有重大突破，基本上已经完全解决了硬件端的问题。在接下来的时间，只需要专注于对硬件端细节美化，使鱼缸的构架更加美观合理，希望继续加油~
+- 刘晃伸：这周参加了创客马拉松，还是收获颇多。一是见识了各位dalao，二也是见到了大家的创意，还是感触颇多。与此同时，自己的努力也没有白费，完成了相对来说比较困难的部分，还是很欣慰的。
+
+### （三）项目更新记录
+- 更新第一版：冯韵菱 2018/11/13
+- 更新第二版：田宇航 2018/11/13
+- 更新第三版：刘晃伸 2018/11/13  
+- 更新第四版：冯昕澳2018/11/13
+- 更新第五版：张靖鸿2018/11/13
+- 更细第六版：冯韵菱2018/11/20
+- 更新第七版：冯昕澳2018/11/20
+- 更新第八版：刘晃伸2018/11/20
+- 更新第九版：田宇航2018/11/20
+- 更新第十版：张靖鸿2018/11/20
+- 更新第十一版：冯韵菱2018/11/27
+- 更新第十二版：冯昕澳2018/11/27
+- 更新第十三版：田宇航2018/11/27
+- 更新第十四版：刘晃伸2018/11/28

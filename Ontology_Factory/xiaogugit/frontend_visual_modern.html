@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本体Git Neo 可视化工作台</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-app: #090807;
+      --bg-panel: rgba(24, 18, 13, 0.82);
+      --bg-panel-strong: rgba(19, 15, 11, 0.96);
+      --bg-input: rgba(10, 8, 6, 0.92);
+      --border: rgba(217, 183, 120, 0.14);
+      --border-hover: rgba(217, 183, 120, 0.28);
+      --border-focus: #d7b778;
+      --text-main: #f8f1e7;
+      --text-muted: #c0ae96;
+      --brand: #d7b778;
+      --brand-hover: #e7ca93;
+      --brand-bg: rgba(215, 183, 120, 0.12);
+      --ok: #4ade80;
+      --err: #fb7185;
+      --header-h: 68px;
+      --sidebar-w: 352px;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(215, 183, 120, 0.22); border: 2px solid transparent; border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(215, 183, 120, 0.38); }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(circle at top left, rgba(215, 183, 120, 0.18), transparent 22%),
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.06), transparent 18%),
+        linear-gradient(180deg, #100d0a 0%, #0b0908 46%, #070606 100%);
+      color: var(--text-main);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(215, 183, 120, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(215, 183, 120, 0.025) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(180deg, rgba(255,255,255,0.85), transparent 92%);
+    }
+
+    .app-header {
+      height: var(--header-h);
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: linear-gradient(180deg, rgba(20, 16, 12, 0.92), rgba(12, 10, 8, 0.84));
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 2;
+    }
+
+    .app-header::after {
+      content: "";
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(215, 183, 120, 0.55), transparent);
+    }
+
+    .brand-container { display: flex; flex-direction: column; justify-content: center; }
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-main);
+    }
+    .logo::before {
+      content: "";
+      width: 14px;
+      height: 14px;
+      background: linear-gradient(135deg, #f3deb3, var(--brand));
+      border-radius: 4px;
+      box-shadow: 0 0 20px rgba(215, 183, 120, 0.45);
+    }
+    .subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      letter-spacing: 0.02em;
+      padding-left: 24px;
+    }
+    .header-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .header-links a {
+      color: #f7e8c8;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(215, 183, 120, 0.16);
+      background: rgba(255, 255, 255, 0.03);
+      transition: 0.2s;
+    }
+    .header-links a:hover { background: rgba(215,183,120,0.08); border-color: rgba(215, 183, 120, 0.3); }
+
+    .app-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      padding: 18px;
+      gap: 18px;
+      min-height: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      border: 1px solid rgba(215, 183, 120, 0.16);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(22, 17, 13, 0.94), rgba(16, 13, 10, 0.84));
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .sidebar-group {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-group:last-child { border-bottom: none; }
+
+    .group-title {
+      padding: 14px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .group-title:hover { color: var(--text-main); background: rgba(255,255,255,0.03); }
+
+    details > summary { list-style: none; outline: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::after { content: "▼"; font-size: 10px; transform: rotate(-90deg); transition: 0.2s; display: inline-block; }
+    details[open] > summary::after { transform: rotate(0); }
+
+    .group-body {
+      padding: 0 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    label { display: block; margin-bottom: 4px; color: var(--text-muted); font-size: 12px; }
+    input, select, textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+    }
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .form-row { display: flex; gap: 10px; }
+    .form-row > div { flex: 1; min-width: 0; }
+
+    .btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border-hover);
+      color: var(--text-main);
+      padding: 9px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(215, 183, 120, 0.35); }
+    .btn.primary {
+      background: linear-gradient(135deg, #f0d9ad, var(--brand));
+      border-color: transparent;
+      color: #271a0d;
+      box-shadow: 0 12px 28px rgba(215, 183, 120, 0.24);
+    }
+    .btn.primary:hover { filter: brightness(1.04); }
+    .btn.full { width: 100%; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .status-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+    }
+    .status-text.info { color: var(--brand); border-color: var(--brand-bg); background: var(--brand-bg); }
+    .status-text.ok { color: var(--ok); border-color: rgba(74, 222, 128, 0.22); background: rgba(74, 222, 128, 0.08); }
+    .status-text.error { color: var(--err); border-color: rgba(251, 113, 133, 0.22); background: rgba(251, 113, 133, 0.08); }
+    .mt-2 { margin-top: 8px; }
+
+    .main-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+      border: 1px solid rgba(215, 183, 120, 0.16);
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(20, 16, 12, 0.88), rgba(14, 11, 9, 0.82));
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .workspace-banner {
+      padding: 18px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(215, 183, 120, 0.16), rgba(255, 255, 255, 0.02) 48%, rgba(215, 183, 120, 0.06));
+    }
+
+    .workspace-banner h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.03em;
+      color: #fff6e8;
+    }
+
+    .workspace-banner p {
+      margin: 8px 0 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.7;
+      max-width: 760px;
+    }
+
+    .banner-metrics {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .metric-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(215, 183, 120, 0.16);
+      background: rgba(10, 8, 6, 0.28);
+      color: #f7e8c8;
+      font-size: 12px;
+    }
+
+    .view-tabs {
+      display: flex;
+      padding: 12px 16px 0;
+      gap: 8px;
+      background: rgba(10, 8, 6, 0.34);
+      border-bottom: 1px solid var(--border);
+    }
+    .view-tab {
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 14px 14px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+    }
+    .view-tab:hover { color: var(--text-main); background: rgba(255,255,255,0.04); }
+    .view-tab.active {
+      color: #fff8ed;
+      background: var(--bg-panel-strong);
+      border-color: var(--border);
+      position: relative;
+    }
+    .view-tab.active::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--bg-panel-strong);
+    }
+
+    .view-content {
+      flex: 1;
+      background: var(--bg-panel-strong);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .graph-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .graph-container::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(215, 183, 120, 0.12) 1px, transparent 0);
+      background-size: 24px 24px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    #timeline-empty, #global-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .bottom-panel {
+      height: 36%;
+      min-height: 220px;
+      border-top: 1px solid var(--border);
+      background: rgba(11, 9, 8, 0.82);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .bottom-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 10px;
+      background: rgba(255,255,255,0.02);
+    }
+    .bottom-tab {
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 2px solid transparent;
+    }
+    .bottom-tab:hover { color: var(--text-main); }
+    .bottom-tab.active { color: var(--text-main); border-bottom-color: var(--brand); }
+
+    .bottom-content {
+      flex: 1;
+      overflow: auto;
+      padding: 14px;
+      background: transparent;
+    }
+
+    .bottom-pane { display: none; height: 100%; }
+    .bottom-pane.active { display: block; }
+
+    pre {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #dbeafe;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .global-board {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 24px;
+      overflow-y: auto;
+      height: 100%;
+      position: relative;
+      z-index: 1;
+    }
+    .file-card {
+      background: rgba(20, 16, 12, 0.58);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .file-card-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.02);
+    }
+    .file-card-title { font-weight: 600; font-size: 13px; }
+    .file-card-meta { font-size: 12px; color: var(--text-muted); }
+    .file-graph-stage { height: 220px; position: relative; }
+
+    .console-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .console-box {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(16, 13, 10, 0.76);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .console-box h4 {
+      margin: 0;
+      padding: 10px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.02);
+      letter-spacing: 0.05em;
+    }
+    .console-box pre { padding: 12px; font-size: 11px; color: #e7dccb; max-height: 220px; overflow: auto; }
+
+    @media (max-width: 980px) {
+      .app-body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        min-width: 0;
+        max-height: 48vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand-container">
+      <div class="logo">本体Git 商业驾驶舱</div>
+      <div class="subtitle">高层展示风格的独立可视化面板，保留原版 `/ui-visual` 不变</div>
+    </div>
+    <div class="header-links">
+      <a href="/ui-modern" target="_blank">Neo 表单面板</a>
+      <a href="/docs" target="_blank">API 文档</a>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <aside class="sidebar">
+      <div class="sidebar-group" style="padding-top: 8px;">
+        <div class="group-title">视图靶向</div>
+        <div class="group-body">
+          <div class="form-row">
+            <div><label>项目 ID</label><input id="visual-project" value="demo"></div>
+            <div><label>关注本体</label><input id="visual-file" value="ontology"></div>
+          </div>
+          <button class="btn primary full" onclick="refreshAllVisualizations()">加载图谱</button>
+          <div id="visual-status" class="status-text mt-2">就绪</div>
+        </div>
+      </div>
+
+      <details class="sidebar-group" open>
+        <summary class="group-title">写入新分支 / 版本 (POST)</summary>
+        <div class="group-body">
+          <div class="form-row">
+            <div><label>写入项目</label><input id="write-project" value="demo"></div>
+            <div><label>写入本体</label><input id="write-file" value="ontology"></div>
+          </div>
+          <div class="form-row">
+            <div><label>basevision</label><input id="write-basevision" type="number" min="0" required value="0" placeholder="父版本号"></div>
+            <div><label>提交说明</label><input id="write-message" value="AI: update ontology"></div>
+          </div>
+          <div class="form-row">
+            <div><label>本体名称</label><input id="write-agent" value="老师"></div>
+            <div><label>提交者</label><input id="write-committer" value="张三"></div>
+          </div>
+          <label>JSON 数据</label>
+          <textarea id="write-data">{
+  "name": "老师",
+  "abilities": [
+    "授课",
+    "备课"
+  ],
+  "interactions": [
+    {
+      "target": "学生",
+      "type": "教授"
+    },
+    {
+      "target": "学校",
+      "type": "任职"
+    }
+  ]
+}</textarea>
+          <button class="btn full" onclick="writeVersion()">执行提交</button>
+        </div>
+      </details>
+
+      <details class="sidebar-group">
+        <summary class="group-title">读取 / 回滚 (GET/POST)</summary>
+        <div class="group-body">
+          <label>项目与本体</label>
+          <div class="form-row">
+            <input id="read-project" value="demo" placeholder="Project ID">
+            <input id="read-file" value="ontology" placeholder="Ontology name">
+          </div>
+          <label>目标 Version ID (优先) / Commit ID</label>
+          <div class="form-row">
+            <input id="read-version-id" placeholder="version_id">
+            <input id="read-commit" placeholder="commit_id">
+          </div>
+          <div class="btn-group" style="margin-top: 4px;">
+            <button class="btn" style="flex:1;" onclick="readVersion()">读取快照</button>
+            <button class="btn" style="flex:1; border-color: var(--err); color: var(--err);" onclick="rollbackVersion()">强制回滚</button>
+          </div>
+          <input type="hidden" id="rollback-project" value="demo">
+          <input type="hidden" id="rollback-version-id">
+          <input type="hidden" id="rollback-commit">
+
+          <hr style="border:none; border-top:1px solid var(--border); margin: 4px 0;">
+
+          <label>删除本体</label>
+          <div class="form-row">
+            <input id="delete-project" value="demo" placeholder="Project ID">
+            <input id="delete-file" value="ontology" placeholder="Ontology name">
+          </div>
+          <div class="form-row">
+            <input id="delete-committer" value="张三" placeholder="Operator">
+            <input id="delete-message" value="删除本体" placeholder="删除说明">
+          </div>
+          <button class="btn" style="width:100%; border-color: var(--err); color: var(--err);" onclick="deleteOntology()">彻底删除当前本体</button>
+        </div>
+      </details>
+
+      <details class="sidebar-group">
+        <summary class="group-title">项目管理配置</summary>
+        <div class="group-body">
+          <label>初始化项目</label>
+          <div class="form-row">
+            <input id="init-project" value="demo" placeholder="Project ID">
+            <input id="init-name" value="演示项目" placeholder="Name">
+          </div>
+          <textarea id="init-description" style="min-height: 40px; margin-top: 8px;">这是一个用于演示本体版本链可视化的本体Git项目。</textarea>
+          <div class="form-row" style="margin-top: 8px;">
+            <select id="init-status">
+              <option value="开发中" selected>开发中</option>
+              <option value="测试中">测试中</option>
+              <option value="已完成">已完成</option>
+            </select>
+            <button class="btn" onclick="initProject()">初始化</button>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin: 12px 0;">
+
+          <label>更新状态</label>
+          <div class="form-row">
+            <input id="status-project" value="demo" placeholder="Project ID">
+            <input id="status-operator" value="System" placeholder="Operator">
+          </div>
+          <div class="form-row" style="margin-top: 8px;">
+            <select id="status-value">
+              <option value="开发中">开发中</option>
+              <option value="测试中">测试中</option>
+              <option value="已完成">已完成</option>
+              <option value="已回滚">已回滚</option>
+            </select>
+            <button class="btn" onclick="updateProjectStatus()">更新</button>
+          </div>
+        </div>
+      </details>
+    </aside>
+
+    <main class="main-view">
+      <div class="workspace-banner">
+        <h2>Ontology Portfolio Workspace</h2>
+        <p>以商业化驾驶舱风格呈现本体版本链、项目总览和关键操作入口，适合演示、汇报与产品化展示。</p>
+        <div class="banner-metrics">
+          <div class="metric-chip">版本链总览</div>
+          <div class="metric-chip">项目级驾驶舱</div>
+          <div class="metric-chip">高层汇报风格</div>
+        </div>
+      </div>
+      <div class="view-tabs">
+        <div class="view-tab active" id="tab-single" onclick="switchViewTab('single')">单文件主图谱</div>
+        <div class="view-tab" id="tab-global" onclick="switchViewTab('global')">项目全局总览</div>
+      </div>
+
+      <div class="view-content" id="view-single">
+        <div id="timeline-empty">请在左侧输入项目和文件名后加载图谱</div>
+        <div id="timeline-graph" class="graph-container" hidden></div>
+      </div>
+
+      <div class="view-content" id="view-global" hidden>
+        <div id="global-empty">请在左侧输入项目ID后加载图谱</div>
+        <div id="global-board" class="global-board" hidden></div>
+      </div>
+
+      <div class="bottom-panel">
+        <div class="bottom-tabs">
+          <div class="bottom-tab active" data-pane="details" onclick="switchBottomTab('details', this)">提交详情</div>
+          <div class="bottom-tab" data-pane="source" onclick="switchBottomTab('source', this)">文件快照</div>
+          <div class="bottom-tab" data-pane="diff" onclick="switchBottomTab('diff', this)">相邻差异</div>
+          <div class="bottom-tab" data-pane="console" onclick="switchBottomTab('console', this)">接口日志</div>
+        </div>
+        <div class="bottom-content">
+          <div class="bottom-pane active" id="pane-details">
+            <pre id="selected-commit-output">请点击上方图谱节点查看详情</pre>
+          </div>
+          <div class="bottom-pane" id="pane-source">
+            <pre id="selected-file-output">请点击上方图谱节点查看快照</pre>
+          </div>
+          <div class="bottom-pane" id="pane-diff">
+            <pre id="selected-diff-output">请点击上方图谱节点查看差异</pre>
+          </div>
+          <div class="bottom-pane" id="pane-console">
+            <div class="console-grid">
+              <div class="console-box"><h4>Write / Read / Rollback</h4><pre id="action-output"></pre></div>
+              <div class="console-box"><h4>Visual Data</h4><pre id="log-output"></pre></div>
+              <div class="console-box"><h4>Project / System</h4><pre id="project-detail-output"></pre></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://gw.alipayobjects.com/os/lib/antv/g6/4.8.24/dist/g6.min.js"></script>
+  <script>
+    const state = {
+      currentTree: null,
+      selectedVersionId: null,
+      globalTrees: [],
+      mainGraph: null,
+      globalGraphInstances: []
+    };
+
+    function switchViewTab(tab) {
+      document.getElementById('tab-single').classList.toggle('active', tab === 'single');
+      document.getElementById('tab-global').classList.toggle('active', tab === 'global');
+      document.getElementById('view-single').hidden = tab !== 'single';
+      document.getElementById('view-global').hidden = tab !== 'global';
+
+      if (tab === 'single' && state.mainGraph && !document.getElementById('timeline-graph').hidden) {
+         state.mainGraph.changeSize(document.getElementById('timeline-graph').clientWidth, document.getElementById('timeline-graph').clientHeight);
+         state.mainGraph.fitView(24);
+      } else if (tab === 'global') {
+         state.globalGraphInstances.forEach(g => {
+            const container = g.get('container');
+            if(container) { g.changeSize(container.clientWidth, container.clientHeight); g.fitView(16); }
+         });
+      }
+    }
+
+    function switchBottomTab(pane, tabEl = null) {
+      document.querySelectorAll('.bottom-tab').forEach(el => el.classList.remove('active'));
+      const targetTab = tabEl || document.querySelector(`.bottom-tab[data-pane="${pane}"]`);
+      if (targetTab) targetTab.classList.add('active');
+      document.querySelectorAll('.bottom-pane').forEach(el => el.classList.remove('active'));
+      document.getElementById(`pane-${pane}`).classList.add('active');
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    function formatBeijingTime(value) {
+      if (!value) return "-";
+      const normalized = String(value).replace(" ", "T");
+      const date = new Date(normalized);
+      if (Number.isNaN(date.getTime())) return String(value).replace("T", " ").replace(/\+\d{2}:\d{2}$/, "");
+      return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(date).replace(/\//g, "-");
+    }
+
+    function setOutput(id, data) {
+      const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    }
+
+    function logAction(data) {
+      setOutput("action-output", data);
+      switchBottomTab('console');
+    }
+
+    function setVisualStatus(text, tone) {
+      const el = document.getElementById("visual-status");
+      el.className = `status-text ${tone} mt-2`;
+      el.textContent = text;
+    }
+
+    function clearSelectedPanels(message) {
+      setOutput("selected-commit-output", message);
+      setOutput("selected-file-output", message);
+      setOutput("selected-diff-output", message);
+    }
+
+    async function apiRequest(url, options = {}) {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      let data = text;
+      try { data = JSON.parse(text); } catch(e){}
+      if (!response.ok) throw new Error(data.detail || (typeof data === 'string' ? data : JSON.stringify(data)));
+      return data;
+    }
+
+    const apiGet = (url) => apiRequest(url);
+    const apiPost = (url, payload) => apiRequest(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload ? JSON.stringify(payload) : undefined });
+    const apiPostQuery = (url) => apiRequest(url, { method: "POST" });
+
+    function getVisualProjectId() { return document.getElementById("visual-project").value.trim(); }
+    function getFilenameWithExt(id) { let v = document.getElementById(id).value.trim(); return v && !v.endsWith('.json') ? v + '.json' : v; }
+    function setFilenameWithoutExt(id, f) { if(f) { const e = document.getElementById(id); if(e) e.value = f.replace(/\.json$/, ''); } }
+    function getVisualFilename() { return getFilenameWithExt("visual-file"); }
+    function getCurrentVersions(tree = state.currentTree) { return tree && Array.isArray(tree.versions) ? tree.versions : []; }
+    function getVersionById(versionId, tree = state.currentTree) { return getCurrentVersions(tree).find((v) => String(v.version_id) === String(versionId)) || null; }
+
+    function destroyGraph(graph) { if (graph && !graph.destroyed) graph.destroy(); }
+    function destroyGlobalGraphs() {
+      state.globalGraphInstances.forEach(destroyGraph);
+      state.globalGraphInstances = [];
+    }
+
+    function buildGraphTreeData(tree, options = {}) {
+      const versions = getCurrentVersions(tree);
+      if (!versions.length) return null;
+
+      const nodeMap = new Map();
+      versions.forEach(v => nodeMap.set(String(v.version_id), v));
+
+      function orderedIds(ids) {
+        return (ids || []).map(String).filter(id => nodeMap.has(id)).sort((a, b) => Number(a) - Number(b));
+      }
+
+      function toNode(versionId) {
+        const v = nodeMap.get(String(versionId));
+        return {
+          id: `version-${v.version_id}`,
+          versionId: v.version_id,
+          label: `curr ${v.currvision}`,
+          title: v.message || "无说明",
+          subtitle: `${v.object_name || "-"}\n${v.committer || "未知"}\n${formatBeijingTime(v.time)}`,
+          isLatest: Boolean(v.is_latest),
+          isSelected: String(state.selectedVersionId) === String(v.version_id),
+          children: orderedIds(v.child_version_ids).map(toNode)
+        };
+      }
+
+      const rootIds = orderedIds(tree.root_version_ids);
+      const roots = rootIds.length ? rootIds.map(toNode) : [toNode(versions[0].version_id)];
+
+      if (roots.length === 1 && options.showVirtualRoot === false) return roots[0];
+
+      return {
+        id: `file-root-${tree.filename}`,
+        label: tree.filename,
+        title: "File Root",
+        subtitle: `共 ${tree.version_count ?? 0} 版本`,
+        isVirtualRoot: true,
+        children: roots
+      };
+    }
+
+    function createG6TreeGraph(container, data, options = {}) {
+      if (!window.G6 || !container || !data) return null;
+
+      const width = container.clientWidth || 400;
+      const height = container.clientHeight || 300;
+
+      const graph = new G6.TreeGraph({
+        container,
+        width,
+        height,
+        animate: true,
+        fitView: true,
+        fitViewPadding: [24, 24, 24, 24],
+        modes: { default: ["drag-canvas", "zoom-canvas", "drag-node"] },
+        layout: {
+          type: "compactBox",
+          direction: "LR",
+          getId: d => d.id,
+          getHeight: d => d.isVirtualRoot ? 40 : 76,
+          getWidth: d => d.isVirtualRoot ? 120 : 208,
+          getVGap: () => options.vGap || 24,
+          getHGap: () => options.hGap || 80
+        },
+        defaultNode: {
+          type: "rect",
+          size: [208, 76],
+          style: { radius: 12, fill: "#18110d", stroke: "rgba(215, 183, 120, 0.24)", lineWidth: 1, cursor: "pointer" }
+        },
+        defaultEdge: {
+          type: "cubic-horizontal",
+          style: { stroke: "rgba(215, 183, 120, 0.22)", lineWidth: 1.6, endArrow: false }
+        }
+      });
+
+      graph.node((node) => {
+        const label = node.isVirtualRoot ? node.label : `currvision ${node.label.replace('curr ', '')}\n${node.title}\n${node.subtitle}`;
+        const fill = node.isVirtualRoot ? "rgba(255,255,255,0.04)" : (node.isLatest ? "rgba(74, 222, 128, 0.12)" : (node.isSelected ? "rgba(215, 183, 120, 0.18)" : "#18110d"));
+        const stroke = node.isVirtualRoot ? "rgba(215, 183, 120, 0.18)" : (node.isSelected ? "#e7ca93" : (node.isLatest ? "#4ade80" : "rgba(215, 183, 120, 0.24)"));
+        const textColor = "#f8f1e7";
+
+        return {
+          label,
+          labelCfg: { style: { fill: textColor, fontSize: 11, lineHeight: 15, fontWeight: node.isVirtualRoot ? 700 : 400 } },
+          style: {
+            fill,
+            stroke,
+            radius: 12,
+            lineWidth: node.isSelected ? 1.8 : 1,
+            shadowColor: node.isSelected ? "rgba(215, 183, 120, 0.3)" : "rgba(0, 0, 0, 0.32)",
+            shadowBlur: node.isSelected ? 14 : 8,
+            cursor: "pointer"
+          }
+        };
+      });
+
+      graph.data(data);
+      graph.render();
+      return graph;
+    }
+
+    function renderTimeline(tree) {
+      const empty = document.getElementById("timeline-empty");
+      const graphContainer = document.getElementById("timeline-graph");
+      destroyGraph(state.mainGraph);
+      state.mainGraph = null;
+
+      const versions = getCurrentVersions(tree);
+      if (!versions.length) {
+        empty.hidden = false; graphContainer.hidden = true; return;
+      }
+      empty.hidden = true; graphContainer.hidden = false;
+
+      const graphData = buildGraphTreeData(tree, { showVirtualRoot: true });
+      if (!graphData) return;
+
+      state.mainGraph = createG6TreeGraph(graphContainer, graphData, { hGap: 100, vGap: 30 });
+      if (state.mainGraph) {
+        state.mainGraph.on("node:click", (evt) => {
+          if (evt.item.getModel().versionId !== undefined) selectVersion(evt.item.getModel().versionId);
+        });
+      }
+    }
+
+    function renderGlobalOverview(trees) {
+      const board = document.getElementById("global-board");
+      const empty = document.getElementById("global-empty");
+      board.innerHTML = "";
+      destroyGlobalGraphs();
+
+      if (!trees.length) {
+        empty.hidden = false; board.hidden = true; return;
+      }
+      empty.hidden = true; board.hidden = false;
+
+      trees.forEach(tree => {
+        const card = document.createElement("div");
+        card.className = "file-card";
+
+        card.innerHTML = `
+          <div class="file-card-header">
+            <div>
+              <div class="file-card-title">${escapeHtml(tree.filename)}</div>
+              <div class="file-card-meta">共 ${tree.version_count || 0} 版本</div>
+            </div>
+            <button class="btn" onclick="focusFile('${escapeHtml(tree.filename)}')">主视图查看</button>
+          </div>
+          <div class="file-graph-stage"></div>
+        `;
+
+        board.appendChild(card);
+        const stage = card.querySelector(".file-graph-stage");
+        const graphData = buildGraphTreeData(tree, { showVirtualRoot: false });
+
+        if (graphData) {
+          const graph = createG6TreeGraph(stage, graphData, { hGap: 60, vGap: 16 });
+          if (graph) {
+            graph.on("node:click", async (evt) => {
+              if (evt.item.getModel().versionId !== undefined) {
+                await focusFile(tree.filename);
+                await selectVersion(evt.item.getModel().versionId);
+              }
+            });
+            state.globalGraphInstances.push(graph);
+          }
+        }
+      });
+    }
+
+    async function focusFile(filename) {
+      setFilenameWithoutExt("visual-file", filename);
+      switchViewTab('single');
+      await refreshVisualization();
+    }
+
+    function fillVersionInputs(version) {
+      if (!version) return;
+      const pid = getVisualProjectId(), file = version.filename || getVisualFilename(), vid = version.version_id ?? "", cid = version.commit_id || "";
+      document.getElementById("write-project").value = pid;
+      setFilenameWithoutExt("write-file", file);
+      document.getElementById("write-basevision").value = vid;
+
+      document.getElementById("read-project").value = pid;
+      setFilenameWithoutExt("read-file", file);
+      document.getElementById("read-version-id").value = vid;
+      document.getElementById("read-commit").value = cid;
+
+      document.getElementById("rollback-project").value = pid;
+      document.getElementById("rollback-version-id").value = vid;
+      document.getElementById("rollback-commit").value = cid;
+      document.getElementById("delete-project").value = pid;
+      setFilenameWithoutExt("delete-file", file);
+    }
+
+    async function resolveWriteBasevision(projectId, filename, requestedBasevision, shouldAutoResolve) {
+      if (!shouldAutoResolve) return requestedBasevision;
+      if (requestedBasevision > 0) return requestedBasevision;
+      const params = new URLSearchParams({ filename });
+      const tree = await apiGet(`/versions/${encodeURIComponent(projectId)}?${params.toString()}`);
+      const latestVersionId = Number(tree.latest_version_id || 0);
+      const versions = Array.isArray(tree.versions) ? tree.versions : [];
+      const latest = versions.find(v => String(v.version_id) === String(latestVersionId));
+      if (latest && latest.is_deleted) return 0;
+      return latestVersionId > 0 ? latestVersionId : 0;
+    }
+
+    async function selectVersion(versionId) {
+      const pid = getVisualProjectId();
+      const version = getVersionById(versionId);
+      if (!version) return;
+      const filename = version.filename || getVisualFilename();
+      const fileParam = `filename=${encodeURIComponent(filename)}`;
+
+      state.selectedVersionId = versionId;
+      renderTimeline(state.currentTree);
+      fillVersionInputs(version);
+      setVisualStatus(`已选中 ${version.filename} 的版本: ID ${versionId} (curr ${version.currvision})`, "ok");
+
+      const activeTab = document.querySelector('.bottom-tab.active');
+      if (activeTab && activeTab.textContent.includes('接口日志')) switchBottomTab('details');
+
+      apiGet(`/version-detail/${encodeURIComponent(pid)}/${encodeURIComponent(versionId)}?${fileParam}`)
+        .then(d => setOutput("selected-commit-output", d)).catch(e => setOutput("selected-commit-output", String(e)));
+
+      apiGet(`/version-read/${encodeURIComponent(pid)}/${encodeURIComponent(versionId)}?${fileParam}`)
+        .then(d => setOutput("selected-file-output", d)).catch(e => setOutput("selected-file-output", String(e)));
+
+      if (version.primary_parent_version_id) {
+        const p = new URLSearchParams({ project_id: pid, base_version_id: version.primary_parent_version_id, target_version_id: versionId, filename });
+        apiGet(`/version-diff?${p.toString()}`)
+          .then(d => setOutput("selected-diff-output", d)).catch(e => setOutput("selected-diff-output", String(e)));
+      } else {
+        setOutput("selected-diff-output", "无基准版本，无法生成 Diff");
+      }
+    }
+
+    async function refreshVisualization() {
+      const pid = getVisualProjectId(), file = getVisualFilename();
+      if (!pid || !file) { setVisualStatus("项目ID或文件名缺失", "error"); return; }
+
+      setVisualStatus(`加载中...`, "info");
+      clearSelectedPanels("请在图谱中点击节点");
+
+      try {
+        const p = new URLSearchParams({ filename: file });
+        const [proj, tree] = await Promise.all([
+          apiGet(`/projects/${encodeURIComponent(pid)}`),
+          apiGet(`/versions/${encodeURIComponent(pid)}?${p.toString()}`)
+        ]);
+
+        setOutput("project-detail-output", proj);
+        setOutput("log-output", tree);
+        state.currentTree = tree;
+
+        const versions = getCurrentVersions(tree);
+        if (!versions.length) {
+          state.selectedVersionId = null; renderTimeline(tree); setVisualStatus(`文件 ${file} 无历史记录`, "info"); return;
+        }
+
+        const latest = getVersionById(tree.latest_version_id, tree) || versions[versions.length - 1];
+        if (latest && latest.is_deleted) {
+          state.selectedVersionId = null;
+          renderTimeline(null);
+          clearSelectedPanels(`本体 ${file} 已删除；如需查看历史，请通过版本详情接口按版本号查询。`);
+          setVisualStatus(`文件 ${file} 已删除`, "info");
+          return;
+        }
+        state.selectedVersionId = latest.version_id;
+        renderTimeline(tree);
+        setVisualStatus(`加载成功，共 ${tree.version_count} 版本`, "ok");
+        await selectVersion(latest.version_id);
+      } catch(e) {
+        state.currentTree = null; state.selectedVersionId = null; renderTimeline(null);
+        setVisualStatus(`失败: ${e.message}`, "error");
+      }
+    }
+
+    async function refreshGlobalOverview() {
+      const pid = getVisualProjectId();
+      if (!pid) return;
+      try {
+        const data = await apiGet(`/versions/${encodeURIComponent(pid)}`);
+        state.globalTrees = Array.isArray(data.files) ? data.files : [];
+        renderGlobalOverview(state.globalTrees);
+      } catch(e) {
+        state.globalTrees = []; renderGlobalOverview([]);
+      }
+    }
+
+    async function refreshAllVisualizations() {
+      await Promise.allSettled([refreshVisualization(), refreshGlobalOverview()]);
+    }
+
+    async function writeVersion() {
+      try {
+        const projectId = document.getElementById("write-project").value.trim();
+        const filename = getFilenameWithExt("write-file");
+        const basevisionRaw = document.getElementById("write-basevision").value.trim();
+        const shouldAutoResolveBasevision = basevisionRaw === "";
+        const inputBasevision = Number(basevisionRaw || 0);
+        const resolvedBasevision = await resolveWriteBasevision(projectId, filename, inputBasevision, shouldAutoResolveBasevision);
+        const payload = {
+          project_id: projectId,
+          filename,
+          basevision: resolvedBasevision,
+          message: document.getElementById("write-message").value.trim(),
+          agent_name: document.getElementById("write-agent").value.trim(),
+          committer_name: document.getElementById("write-committer").value.trim(),
+          data: JSON.parse(document.getElementById("write-data").value)
+        };
+        document.getElementById("write-basevision").value = String(resolvedBasevision);
+        const res = await apiPost("/write", payload);
+        logAction(res);
+        document.getElementById("visual-project").value = payload.project_id;
+        setFilenameWithoutExt("visual-file", payload.filename);
+        await refreshAllVisualizations();
+      } catch(e) { logAction(`Write Error: ${e.message}`); }
+    }
+
+    async function readVersion() {
+      try {
+        const pid = document.getElementById("read-project").value.trim();
+        const vid = document.getElementById("read-version-id").value.trim();
+        let res;
+        if(vid) {
+          const filename = getFilenameWithExt("read-file");
+          const p = new URLSearchParams({ filename });
+          res = await apiGet(`/version-read/${encodeURIComponent(pid)}/${encodeURIComponent(vid)}?${p.toString()}`);
+        }
+        else {
+          const file = getFilenameWithExt("read-file");
+          const cid = document.getElementById("read-commit").value.trim();
+          res = await apiGet(`/read/${encodeURIComponent(pid)}/${encodeURIComponent(file)}${cid ? `?commit_id=${encodeURIComponent(cid)}`:''}`);
+        }
+        logAction(res);
+      } catch(e) { logAction(`Read Error: ${e.message}`); }
+    }
+
+    async function rollbackVersion() {
+      try {
+        const pid = document.getElementById("rollback-project").value.trim() || document.getElementById("read-project").value.trim();
+        const vid = document.getElementById("rollback-version-id").value.trim() || document.getElementById("read-version-id").value.trim();
+        const cid = document.getElementById("rollback-commit").value.trim() || document.getElementById("read-commit").value.trim();
+        let res;
+        if(vid) {
+          const filename = getFilenameWithExt("read-file");
+          res = await apiPostQuery(`/version-rollback?project_id=${encodeURIComponent(pid)}&version_id=${encodeURIComponent(vid)}&filename=${encodeURIComponent(filename)}`);
+        }
+        else res = await apiPostQuery(`/rollback?project_id=${pid}&commit_id=${cid}`);
+        logAction(res);
+        document.getElementById("visual-project").value = pid;
+        await refreshAllVisualizations();
+      } catch(e) { logAction(`Rollback Error: ${e.message}`); }
+    }
+
+    async function deleteOntology() {
+      try {
+        const payload = {
+          project_id: document.getElementById("delete-project").value.trim() || getVisualProjectId(),
+          filename: getFilenameWithExt("delete-file"),
+          committer_name: document.getElementById("delete-committer").value.trim() || "System",
+          message: document.getElementById("delete-message").value.trim() || "删除本体",
+          purge_history: true
+        };
+        if (!payload.project_id || !payload.filename) {
+          throw new Error("项目 ID 和文件名不能为空");
+        }
+        if (!window.confirm(`确认彻底删除本体 ${payload.filename} 吗？该操作会重写历史且不可恢复。`)) {
+          logAction({ cancelled: true });
+          return;
+        }
+        const res = await apiPost("/delete", payload);
+        logAction(res);
+        document.getElementById("visual-project").value = payload.project_id;
+        setFilenameWithoutExt("visual-file", payload.filename);
+        await refreshAllVisualizations();
+      } catch(e) { logAction(`Delete Error: ${e.message}`); }
+    }
+
+    async function initProject() {
+      try {
+        const p = {
+          project_id: document.getElementById("init-project").value.trim(),
+          name: document.getElementById("init-name").value.trim(),
+          description: document.getElementById("init-description").value.trim(),
+          status: document.getElementById("init-status").value
+        };
+        const res = await apiPost("/projects/init", p);
+        logAction(res);
+      } catch(e) { logAction(`Init Error: ${e.message}`); }
+    }
+
+    async function updateProjectStatus() {
+      try {
+        const p = {
+          project_id: document.getElementById("status-project").value.trim(),
+          status: document.getElementById("status-value").value,
+          operator: document.getElementById("status-operator").value.trim()
+        };
+        const res = await apiPost("/projects/status", p);
+        logAction(res);
+      } catch(e) { logAction(`Status Error: ${e.message}`); }
+    }
+
+    window.addEventListener('resize', () => {
+      if (state.mainGraph && !document.getElementById('timeline-graph').hidden) {
+         state.mainGraph.changeSize(document.getElementById('timeline-graph').clientWidth, document.getElementById('timeline-graph').clientHeight);
+      }
+      if (!document.getElementById('global-board').hidden) {
+         state.globalGraphInstances.forEach(g => {
+            const container = g.get('container');
+            if(container) g.changeSize(container.clientWidth, container.clientHeight);
+         });
+      }
+    });
+  </script>
+</body>
+</html>

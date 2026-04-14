@@ -1,0 +1,82 @@
+Metadata-Version: 2.1
+Name: wikimg
+Version: 0.1.0
+Summary: A layered Markdown wiki manager for the command line.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+
+# WikiMG
+
+WikiMG is a small CLI-first wiki manager for Markdown documents.
+
+It organizes documents into exactly one of three layers:
+
+- `common`
+- `domain`
+- `private`
+
+Every document must live under one layer only.
+
+## Workspace Layout
+
+```text
+.wikimg/config.json
+wiki/
+  common/
+  domain/
+  private/
+```
+
+## Quick Start
+
+Direct run from the repository:
+
+```bash
+./wikimg init
+./wikimg new common "Getting Started"
+./wikimg list
+```
+
+Install as a command:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+
+wikimg init
+wikimg new common "Getting Started"
+wikimg list
+wikimg show common:getting-started
+wikimg edit common:getting-started
+wikimg move common:getting-started private
+wikimg rename private:getting-started "Personal Notes"
+wikimg search notes --content
+wikimg doctor
+```
+
+## Commands
+
+- `wikimg init`
+- `wikimg new <layer> <title>`
+- `wikimg list`
+- `wikimg show <ref>`
+- `wikimg edit <ref>`
+- `wikimg rename <ref> <new_title>`
+- `wikimg move <ref> <target_layer>`
+- `wikimg delete <ref> --yes`
+- `wikimg search <query> [--content]`
+- `wikimg doctor`
+
+## Document References
+
+The preferred reference form is `layer:slug`, for example:
+
+```text
+common:getting-started
+domain:backend/auth-flow
+private:daily-notes
+```
+
+Nested slugs are supported. A document still belongs to exactly one top-level
+layer, even when it is placed inside subdirectories under that layer.

@@ -1,0 +1,12 @@
+[openai]
+# Replace with your actual API key
+api_key = "YOUR_API_KEY_HERE"
+model = "qwen3-coder-next"
+base_url = "https://coding.dashscope.aliyuncs.com/v1"
+temperature = 0.0
+timeout = 60
+max_retries = 2
+
+[negotiation]
+min_rounds = 2
+max_rounds = 5

@@ -1,0 +1,17 @@
+version: "1.0"
+entities:
+  - name: Payment
+    description: Payment entity used for code-audit examples.
+    attributes:
+      - payment_id
+      - amount
+      - status
+    constraints:
+      required_fields:
+        - payment_id
+        - amount
+        - status
+constraints:
+  - entity: Payment
+    rule: amount_must_be_positive
+    description: Payment amount must stay positive.

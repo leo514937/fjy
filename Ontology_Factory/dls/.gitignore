@@ -1,0 +1,10 @@
+.venv/
+.pytest_cache/
+__pycache__/
+
+# Sensitive configuration file
+config/ontology_negotiator.toml
+
+# Run artifacts and generated knowledge graphs
+artifacts/
+examples/*.json

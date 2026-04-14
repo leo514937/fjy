@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "docs_dir": "wiki",
+  "layers": [
+    "common",
+    "domain",
+    "private"
+  ]
+}
