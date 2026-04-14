@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+coverage
+.idea
+.global/
+.agent/config.json
+.agent/sessions
+.agent/memory/*.json
+user_testroom/.agent/

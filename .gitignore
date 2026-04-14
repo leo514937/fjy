@@ -1,0 +1,30 @@
+# Agent & Configs
+**/.agent/
+**/.qagent-web-runtime/
+**/.env*
+**/config.yaml
+**/config.local.yaml
+**/settings.json
+
+# Dependencies & Build
+node_modules/
+dist/
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Logs & Temp
+*.log
+.run-logs/
+scratch_*.py
+.DS_Store
+
+# Project Specific
+OntoGit/xiaogugit/storage/
+Ontology_Factory/outputs/
+Ontology_Factory/storage/data/*.sqlite3
+
+# IDE
+.vscode/
+.idea/
