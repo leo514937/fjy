@@ -16,21 +16,43 @@ function emptyState() {
   };
 }
 
-function mapLegacyToolRunStatus(status) {
-  switch (status) {
-    case "success":
-      return "completed";
-    case "cancelled":
-    case "rejected":
-    case "timeout":
-      return "interrupted";
-    case "error":
-      return "failed";
-    case "running":
-      return "executing";
-    default:
-      return "thinking";
+function normalizeSemanticStatus(status) {
+  if (status === "failed") {
+    return "interrupted";
   }
+
+  return typeof status === "string" && status
+    ? status
+    : "thinking";
+}
+
+function truncateCommand(command) {
+  const normalized = typeof command === "string"
+    ? command.replace(/\s+/g, " ").trim()
+    : "";
+
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized.length > 48 ? `${normalized.slice(0, 48)}...` : normalized;
+}
+
+function isInterruptedToolRun(toolRun) {
+  if (!toolRun || typeof toolRun !== "object") {
+    return false;
+  }
+
+  if (
+    toolRun.status === "cancelled"
+    || toolRun.status === "rejected"
+    || toolRun.status === "timeout"
+    || toolRun.status === "error"
+  ) {
+    return true;
+  }
+
+  return typeof toolRun.exitCode === "number" && toolRun.exitCode !== 0;
 }
 
 function executionStageLabel(status) {
@@ -45,8 +67,6 @@ function executionStageLabel(status) {
       return "观察中...";
     case "interrupted":
       return "执行中断...";
-    case "failed":
-      return "执行失败...";
     case "completed":
       return "执行结束...";
     default:
@@ -60,16 +80,18 @@ function normalizeExecutionStage(value) {
     return null;
   }
 
-  const semanticStatus = typeof raw.semanticStatus === "string"
-    ? raw.semanticStatus
-    : "thinking";
+  if (raw.sourceEventType === "legacy.tool_run") {
+    return null;
+  }
+
+  const semanticStatus = normalizeSemanticStatus(raw.semanticStatus);
 
   return {
     id: typeof raw.id === "string" ? raw.id : "",
     semanticStatus,
     label: typeof raw.label === "string" ? raw.label : executionStageLabel(semanticStatus),
     phaseState: raw.phaseState === "completed" ? "completed" : "active",
-    sourceEventType: typeof raw.sourceEventType === "string" ? raw.sourceEventType : "legacy.tool_run",
+    sourceEventType: typeof raw.sourceEventType === "string" ? raw.sourceEventType : "request.started",
     detail: typeof raw.detail === "string" ? raw.detail : "",
     callId: typeof raw.callId === "string" ? raw.callId : null,
     startedAt: typeof raw.startedAt === "string" ? raw.startedAt : null,
@@ -77,25 +99,28 @@ function normalizeExecutionStage(value) {
   };
 }
 
-function deriveExecutionStagesFromToolRuns(toolRuns) {
-  if (!Array.isArray(toolRuns) || toolRuns.length === 0) {
-    return [];
-  }
+function createCompatibilityStage({
+  id,
+  semanticStatus,
+  detail,
+  sourceEventType,
+  callId = null,
+  startedAt = null,
+  finishedAt = null,
+}) {
+  const normalizedStatus = normalizeSemanticStatus(semanticStatus);
 
-  return toolRuns.map((run, index) => {
-    const semanticStatus = mapLegacyToolRunStatus(run.status);
-    return {
-      id: `legacy-stage-${run.callId || index}`,
-      semanticStatus,
-      label: executionStageLabel(semanticStatus),
-      phaseState: run.finishedAt ? "completed" : "active",
-      sourceEventType: "legacy.tool_run",
-      detail: run.command || "",
-      callId: run.callId || null,
-      startedAt: run.startedAt || null,
-      finishedAt: run.finishedAt || null,
-    };
-  });
+  return {
+    id,
+    semanticStatus: normalizedStatus,
+    label: executionStageLabel(normalizedStatus),
+    phaseState: "completed",
+    sourceEventType,
+    detail,
+    callId,
+    startedAt,
+    finishedAt: finishedAt || startedAt,
+  };
 }
 
 function normalizeToolRun(value) {
@@ -119,6 +144,118 @@ function normalizeToolRun(value) {
   };
 }
 
+function deriveCompatibilityExecutionStages({ id, question, answer, toolRuns }) {
+  const runs = Array.isArray(toolRuns) ? toolRuns : [];
+  const answerText = typeof answer === "string" ? answer.trim() : "";
+  const questionText = typeof question === "string" ? question.trim() : "";
+  const stageIdPrefix = typeof id === "string" && id ? id : "message";
+
+  if (runs.length === 0) {
+    if (!answerText) {
+      return [];
+    }
+
+    return [
+      createCompatibilityStage({
+        id: `${stageIdPrefix}-compat-thinking-no-tool`,
+        semanticStatus: "thinking",
+        detail: questionText ? `正在分析问题：${truncateCommand(questionText)}` : "正在分析问题与上下文",
+        sourceEventType: "compat.thinking",
+      }),
+      createCompatibilityStage({
+        id: `${stageIdPrefix}-compat-reasoning-no-tool`,
+        semanticStatus: "reasoning",
+        detail: "正在整理最终回答",
+        sourceEventType: "compat.reasoning",
+      }),
+      createCompatibilityStage({
+        id: `${stageIdPrefix}-compat-completed-no-tool`,
+        semanticStatus: "completed",
+        detail: "本轮执行已结束",
+        sourceEventType: "compat.completed",
+      }),
+    ];
+  }
+
+  const firstRun = runs[0];
+  const lastRun = runs[runs.length - 1];
+  const firstTimestamp = firstRun.startedAt || firstRun.finishedAt || null;
+  const lastTimestamp = lastRun.finishedAt || lastRun.startedAt || firstTimestamp;
+  const hasInterruptedRun = runs.some(isInterruptedToolRun);
+  const stages = [
+    createCompatibilityStage({
+      id: `${stageIdPrefix}-compat-thinking`,
+      semanticStatus: "thinking",
+      detail: questionText ? `正在分析问题：${truncateCommand(questionText)}` : "正在分析问题与上下文",
+      sourceEventType: "compat.thinking",
+      startedAt: firstTimestamp,
+      finishedAt: firstTimestamp,
+    }),
+  ];
+
+  runs.forEach((run, index) => {
+    const startedAt = run.startedAt || run.finishedAt || firstTimestamp;
+    const finishedAt = run.finishedAt || startedAt;
+    const commandText = truncateCommand(run.command);
+
+    stages.push(createCompatibilityStage({
+      id: `${stageIdPrefix}-compat-executing-${run.callId || index}`,
+      semanticStatus: "executing",
+      detail: commandText ? `正在执行：${commandText}` : "正在发起命令执行",
+      sourceEventType: "compat.executing",
+      callId: run.callId || null,
+      startedAt,
+      finishedAt,
+    }));
+
+    if (run.stdout || run.stderr || run.truncated) {
+      stages.push(createCompatibilityStage({
+        id: `${stageIdPrefix}-compat-observing-${run.callId || index}`,
+        semanticStatus: "observing",
+        detail: run.stderr && !run.stdout ? "正在观察错误输出" : "正在观察命令输出",
+        sourceEventType: "compat.observing",
+        callId: run.callId || null,
+        startedAt: finishedAt,
+        finishedAt,
+      }));
+    }
+
+    if (isInterruptedToolRun(run)) {
+      stages.push(createCompatibilityStage({
+        id: `${stageIdPrefix}-compat-interrupted-${run.callId || index}`,
+        semanticStatus: "interrupted",
+        detail: "执行过程被中断或返回异常",
+        sourceEventType: "compat.interrupted",
+        callId: run.callId || null,
+        startedAt: finishedAt,
+        finishedAt,
+      }));
+    }
+  });
+
+  if (answerText) {
+    stages.push(createCompatibilityStage({
+      id: `${stageIdPrefix}-compat-reasoning`,
+      semanticStatus: "reasoning",
+      detail: "正在整理最终回答",
+      sourceEventType: "compat.reasoning",
+      startedAt: lastTimestamp,
+      finishedAt: lastTimestamp,
+    }));
+  }
+
+  stages.push(createCompatibilityStage({
+    id: `${stageIdPrefix}-compat-final`,
+    semanticStatus: answerText || !hasInterruptedRun ? "completed" : "interrupted",
+    detail: answerText || !hasInterruptedRun ? "本轮执行已结束" : "本轮执行已中断",
+    sourceEventType: answerText || !hasInterruptedRun ? "compat.completed" : "compat.interrupted",
+    startedAt: lastTimestamp,
+    finishedAt: lastTimestamp,
+  }));
+
+  return stages;
+}
+
 function normalizeMessage(value) {
   const raw = asObject(value);
   if (!raw) {
@@ -128,9 +265,17 @@ function normalizeMessage(value) {
   const toolRuns = Array.isArray(raw.toolRuns)
     ? raw.toolRuns.map(normalizeToolRun).filter(Boolean)
     : [];
-  const executionStages = Array.isArray(raw.executionStages)
+  const normalizedExecutionStages = Array.isArray(raw.executionStages)
     ? raw.executionStages.map(normalizeExecutionStage).filter(Boolean)
-    : deriveExecutionStagesFromToolRuns(toolRuns);
+    : [];
+  const executionStages = normalizedExecutionStages.length > 0
+    ? normalizedExecutionStages
+    : deriveCompatibilityExecutionStages({
+      id: typeof raw.id === "string" ? raw.id : "",
+      question: typeof raw.question === "string" ? raw.question : "",
+      answer: typeof raw.answer === "string" ? raw.answer : "",
+      toolRuns,
+    });
 
   return {
     id: typeof raw.id === "string" ? raw.id : "",

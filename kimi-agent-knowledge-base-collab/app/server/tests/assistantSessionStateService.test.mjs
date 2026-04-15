@@ -103,7 +103,7 @@ test("AssistantSessionStateService persists frontend chat sessions", async () =>
   });
 });
 
-test("AssistantSessionStateService derives execution stages from legacy tool runs", async () => {
+test("AssistantSessionStateService derives rich compatibility stages for legacy tool runs", async () => {
   const runtimeRoot = await mkdtemp(path.join(os.tmpdir(), "assistant-session-state-legacy-"));
   const service = new AssistantSessionStateService({ runtimeRoot });
 
@@ -119,6 +119,19 @@ test("AssistantSessionStateService derives execution stages from legacy tool run
             question: "列出目录",
             answer: "已列出",
             relatedNames: [],
+            executionStages: [
+              {
+                id: "legacy-stage-tool-legacy",
+                semanticStatus: "completed",
+                label: "执行结束...",
+                phaseState: "completed",
+                sourceEventType: "legacy.tool_run",
+                detail: "dir",
+                callId: "tool-legacy",
+                startedAt: "2026-04-15T02:00:00.000Z",
+                finishedAt: "2026-04-15T02:00:01.000Z",
+              },
+            ],
             toolRuns: [
               {
                 callId: "tool-legacy",
@@ -147,8 +160,12 @@ test("AssistantSessionStateService derives execution stages from legacy tool run
   const executionStages = state.sessions[0].messages[0].executionStages;
 
   assert.equal(Array.isArray(executionStages), true);
-  assert.equal(executionStages.length, 1);
-  assert.equal(executionStages[0].semanticStatus, "completed");
-  assert.equal(executionStages[0].callId, "tool-legacy");
-  assert.equal(executionStages[0].detail, "dir");
+  assert.equal(executionStages.length >= 4, true);
+  assert.equal(executionStages[0].semanticStatus, "thinking");
+  assert.equal(executionStages.some((stage) => stage.semanticStatus === "executing"), true);
+  assert.equal(executionStages.some((stage) => stage.semanticStatus === "observing"), true);
+  assert.equal(executionStages.some((stage) => stage.semanticStatus === "reasoning"), true);
+  assert.equal(executionStages.at(-1)?.semanticStatus, "completed");
+  assert.equal(state.sessions[0].messages[0].toolRuns.length, 1);
+  assert.equal(state.sessions[0].messages[0].toolRuns[0].callId, "tool-legacy");
 });

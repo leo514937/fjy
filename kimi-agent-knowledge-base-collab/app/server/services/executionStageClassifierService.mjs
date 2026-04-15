@@ -4,12 +4,12 @@ const EXECUTION_STAGE_LABELS = Object.freeze({
   reasoning: "推理中...",
   observing: "观察中...",
   interrupted: "执行中断...",
-  failed: "执行失败...",
   completed: "执行结束...",
 });
 
 const VALID_EXECUTION_STAGE_STATUSES = new Set(Object.keys(EXECUTION_STAGE_LABELS));
 const DEFAULT_REQUEST_TIMEOUT_MS = 3_000;
+const ALL_EXECUTION_STAGE_STATUSES = Object.freeze(Object.keys(EXECUTION_STAGE_LABELS));
 
 function asTrimmedString(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -37,7 +37,7 @@ function inferStatusFromText(detail, fallback = "thinking") {
     || normalized.includes("exception")
     || normalized.includes("stderr")
   ) {
-    return "failed";
+    return "interrupted";
   }
 
   if (
@@ -96,6 +96,50 @@ function normalizeSemanticStatus(value) {
   return inferStatusFromText(normalized, null);
 }
 
+function buildCandidateStatuses(input) {
+  const type = asTrimmedString(input?.type);
+  const payload = input?.payload && typeof input.payload === "object" ? input.payload : {};
+  const resultStatus = asTrimmedString(payload?.result?.status || payload?.status).toLowerCase();
+
+  switch (type) {
+    case "request.started":
+      return ["thinking"];
+    case "status.changed":
+      return ["thinking", "executing", "reasoning", "observing"];
+    case "tool.started":
+      return ["executing"];
+    case "tool.output.delta":
+      return ["observing"];
+    case "assistant.delta":
+    case "assistant.completed":
+      return ["reasoning"];
+    case "runtime.error":
+      return ["interrupted"];
+    case "runtime.aborted":
+      return ["interrupted"];
+    case "command.completed":
+    case "tool.finished":
+      if (resultStatus === "cancelled" || resultStatus === "rejected" || resultStatus === "timeout") {
+        return ["interrupted"];
+      }
+      if (resultStatus === "success") {
+        return ["completed"];
+      }
+      return ["interrupted"];
+    default:
+      return [...ALL_EXECUTION_STAGE_STATUSES];
+  }
+}
+
+function normalizeSemanticStatusWithinCandidates(value, candidateStatuses) {
+  const normalized = normalizeSemanticStatus(value);
+  if (!normalized) {
+    return null;
+  }
+
+  return candidateStatuses.includes(normalized) ? normalized : null;
+}
+
 function extractLlmContent(payload) {
   const choice = payload?.choices?.[0]?.message?.content;
   if (typeof choice === "string") {
@@ -128,14 +172,14 @@ function classifyCommandCompletedResult(result) {
   }
 
   if (status) {
-    return "failed";
+    return "interrupted";
   }
 
   if (typeof result?.exitCode === "number" && result.exitCode === 0) {
     return "completed";
   }
 
-  return "failed";
+  return "interrupted";
 }
 
 export function getExecutionStageLabel(status) {
@@ -167,7 +211,7 @@ export function classifyExecutionStageFallback(input) {
   }
 
   if (type === "runtime.error") {
-    return "failed";
+    return "interrupted";
   }
 
   if (type === "runtime.aborted") {
@@ -193,8 +237,10 @@ export function classifyExecutionStageFallback(input) {
 
 function buildUserPrompt(input) {
   const payload = input?.payload && typeof input.payload === "object" ? input.payload : {};
+  const candidateStatuses = buildCandidateStatuses(input);
   const snapshot = {
     eventType: input?.type || "",
+    candidateStatuses,
     currentSemanticStatus: input?.currentSemanticStatus || null,
     detail: asTrimmedString(payload.detail) || null,
     message: asTrimmedString(payload.message) || null,
@@ -214,6 +260,23 @@ function buildUserPrompt(input) {
   return JSON.stringify(snapshot);
 }
 
+function buildSystemPrompt(input) {
+  const candidateStatuses = buildCandidateStatuses(input);
+
+  return [
+    "你是运行事件语义阶段分类器。",
+    `当前事件只能从以下候选英文 code 中选择一个：${candidateStatuses.join(", ")}。`,
+    "你的任务是把当前事件路由到最接近的执行阶段，而不是偷懒选择看起来最稳妥的终态。",
+    "不要为了省事把大量事件都归到 completed，也不要把大量事件都归到 thinking。",
+    "只有明确成功收口的终止事件才能选择 completed。",
+    "只有明确取消、超时、拒绝、中断时才能选择 interrupted。",
+    "执行报错、异常退出、工具失败等异常情况，也统一选择 interrupted。",
+    "一般来说：开始规划更接近 thinking，发起工具或命令更接近 executing，读取工具输出更接近 observing，整理回答更接近 reasoning。",
+    "如果多个候选都勉强合理，优先选择最贴近当前事件语义、并能让整条执行链路阶段分布自然均匀的那个。",
+    "只输出一个英文 code，不要输出解释、标点、JSON 或额外文本。",
+  ].join(" ");
+}
+
 export class ExecutionStageClassifierService {
   constructor(options = {}) {
     this.fetchImpl = options.fetchImpl || globalThis.fetch?.bind(globalThis);
@@ -223,6 +286,7 @@ export class ExecutionStageClassifierService {
   }
 
   async classify(input) {
+    const candidateStatuses = buildCandidateStatuses(input);
     const fallbackStatus = classifyExecutionStageFallback(input);
     const fallbackResult = {
       semanticStatus: fallbackStatus,
@@ -236,7 +300,7 @@ export class ExecutionStageClassifierService {
 
     try {
       const llmStatus = await this.classifyWithLlm(input);
-      const normalized = normalizeSemanticStatus(llmStatus);
+      const normalized = normalizeSemanticStatusWithinCandidates(llmStatus, candidateStatuses);
       if (!normalized) {
         return fallbackResult;
       }
@@ -281,11 +345,7 @@ export class ExecutionStageClassifierService {
             messages: [
               {
                 role: "system",
-                content: [
-                  "你是运行事件分类器。",
-                  "只允许从以下枚举中返回一个英文 code：thinking, executing, reasoning, observing, interrupted, failed, completed。",
-                  "禁止返回解释、标点、JSON、额外文本。",
-                ].join(" "),
+                content: buildSystemPrompt(input),
               },
               {
                 role: "user",

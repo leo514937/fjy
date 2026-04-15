@@ -139,7 +139,6 @@ export type OntologyAssistantSemanticStatus =
   | 'reasoning'
   | 'observing'
   | 'interrupted'
-  | 'failed'
   | 'completed';
 
 export interface OntologyAssistantExecutionStageEvent {

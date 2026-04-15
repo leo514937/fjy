@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Activity, CheckCircle2, XCircle, Clock, ChevronDown, ChevronRight, Info, AlertTriangle, Sparkles, BrainCircuit, Eye } from 'lucide-react';
+import { Terminal, Activity, CheckCircle2, Clock, ChevronDown, ChevronRight, Info, AlertTriangle, Sparkles, BrainCircuit, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -59,7 +59,6 @@ function StepItem({ stage }: { stage: ConversationExecutionStage }) {
       case 'reasoning': return <BrainCircuit className="w-4 h-4 text-indigo-500 fill-white" />;
       case 'observing': return <Eye className="w-4 h-4 text-cyan-500 fill-white" />;
       case 'completed': return <CheckCircle2 className="w-4 h-4 text-green-500 fill-white" />;
-      case 'failed': return <XCircle className="w-4 h-4 text-red-500 fill-white" />;
       case 'interrupted': return <Info className="w-4 h-4 text-amber-500 fill-white" />;
       default: return <Clock className="w-4 h-4 text-slate-400 fill-white" />;
     }
@@ -76,7 +75,7 @@ function StepItem({ stage }: { stage: ConversationExecutionStage }) {
         <div
           className={cn(
             "p-3 rounded-xl border bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden relative",
-            stage.semanticStatus === 'failed' ? 'border-red-100' : 'border-slate-100',
+            stage.semanticStatus === 'interrupted' ? 'border-amber-100' : 'border-slate-100',
             isOpen ? 'ring-2 ring-blue-500/10' : ''
           )}
           onClick={() => setIsOpen(!isOpen)}
@@ -86,10 +85,9 @@ function StepItem({ stage }: { stage: ConversationExecutionStage }) {
               <span className={cn(
                 "text-[10px] font-bold tracking-wider px-1.5 rounded",
                 stage.semanticStatus === 'completed' ? 'bg-green-100 text-green-700' :
-                  stage.semanticStatus === 'failed' ? 'bg-red-100 text-red-700' :
+                  stage.semanticStatus === 'interrupted' ? 'bg-amber-100 text-amber-700' :
                     stage.phaseState === 'active' ? 'bg-blue-100 text-blue-700' :
-                      stage.semanticStatus === 'interrupted' ? 'bg-amber-100 text-amber-700' :
-                        'bg-slate-100 text-slate-600'
+                      'bg-slate-100 text-slate-600'
               )}>
                 {stage.label}
               </span>
@@ -105,12 +103,6 @@ function StepItem({ stage }: { stage: ConversationExecutionStage }) {
           {stage.detail ? (
             <div className="text-[11px] font-medium text-slate-700 truncate leading-tight">
               {stage.detail}
-            </div>
-          ) : null}
-
-          {toolRun?.command ? (
-            <div className="mt-1 text-[10px] font-medium text-slate-400 font-mono truncate leading-tight">
-              $ {toolRun.command}
             </div>
           ) : null}
 

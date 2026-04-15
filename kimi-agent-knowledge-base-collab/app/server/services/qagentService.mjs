@@ -11,6 +11,10 @@ const DEFAULT_STREAM_TIMEOUT_MS = 120_000;
 const DEFAULT_CONTROL_TIMEOUT_MS = 15_000;
 const DEFAULT_EXECUTION_STAGE_DETAIL = "已整理知识库上下文，准备连接 Agent CLI...";
 
+function asNonEmptyString(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : "";
+}
+
 function createExecutionStageId() {
   return `stage-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -31,11 +35,12 @@ function extractExecutionStageDetail(event) {
   }
 
   if (event.type === "tool.started") {
-    return typeof payload?.toolCall?.input?.command === "string" ? payload.toolCall.input.command : "";
+    const toolName = asNonEmptyString(payload?.toolCall?.name);
+    return toolName ? `正在调用 ${toolName} 工具` : "正在发起工具执行";
   }
 
   if (event.type === "tool.output.delta") {
-    return typeof payload.command === "string" ? payload.command : "正在读取命令输出";
+    return payload.stream === "stderr" ? "正在观察错误输出" : "正在观察命令输出";
   }
 
   if (event.type === "assistant.delta" || event.type === "assistant.completed") {
@@ -101,11 +106,18 @@ class ExecutionStageTracker {
     const callId = extractExecutionStageCallId(event);
     const createdAt = event.createdAt || new Date().toISOString();
     const terminal = options.terminal === true;
+    const sameSourceType = this.currentStage?.sourceEventType === event.type;
+    const sameCallId = callId
+      ? this.currentStage?.callId === callId
+      : this.currentStage?.callId == null;
+    const sameDetail = Boolean(detail && this.currentStage?.detail === detail);
+    const shouldReuseCurrentStage = sameSourceType && sameCallId && sameDetail;
 
     if (
       this.currentStage
       && this.currentStage.semanticStatus === classification.semanticStatus
       && !terminal
+      && shouldReuseCurrentStage
     ) {
       return;
     }
@@ -114,6 +126,7 @@ class ExecutionStageTracker {
       this.currentStage
       && this.currentStage.semanticStatus === classification.semanticStatus
       && terminal
+      && (sameSourceType || sameCallId || sameDetail)
     ) {
       const nextStage = {
         ...this.currentStage,
@@ -661,6 +674,7 @@ export class QAgentService {
           if (typeof content === "string" && content.length > 0) {
             lastNonEmptyAssistantCompleted = content;
           }
+          void enqueueExecutionStage(event);
           return;
         }
 
@@ -721,6 +735,9 @@ export class QAgentService {
               startedAt: result.startedAt || event.createdAt,
               finishedAt: result.finishedAt || event.createdAt,
             }, event);
+          }
+          if (result?.status && result.status !== "success" && result.status !== "running") {
+            void enqueueExecutionStage(event, { terminal: true });
           }
           return;
         }

@@ -362,7 +362,7 @@ if (isStream) {
   }]);
   assert.deepEqual(
     executionStages.map((stage) => stage.semanticStatus),
-    ["thinking", "executing", "observing", "reasoning", "completed"],
+    ["thinking", "thinking", "executing", "observing", "reasoning", "reasoning", "completed"],
   );
   assert.equal(executionStages.at(-1)?.label, "执行结束...");
 });
