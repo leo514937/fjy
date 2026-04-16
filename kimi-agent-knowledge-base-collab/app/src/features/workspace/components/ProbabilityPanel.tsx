@@ -33,7 +33,7 @@ export function ProbabilityPanel({ probInput, setProbInput, probResult, analyzin
             onChange={(event) => setProbInput(event.target.value)}
           />
           <Button 
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2 border-none font-black uppercase tracking-widest text-[10px] h-10 rounded-xl shadow-md" 
+            className="w-full bg-zinc-200 hover:bg-zinc-300 dark:bg-primary dark:hover:bg-primary/90 text-zinc-900 dark:text-primary-foreground gap-2 border-none font-black uppercase tracking-widest text-[10px] h-10 rounded-xl shadow-md transition-all active:scale-[0.98]" 
             onClick={onAnalyze} 
             disabled={analyzing}
           >

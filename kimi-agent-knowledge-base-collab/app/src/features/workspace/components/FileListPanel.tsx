@@ -28,15 +28,15 @@ export function FileListPanel({ timelines, selectedFile, onSelectFile }: FileLis
                 onClick={() => onSelectFile(timeline.filename)}
                 className={`w-full flex flex-col items-start px-4 py-3 text-sm rounded-xl transition-all font-black uppercase tracking-tight ${
                   selectedFile === timeline.filename 
-                    ? 'bg-primary text-primary-foreground shadow-lg' 
-                    : 'text-muted-foreground hover:bg-primary/5 hover:text-foreground border border-transparent hover:border-border/40'
+                    ? 'bg-zinc-200 dark:bg-primary text-zinc-900 dark:text-primary-foreground shadow-md' 
+                    : 'text-muted-foreground hover:bg-zinc-100 dark:hover:bg-primary/5 hover:text-foreground border border-transparent hover:border-border/40'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <FileJson className="h-4 w-4" />
                   <span className="tracking-tight">{timeline.filename}</span>
                 </div>
-                <span className={`text-[9px] uppercase font-black tracking-widest mt-1.5 ${selectedFile === timeline.filename ? 'text-primary-foreground/60' : 'text-muted-foreground/50'}`}>
+                <span className={`text-[9px] uppercase font-black tracking-widest mt-1.5 ${selectedFile === timeline.filename ? 'text-zinc-500 dark:text-primary-foreground/60' : 'text-muted-foreground/50'}`}>
                   {timeline.commits.length} Versions
                 </span>
               </button>

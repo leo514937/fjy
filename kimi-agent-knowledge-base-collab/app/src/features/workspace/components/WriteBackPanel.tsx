@@ -60,7 +60,7 @@ export function WriteBackPanel(props: WriteBackPanelProps) {
           <Input placeholder="例如：更新了实体属性定义" value={writeMessage} onChange={(event) => setWriteMessage(event.target.value)} className="h-10 text-sm bg-muted/10 border-border/40 focus:bg-muted/20 transition-all font-bold" />
         </div>
         <Button 
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2 h-12 rounded-2xl shadow-lg ring-1 ring-primary-foreground/10 font-black uppercase tracking-widest text-xs transition-all active:scale-[0.98]" 
+          className="w-full bg-zinc-200 hover:bg-zinc-300 dark:bg-primary dark:hover:bg-primary/90 text-zinc-900 dark:text-primary-foreground gap-2 h-12 rounded-2xl shadow-lg ring-1 ring-zinc-300/50 dark:ring-primary-foreground/10 font-black uppercase tracking-widest text-xs transition-all active:scale-[0.98]" 
           onClick={onWrite} 
           disabled={writing || !selectedProjectId}
         >

@@ -39,16 +39,6 @@ export function ExecutionFlow({
             {executionStages.length}
           </span>
         </div>
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-7 w-7 rounded-lg text-slate-400 hover:text-slate-600"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        )}
       </div>
 
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto scroll-smooth custom-scrollbar-thin">

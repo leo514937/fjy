@@ -127,7 +127,7 @@ export function ChatArea({
             </div>
           )}
 
-          <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 pt-16 pb-[80vh]">
+          <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 pt-16 pb-[55vh]">
             {messages.map((message: any, index: number) => {
               const prevMessage = index > 0 ? messages[index - 1] : null;
               const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
@@ -195,8 +195,9 @@ export function ChatArea({
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
-        <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 pb-6 pt-4 text-center">
-          <div className="relative flex flex-col bg-muted/30 dark:bg-[#2f2f2f] rounded-[28px] border border-border p-1.5 shadow-xl pointer-events-auto transition-all">
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent z-10" />
+        <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 pb-6 pt-0 text-center z-20">
+          <div className="relative flex flex-col bg-background/95 backdrop-blur-xl rounded-[28px] border border-border p-1.5 shadow-2xl pointer-events-auto transition-all">
             {/* File List Chips */}
             {selectedFiles.length > 0 && (
               <div className="absolute bottom-full left-0 right-0 mb-4 flex flex-wrap gap-2 px-2 animate-in slide-in-from-bottom-2 duration-300">
@@ -209,7 +210,7 @@ export function ChatArea({
                       <span className="text-[11px] font-bold text-foreground max-w-[120px] truncate leading-none mb-0.5">{file.name}</span>
                       <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-tighter">{(file.size / 1024).toFixed(0)} KB</span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => removeFile(i)}
                       className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-destructive transition-all"
                     >
@@ -228,7 +229,7 @@ export function ChatArea({
                 value={draftQuestion}
                 onChange={(e) => onDraftChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full min-h-[32px] max-h-[200px] px-2 pt-2.5 pb-1 resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[17px] leading-[1.6] text-foreground placeholder:text-muted-foreground/50 shadow-none outline-none"
+                className="w-full min-h-[32px] max-h-[200px] px-2 pt-2.5 pb-1 resize-none border-none bg-transparent dark:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[17px] leading-[1.6] text-foreground placeholder:text-muted-foreground/50 shadow-none outline-none"
               />
             </div>
 

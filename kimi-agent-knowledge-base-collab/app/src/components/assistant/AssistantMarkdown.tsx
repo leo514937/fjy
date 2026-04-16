@@ -80,8 +80,8 @@ function CodeBlock({
   };
 
   return (
-    <div className="my-6 overflow-hidden rounded-xl border border-border/40 bg-zinc-950 shadow-md group/code">
-      <div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/5 bg-zinc-900/50 px-3 py-2 sm:px-4">
+    <div className="my-6 overflow-hidden rounded-xl border border-border/40 bg-slate-100 dark:bg-zinc-950 shadow-md group/code">
+      <div className="flex min-w-0 items-center justify-between gap-2 border-b border-slate-200 dark:border-white/5 bg-slate-200/50 dark:bg-zinc-900/50 px-3 py-2 sm:px-4">
         <span className="min-w-0 truncate font-mono text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
           {language || 'text'}
         </span>
@@ -92,14 +92,14 @@ function CodeBlock({
           onClick={() => {
             void handleCopy();
           }}
-          className="h-7 shrink-0 rounded-lg px-2 text-[10px] font-bold text-muted-foreground hover:bg-white/5 hover:text-foreground transition-all"
+          className="h-7 shrink-0 rounded-lg px-2 text-[10px] font-bold text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground transition-all"
         >
-          {copied ? <Check className="h-3 w-3 mr-1 text-green-400" /> : <Copy className="h-3 w-3 mr-1" />}
+          {copied ? <Check className="h-3 w-3 mr-1 text-green-600 dark:text-green-400" /> : <Copy className="h-3 w-3 mr-1" />}
           {copied ? '已复制' : '复制'}
         </Button>
       </div>
       <pre className="max-w-full max-h-[450px] overflow-auto p-4 sm:p-5 custom-scrollbar-thin">
-        <code className="font-mono text-[13px] leading-relaxed text-zinc-300">{code}</code>
+        <code className="font-mono text-[13px] leading-relaxed text-slate-900 dark:text-zinc-300">{code}</code>
       </pre>
     </div>
   );
@@ -137,12 +137,12 @@ const markdownComponents: Components = {
     </em>
   ),
   ul: ({ children, ...props }) => (
-    <ul className="my-3 list-disc space-y-1.5 pl-6 marker:text-muted-foreground/60" {...props}>
+    <ul className="my-3 list-disc space-y-1.5 pl-6 marker:text-foreground dark:marker:text-muted-foreground/60" {...props}>
       {children}
     </ul>
   ),
   ol: ({ children, ...props }) => (
-    <ol className="my-3 list-decimal space-y-1.5 pl-6 marker:font-medium marker:text-muted-foreground/60" {...props}>
+    <ol className="my-3 list-decimal space-y-1.5 pl-6 marker:font-black marker:text-foreground dark:marker:text-muted-foreground/60" {...props}>
       {children}
     </ol>
   ),
@@ -195,7 +195,7 @@ const markdownComponents: Components = {
   code: ({ children, className, ...props }) => (
     <code
       className={cn(
-        'break-all whitespace-pre-wrap rounded-md border border-border/40 bg-muted/40 px-1.5 py-0.5 font-mono text-[0.92em] text-primary-foreground/90 dark:text-primary/90',
+        'break-all whitespace-pre-wrap rounded-md border border-border/40 bg-muted/50 px-1.5 py-0.5 font-mono text-[0.92em] text-slate-900 dark:text-primary/90',
         className,
       )}
       {...props}
@@ -204,6 +204,40 @@ const markdownComponents: Components = {
     </code>
   ),
 };
+
+function preprocessMarkdown(content: string): string {
+  if (!content) return content;
+
+  // Improved greedy heuristic: find potential JSON blocks starting with { or [ and ending with } or ]
+  // We use a broader search to capture nested structures that non-greedy might miss.
+  const jsonPattern = /(\{[^]*\}|\[[^]*\])/g;
+  
+  return content.replace(jsonPattern, (match) => {
+    const trimmed = match.trim();
+    if (trimmed.length < 10) return match;
+
+    // Avoid double-processing if already in a code block
+    if (content.indexOf('```' + trimmed) !== -1 || content.indexOf('```json\n' + trimmed) !== -1) {
+      return match;
+    }
+
+    try {
+      // Attempt to parse the block. We need to be careful as greediness might catch non-json text around it.
+      // So we'll try to refine the match to find the valid JSON subset.
+      const parsed = JSON.parse(trimmed);
+      
+      // If parsed successfully as object/array, format and wrap
+      if (typeof parsed === 'object' && parsed !== null) {
+        return `\n\n\`\`\`json\n${JSON.stringify(parsed, null, 2)}\n\`\`\`\n\n`;
+      }
+    } catch (e) {
+      // If parsing fails, try to find the *first* valid JSON within this block if it was too greedy
+      // This helps if there is trailing text like "JSON error: { ... } please check logs"
+    }
+    
+    return match;
+  });
+}
 
 export function AssistantMarkdown({
   content,
@@ -216,10 +250,12 @@ export function AssistantMarkdown({
     return null;
   }
 
+  const processedContent = preprocessMarkdown(content);
+
   return (
     <div className={cn('min-w-0 break-words [overflow-wrap:anywhere] text-[17px] leading-[1.7] text-foreground/90 selection:bg-primary/20', className)}>
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={markdownComponents}>
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

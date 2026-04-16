@@ -84,8 +84,8 @@ export function ProjectListPanel(props: ProjectListPanelProps) {
                 onClick={() => onSelectProject(project.id)}
                 className={`w-full flex items-center justify-between px-4 py-3 text-[13px] rounded-xl transition-all font-black uppercase tracking-tight ${
                   selectedProjectId === project.id 
-                    ? 'bg-primary text-primary-foreground shadow-md ring-1 ring-primary-foreground/20' 
-                    : 'text-muted-foreground hover:bg-primary/5 hover:text-foreground'
+                    ? 'bg-zinc-200 dark:bg-primary text-zinc-900 dark:text-primary-foreground shadow-sm ring-1 ring-zinc-300 dark:ring-primary-foreground/20' 
+                    : 'text-muted-foreground hover:bg-zinc-100 dark:hover:bg-primary/5 hover:text-foreground'
                 }`}
               >
                 <span>{project.name || project.id}</span>
