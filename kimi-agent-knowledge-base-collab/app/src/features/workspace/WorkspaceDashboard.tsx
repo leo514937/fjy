@@ -34,6 +34,7 @@ export function WorkspaceDashboard() {
             onSelectProject={workspace.setSelectedProjectId}
             onRefresh={workspace.loadProjects}
             onInitProject={workspace.handleInitProject}
+            onDeleteProject={workspace.handleDeleteProject}
           />
           <FileListPanel className="flex-1" timelines={workspace.timelines} selectedFile={workspace.selectedFile} onSelectFile={handleSelectFile} />
         </div>

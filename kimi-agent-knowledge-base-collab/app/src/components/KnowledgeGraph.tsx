@@ -80,9 +80,9 @@ export function KnowledgeGraph({
     return accumulator;
   }, {});
   const layerStrokeColors: Record<KnowledgeLayer, string> = {
-    common: '#0f766e',
-    domain: '#334155',
-    private: '#e11d48',
+    common: '#99AF91', // 草木灰绿
+    domain: '#939FB0', // 石墨蓝灰
+    private: '#C19292', // 干枯玫瑰红
   };
   const layerLabels: Record<KnowledgeLayer, string> = {
     common: 'Common',

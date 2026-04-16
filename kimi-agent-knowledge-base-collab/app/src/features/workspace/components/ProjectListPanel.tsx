@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { CheckCircle2, GitBranch, Plus, RefreshCw } from 'lucide-react';
+import { CheckCircle2, GitBranch, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ interface ProjectListPanelProps {
   onSelectProject: (projectId: string) => void;
   onRefresh: () => void | Promise<void>;
   onInitProject: () => void | Promise<void>;
+  onDeleteProject: (projectId: string) => void | Promise<void>;
   className?: string;
 }
 
@@ -39,6 +40,7 @@ export function ProjectListPanel(props: ProjectListPanelProps) {
     onSelectProject,
     onRefresh,
     onInitProject,
+    onDeleteProject,
     className,
   } = props;
 
@@ -85,14 +87,27 @@ export function ProjectListPanel(props: ProjectListPanelProps) {
               <button
                 key={project.id}
                 onClick={() => onSelectProject(project.id)}
-                className={`w-full flex items-center justify-between px-4 py-3 text-[13px] rounded-xl transition-all font-black uppercase tracking-tight ${
+                className={`group w-full flex items-center justify-between px-4 py-3 text-[13px] rounded-xl transition-all font-black uppercase tracking-tight ${
                   selectedProjectId === project.id 
                     ? 'bg-zinc-200 dark:bg-primary text-zinc-900 dark:text-primary-foreground shadow-sm ring-1 ring-zinc-300 dark:ring-primary-foreground/20' 
                     : 'text-muted-foreground hover:bg-zinc-100 dark:hover:bg-primary/5 hover:text-foreground'
                 }`}
               >
                 <span>{project.name || project.id}</span>
-                {selectedProjectId === project.id && <CheckCircle2 className="h-4 w-4" />}
+                <div className="flex items-center gap-1">
+                  {selectedProjectId === project.id && <CheckCircle2 className="h-4 w-4" />}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteProject(project.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </button>
             ))}
           </div>

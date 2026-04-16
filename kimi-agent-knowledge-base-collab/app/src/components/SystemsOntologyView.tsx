@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { fetchSystemAnalysis, type SystemAnalysisData } from '@/features/ontology/api';
 import type { Entity, KnowledgeLayer } from '@/types/ontology';
 
@@ -123,7 +124,15 @@ export function SystemsOntologyView({ entities, selectedEntity, onSelectEntity }
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant="outline">{selectedEntity.type}</Badge>
                 <Badge variant="secondary">{selectedEntity.domain}</Badge>
-                <Badge variant={selectedEntity.layer === 'private' ? 'destructive' : 'outline'}>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "border-none font-bold",
+                    selectedEntity.layer === 'common' && "bg-[#99AF91]/10 text-[#768A6F]",
+                    selectedEntity.layer === 'domain' && "bg-[#939FB0]/10 text-[#6D7A8D]",
+                    selectedEntity.layer === 'private' && "bg-[#C19292]/10 text-[#9B6D6D]"
+                  )}
+                >
                   {layerLabels[selectedEntity.layer]}
                 </Badge>
                 <Badge variant="outline">{selectedEntity.source}</Badge>
@@ -189,7 +198,15 @@ export function SystemsOntologyView({ entities, selectedEntity, onSelectEntity }
               {analyzedEntity ? (
                 <>
                   <Badge variant="secondary">{analyzedEntity.domain}</Badge>
-                  <Badge variant={analyzedEntity.layer === 'private' ? 'destructive' : 'outline'}>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "border-none font-bold",
+                      analyzedEntity.layer === 'common' && "bg-[#99AF91]/10 text-[#768A6F]",
+                      analyzedEntity.layer === 'domain' && "bg-[#939FB0]/10 text-[#6D7A8D]",
+                      analyzedEntity.layer === 'private' && "bg-[#C19292]/10 text-[#9B6D6D]"
+                    )}
+                  >
                     {layerLabels[analyzedEntity.layer]}
                   </Badge>
                 </>

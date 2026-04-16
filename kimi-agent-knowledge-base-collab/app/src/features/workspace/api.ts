@@ -108,3 +108,88 @@ export async function setOfficialRecommend(projectId: string, filename: string, 
   });
   return parseJson(response);
 }
+
+// --- New OntoGit Dashboard & Monitor Endpoints ---
+
+export interface DashboardSummary {
+  projects: XgProject[];
+  timelines: Record<string, XgTimeline[]>;
+  health: {
+    gateway: string;
+    xiaogugit: string;
+    probability: string;
+  };
+}
+
+export async function fetchDashboardSummary(): Promise<DashboardSummary> {
+  const response = await fetch(buildApiUrl('/api/dashboard/summary'));
+  return parseJson<DashboardSummary>(response);
+}
+
+export interface RouteDoc {
+  name: string;
+  method: string;
+  path: string;
+  module: string;
+  auth: string;
+  description: string;
+}
+
+export async function fetchRoutes(): Promise<RouteDoc[]> {
+  const response = await fetch(buildApiUrl('/api/routes'));
+  return parseJson<RouteDoc[]>(response);
+}
+
+export interface HealthStatus {
+  status: string;
+  modules: Record<string, string>;
+}
+
+export async function fetchHealth(): Promise<HealthStatus> {
+  const response = await fetch(buildApiUrl('/health'));
+  return parseJson<HealthStatus>(response);
+}
+
+// --- New Auth Endpoints ---
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  role: string;
+}
+
+export async function login(username: string, password: string): Promise<{ access_token: string }> {
+  const response = await fetch(buildApiUrl('/auth/login'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  return parseJson<{ access_token: string }>(response);
+}
+
+export async function logout(): Promise<void> {
+  await fetch(buildApiUrl('/auth/logout'), { method: 'POST' });
+}
+
+export async function fetchMe(): Promise<AuthUser> {
+  const response = await fetch(buildApiUrl('/auth/me'));
+  return parseJson<AuthUser>(response);
+}
+
+// --- New Admin & Advanced Endpoints ---
+
+export async function deleteXgProject(projectId: string): Promise<unknown> {
+  const response = await fetch(buildApiUrl(`/api/xg/projects/${projectId}`), {
+    method: 'DELETE',
+  });
+  return parseJson(response);
+}
+
+export async function fetchProbabilityScoreOnly(concept: unknown): Promise<{ probability: number }> {
+  const response = await fetch(buildApiUrl('/api/probability/api/llm/probability'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(concept),
+  });
+  return parseJson<{ probability: number }>(response);
+}

@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
+  fetchHealth,
+  fetchRoutes,
+  deleteXgProject,
   fetchProbabilityReason,
   fetchXgDiff,
   fetchXgProjects,
@@ -180,6 +183,23 @@ export function useWorkspaceState() {
     }
   };
 
+  const handleDeleteProject = async (projectId: string) => {
+    if (!confirm(`确定要彻底删除项目 ${projectId} 吗？此操作不可撤销且会清除所有 Git 历史。`)) {
+      return;
+    }
+
+    try {
+      await deleteXgProject(projectId);
+      toast.success('项目已成功删除');
+      if (selectedProjectId === projectId) {
+        setSelectedProjectId('');
+      }
+      await loadProjects();
+    } catch {
+      toast.error('删除项目失败');
+    }
+  };
+
   const handleSetOfficial = async (versionId: string) => {
     if (!selectedProjectId || !selectedFile) {
       return;
@@ -246,6 +266,7 @@ export function useWorkspaceState() {
     handleInitProject,
     handleSetOfficial,
     handleViewDiff,
+    handleDeleteProject,
   };
 }
 

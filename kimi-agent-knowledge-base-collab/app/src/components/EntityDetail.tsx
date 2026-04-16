@@ -28,9 +28,9 @@ const levelColors: Record<number, string> = {
 };
 
 const layerBadgeClasses: Record<KnowledgeLayer, string> = {
-  common: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
-  domain: 'bg-muted text-muted-foreground border-border',
-  private: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  common: 'bg-[#99AF91]/10 text-[#768A6F] border-none',
+  domain: 'bg-[#939FB0]/10 text-[#6D7A8D] border-none',
+  private: 'bg-[#C19292]/10 text-[#9B6D6D] border-none',
 };
 
 const layerLabels: Record<KnowledgeLayer, string> = {

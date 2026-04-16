@@ -8,6 +8,7 @@ import {
   Network,
   FolderTree
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { KnowledgeLayer } from '@/types/ontology';
 
 interface StatsPanelProps {
@@ -149,7 +150,16 @@ export function StatsPanel({ statistics }: StatsPanelProps) {
             <h4 className="text-sm font-medium mb-2">存储层分布</h4>
             <div className="flex flex-wrap gap-2">
               {statistics.layers.map((layer) => (
-                <Badge key={layer} variant={layer === 'private' ? 'destructive' : 'outline'} className="px-3 py-1">
+                <Badge
+                  key={layer}
+                  variant="outline"
+                  className={cn(
+                    "px-3 py-1 border-none font-bold",
+                    layer === 'common' && "bg-[#99AF91]/10 text-[#768A6F]",
+                    layer === 'domain' && "bg-[#939FB0]/10 text-[#6D7A8D]",
+                    layer === 'private' && "bg-[#C19292]/10 text-[#9B6D6D]"
+                  )}
+                >
                   {layerLabels[layer]} · {statistics.layer_counts[layer] || 0}
                 </Badge>
               ))}

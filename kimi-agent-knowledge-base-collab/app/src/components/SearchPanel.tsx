@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Entity } from '@/types/ontology';
+import { cn } from '@/lib/utils';
 
 interface SearchPanelProps {
   onSearch: (query: string) => Promise<Entity[]>;
@@ -98,7 +99,15 @@ export function SearchPanel({ onSearch, onSelectEntity }: SearchPanelProps) {
                       <Badge variant="secondary" className="text-xs">
                         {entity.domain}
                       </Badge>
-                      <Badge variant={entity.layer === 'private' ? 'destructive' : 'outline'} className="text-xs">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs border-none font-bold",
+                          entity.layer === 'common' && "bg-[#99AF91]/10 text-[#768A6F]",
+                          entity.layer === 'domain' && "bg-[#939FB0]/10 text-[#6D7A8D]",
+                          entity.layer === 'private' && "bg-[#C19292]/10 text-[#9B6D6D]"
+                        )}
+                      >
                         {entity.layer}
                       </Badge>
                     </div>

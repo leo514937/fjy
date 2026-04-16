@@ -10,6 +10,7 @@ import {
   Sun,
   Moon,
   Zap,
+  Activity,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';

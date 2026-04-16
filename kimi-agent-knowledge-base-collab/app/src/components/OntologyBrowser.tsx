@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Atom, BookOpen, Layers, Link2, Search, Sparkles, TreePine } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { CrossReference, Entity, KnowledgeLayer } from '@/types/ontology';
 
 interface OntologyBrowserProps {
@@ -165,8 +166,12 @@ export function OntologyBrowser({
                           </Badge>
                           <Badge
                             variant="outline"
-                            className={`text-[10px] h-5 border-none ${entity.layer === 'private' ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'
-                              }`}
+                            className={cn(
+                              "text-[10px] h-5 border-none font-bold",
+                              entity.layer === 'common' && "bg-[#99AF91]/10 text-[#768A6F]",
+                              entity.layer === 'domain' && "bg-[#939FB0]/10 text-[#6D7A8D]",
+                              entity.layer === 'private' && "bg-[#C19292]/10 text-[#9B6D6D]"
+                            )}
                           >
                             {layerLabels[entity.layer]}
                           </Badge>
