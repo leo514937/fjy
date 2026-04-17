@@ -4,7 +4,6 @@ import {
   Layers,
   PanelRightOpen,
   PanelRightClose,
-  Square,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -176,7 +175,6 @@ export function OntologyAssistant({
           >
             <ExecutionFlow
               executionStages={executionStages}
-              onClose={() => setShowFlow(false)}
             />
           </div>
         )}

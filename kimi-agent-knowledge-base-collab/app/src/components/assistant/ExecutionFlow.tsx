@@ -1,24 +1,15 @@
 import React from 'react';
-import { Terminal, Activity, CheckCircle2, Clock, ChevronDown, ChevronRight, AlertTriangle, Sparkles, BrainCircuit, Eye, X } from 'lucide-react';
+import { Terminal, Activity, CheckCircle2, Clock, AlertTriangle, Sparkles, BrainCircuit, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-} from "@/components/ui/collapsible";
 import type { ConversationExecutionStage } from './types';
 import { clampExecutionFlowText } from './executionFlowText';
 
 interface ExecutionFlowProps {
   executionStages: ConversationExecutionStage[];
-  layoutMode?: 'split' | 'stacked';
-  onClose?: () => void;
 }
 
 export function ExecutionFlow({
   executionStages,
-  layoutMode = 'split',
-  onClose,
 }: ExecutionFlowProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
@@ -50,9 +41,6 @@ export function ExecutionFlow({
             </div>
           ) : (
             <div className="relative pl-1 space-y-3">
-              {/* Timeline Connector */}
-              <div className="absolute left-3 top-2 bottom-2 w-[1px] bg-border/30 dark:bg-zinc-800 -translate-x-1/2" />
-
               {executionStages.map((stage, index) => (
                 <StepItem key={stage.id || index} stage={stage} />
               ))}
@@ -65,10 +53,8 @@ export function ExecutionFlow({
 }
 
 function StepItem({ stage }: { stage: ConversationExecutionStage }) {
-  const [isOpen, setIsOpen] = React.useState(false);
   const toolRun = stage.toolRun;
   const compactLabel = clampExecutionFlowText(stage.label, 10);
-  const compactDetail = stage.detail ? clampExecutionFlowText(stage.detail, 24) : '';
 
   const getStatusIcon = () => {
     if (stage.phaseState !== 'completed') return <LoaderIcon />;

@@ -94,13 +94,13 @@ export function MarkdownBlocks({ blocks, onSelectEntityRef }: MarkdownBlocksProp
             );
           case 'paragraph':
             return (
-              <p key={index} className="text-[15px] leading-7 text-foreground/90 font-medium">
+              <p key={index} className="text-[15px] leading-7 text-foreground font-medium">
                 {renderInlineTokens(block.tokens, onSelectEntityRef) || block.text}
               </p>
             );
           case 'list':
             return (
-              <ul key={index} className="list-disc space-y-2.5 pl-5 text-[15px] leading-7 text-foreground/90 font-medium marker:text-primary/40">
+              <ul key={index} className="list-disc space-y-2.5 pl-5 text-[15px] leading-7 text-foreground font-medium marker:text-primary/40">
                 {(block.items || []).map((item, itemIndex) => (
                   <li key={itemIndex}>
                     {renderInlineTokens(item.tokens, onSelectEntityRef) || item.text}
@@ -140,11 +140,18 @@ export function MarkdownBlocks({ blocks, onSelectEntityRef }: MarkdownBlocksProp
           case 'callout': {
             const tone = String(block.tone || 'note').toLowerCase();
             const toneClass = calloutStyles[tone] || calloutStyles.note;
+            const title = block.title || tone.toUpperCase();
+
+            // 过滤：不要显示“前端联调提示”
+            if (title === '前端联调提示') {
+              return null;
+            }
+
             return (
               <div key={index} className={`rounded-2xl border px-4 py-3 ${toneClass}`}>
                 <div className="flex items-center gap-2 text-sm font-medium">
                   {calloutIcons[tone] || calloutIcons.note}
-                  <span>{block.title || tone.toUpperCase()}</span>
+                  <span>{title}</span>
                 </div>
                 <div className="mt-2 text-sm leading-7">
                   {renderInlineTokens(block.tokens, onSelectEntityRef) || block.text}
@@ -154,13 +161,13 @@ export function MarkdownBlocks({ blocks, onSelectEntityRef }: MarkdownBlocksProp
           }
           case 'code':
             return (
-              <div key={index} className="overflow-hidden rounded-2xl border bg-slate-950 text-slate-50">
+              <div key={index} className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-slate-800 bg-zinc-50 dark:bg-slate-950 text-zinc-900 dark:text-slate-50">
                 {block.language ? (
-                  <div className="border-b border-slate-800 px-4 py-2 text-xs uppercase tracking-wider text-slate-400">
+                  <div className="border-b border-zinc-200 dark:border-slate-800 px-4 py-2 text-xs uppercase tracking-widest font-bold text-zinc-500 dark:text-slate-400 bg-zinc-100/50 dark:bg-slate-900/50">
                     {block.language}
                   </div>
                 ) : null}
-                <pre className="overflow-x-auto p-4 text-sm leading-6">
+                <pre className="overflow-x-auto p-4 text-sm leading-relaxed font-mono">
                   <code>{block.text}</code>
                 </pre>
               </div>
@@ -170,10 +177,10 @@ export function MarkdownBlocks({ blocks, onSelectEntityRef }: MarkdownBlocksProp
               <div key={index} className="overflow-x-auto rounded-2xl border">
                 <table className="min-w-full text-sm">
                   {block.header && block.header.length > 0 ? (
-                    <thead className="bg-slate-50">
+                    <thead className="bg-muted/50">
                       <tr>
                         {block.header.map((cell, cellIndex) => (
-                          <th key={cellIndex} className="border-b px-4 py-3 text-left font-medium text-slate-700">
+                          <th key={cellIndex} className="border-b px-4 py-3 text-left font-bold text-foreground/80 uppercase tracking-wider text-[11px]">
                             {renderInlineTokens(cell.tokens, onSelectEntityRef) || cell.text}
                           </th>
                         ))}
@@ -184,7 +191,7 @@ export function MarkdownBlocks({ blocks, onSelectEntityRef }: MarkdownBlocksProp
                     {(block.rows || []).map((row, rowIndex) => (
                       <tr key={rowIndex} className="border-t">
                         {row.map((cell, cellIndex) => (
-                          <td key={cellIndex} className="px-4 py-3 align-top text-slate-700">
+                          <td key={cellIndex} className="px-4 py-3 align-top text-foreground/70">
                             {renderInlineTokens(cell.tokens, onSelectEntityRef) || cell.text}
                           </td>
                         ))}

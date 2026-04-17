@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Send, Sparkles, AlertCircle, Copy, Check, ArrowUp, Square, Paperclip, X, FileIcon, Plus } from 'lucide-react';
+import { Sparkles, AlertCircle, Copy, Check, ArrowUp, Square, X, FileIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AssistantMarkdown, copyCodeToClipboard } from './AssistantMarkdown';
@@ -45,7 +45,6 @@ export function ChatArea({
   onStop,
   onDraftChange,
   isBusy,
-  selectedEntityName,
   renderSettings,
   renderExtraActions
 }: ChatAreaProps) {
@@ -185,7 +184,7 @@ export function ChatArea({
 
             {/* Error state */}
             {error && (
-              <div className="flex items-center gap-3 p-4 rounded-xl border border-red-100 bg-red-50/50 text-red-600 text-sm">
+              <div className="flex items-center gap-3 p-4 rounded-xl border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10 text-red-600 dark:text-red-400 text-sm">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span className="break-words [overflow-wrap:anywhere] font-medium">{error}</span>
               </div>
@@ -203,7 +202,7 @@ export function ChatArea({
               <div className="absolute bottom-full left-0 right-0 mb-4 flex flex-wrap gap-2 px-2 animate-in slide-in-from-bottom-2 duration-300">
                 {selectedFiles.map((file, i) => (
                   <div key={i} className="flex items-center gap-2 bg-card/90 backdrop-blur-md border border-border rounded-2xl pl-3 pr-2 py-2 shadow-lg group/file ring-1 ring-white/5">
-                    <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center font-bold">
                       <FileIcon className="w-3.5 h-3.5 text-blue-500" />
                     </div>
                     <div className="flex flex-col items-start min-w-0 pr-1">

@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-  fetchHealth,
-  fetchRoutes,
+
   deleteXgProject,
   fetchProbabilityReason,
   fetchXgDiff,

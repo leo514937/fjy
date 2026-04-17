@@ -1,8 +1,6 @@
-import { BookOpen, Layers, BarChart3 } from 'lucide-react';
+import { BookOpen, Layers } from 'lucide-react';
 
-import { EntityDetail } from '@/components/EntityDetail';
 import { OntologyBrowser } from '@/components/OntologyBrowser';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useOntologyContext } from '@/features/ontology/useOntologyContext';
 import type { Entity } from '@/types/ontology';
@@ -14,7 +12,6 @@ interface BrowsePageProps {
 export function BrowsePage({ onSelectEntity }: BrowsePageProps) {
   const {
     selectedEntity,
-    relatedEntities,
     filteredEntities,
     filteredCrossReferences,
   } = useOntologyContext();

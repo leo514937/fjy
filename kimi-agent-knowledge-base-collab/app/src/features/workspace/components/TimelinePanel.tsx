@@ -83,7 +83,7 @@ export function TimelinePanel({ selectedFile, timelines, onViewDiff, onSetOffici
               <Maximize2 className="h-3 w-3" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-full w-screen h-screen flex flex-col rounded-none border-none bg-white dark:bg-zinc-950 p-0 gap-0 overflow-hidden shadow-none transition-colors duration-300">
+          <DialogContent className="max-w-full w-screen h-screen flex flex-col rounded-none border-none bg-background p-0 gap-0 overflow-hidden shadow-none transition-colors duration-300">
             <div className="flex-1 min-h-0 relative">
               <ScrollArea className="h-full w-full">
                 <TimelineList isFull />
@@ -91,7 +91,7 @@ export function TimelinePanel({ selectedFile, timelines, onViewDiff, onSetOffici
               
               {/* Floating Top Indicator */}
               <div className="absolute top-10 left-20 flex items-center gap-2 pointer-events-none">
-                <div className="px-4 py-1.5 rounded-full border border-purple-100 bg-purple-50 dark:bg-zinc-900 dark:border-zinc-800 shadow-sm transition-all">
+                <div className="px-4 py-1.5 rounded-full border border-purple-100 bg-purple-50 dark:bg-muted/40 dark:border-border/40 shadow-sm transition-all">
                   <p className="text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400">
                     全屏历史溯源模式 (Timeline Explorer)
                   </p>
@@ -115,7 +115,7 @@ export function TimelinePanel({ selectedFile, timelines, onViewDiff, onSetOffici
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="p-0 flex-1 overflow-hidden bg-muted/10 dark:bg-zinc-950/20 border-t border-border/10">
+      <CardContent className="p-0 flex-1 overflow-hidden bg-muted/10 dark:bg-muted/5 border-t border-border/10">
         <ScrollArea className="h-full">
           <TimelineList />
         </ScrollArea>

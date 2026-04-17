@@ -111,7 +111,7 @@ export function SystemsOntologyView({ entities, selectedEntity, onSelectEntity }
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Boxes className="w-5 h-5 text-primary" />
-            系统分析器
+            系统本体分析
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

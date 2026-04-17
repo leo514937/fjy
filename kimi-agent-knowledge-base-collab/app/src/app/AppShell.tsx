@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   BookOpen,
   Blocks,
@@ -18,13 +18,11 @@ import {
 } from 'lucide-react';
 
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { OntologyBrowser } from '@/components/OntologyBrowser';
 import { Sidebar as AssistantSidebar } from '@/components/assistant/Sidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
@@ -32,12 +30,11 @@ import { useOntologyAssistantState } from '@/hooks/useOntologyAssistantState';
 import { OntologyProvider } from '@/features/ontology/context';
 import { LAYER_FILTERS } from '@/features/ontology/layerFilters';
 import { useOntologyContext } from '@/features/ontology/useOntologyContext';
-import { BrowsePage } from '@/app/pages/BrowsePage';
 import { ExplorerPage } from '@/app/pages/ExplorerPage';
 import { AssistantPage } from '@/app/pages/AssistantPage';
 import { LabPage } from '@/app/pages/LabPage';
-import { GraphPage } from '@/app/pages/GraphPage';
 import { WorkspacePage } from '@/app/pages/WorkspacePage';
+import { SearchPanel } from '@/components/SearchPanel';
 import type { Entity } from '@/types/ontology';
 
 const GlobalSidebar = ({
@@ -48,7 +45,6 @@ const GlobalSidebar = ({
   selectedLayer,
   setSelectedLayer,
   onSearch,
-  onSelectEntity,
   filteredEntityCount,
   filteredRelationCount
 }: {
@@ -61,24 +57,23 @@ const GlobalSidebar = ({
   selectedLayer: string;
   setSelectedLayer: (layer: any) => void;
   onSearch: (query: string) => Promise<any[]>;
-  onSelectEntity: (entity: any) => void;
 }) => (
-  <div className="flex flex-col h-full gap-5">
+  <div className="flex flex-col gap-4">
     {/* 1. 标题与搜索 */}
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2 px-1">
         <Sparkles className="w-4 h-4 text-primary/70" />
         <h3 className="text-[11px] font-black uppercase tracking-widest text-foreground/70">视图工厂控制台</h3>
       </div>
-      
+
       <div className="relative group mx-0.5">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary/70 transition-colors">
           <Search className="w-3.5 h-3.5" />
         </div>
-        <input 
+        <input
           type="text"
           placeholder="快速搜索实体..."
-          className="w-full h-9 pl-9 pr-4 rounded-xl bg-muted/30 border border-border/40 text-[11px] focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:bg-background transition-all"
+          className="w-full h-10 pl-9 pr-4 rounded-xl bg-muted/30 border border-border/40 text-[11px] focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:bg-background transition-all"
           onChange={(e) => onSearch(e.target.value)}
         />
       </div>
@@ -92,7 +87,7 @@ const GlobalSidebar = ({
           variant={selectedLayer === option.value ? 'default' : 'ghost'}
           size="sm"
           className={cn(
-            'flex-1 h-8 rounded-xl text-[10px] font-bold transition-all px-0 active:scale-95',
+            'flex-1 h-9 rounded-xl text-[10px] font-bold transition-all px-0 active:scale-95',
             selectedLayer === option.value
               ? 'bg-background shadow-sm text-primary hover:bg-background'
               : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/50',
@@ -106,11 +101,11 @@ const GlobalSidebar = ({
 
     {/* 3. 实时状态小图标 */}
     <div className="flex items-center gap-2 px-1">
-      <Badge variant="outline" className="flex items-center gap-1.5 rounded-full px-2.5 py-1 border-border/60 text-[10px] font-bold bg-muted/20">
+      <Badge variant="outline" className="flex-1 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 border-border/60 text-[10px] font-bold bg-muted/20">
         <GitBranch className="w-3 h-3 text-primary/70" />
         {filteredEntityCount} 实体
       </Badge>
-      <Badge variant="outline" className="flex items-center gap-1.5 rounded-full px-2.5 py-1 border-border/60 text-[10px] font-bold bg-muted/20">
+      <Badge variant="outline" className="flex-1 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 border-border/60 text-[10px] font-bold bg-muted/20">
         <Network className="w-3 h-3 text-primary/70" />
         {filteredRelationCount} 关系
       </Badge>
@@ -119,12 +114,12 @@ const GlobalSidebar = ({
     <Separator className="bg-border/40" />
 
     {/* 4. 底部四个彩色大框框 */}
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2 px-1">
         <TreePine className="w-4 h-4 text-primary/70" />
         <h3 className="text-[11px] font-black uppercase tracking-widest text-foreground/70">概念速览</h3>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-2 px-0.5">
         {[
           { label: '领域数', value: domainCount, icon: BookOpen, color: 'blue' },
@@ -132,10 +127,10 @@ const GlobalSidebar = ({
           { label: '实体数', value: entityCount, icon: Atom, color: 'amber' },
           { label: '关系数', value: relationCount, icon: Link2, color: 'emerald' },
         ].map((stat) => (
-          <div 
+          <div
             key={stat.label}
             className={cn(
-              "rounded-xl border p-2.5 transition-all active:scale-95 group",
+              "rounded-xl border p-3.5 transition-all active:scale-95 group",
               stat.color === 'blue' && "border-blue-500/20 bg-blue-500/5 hover:border-blue-500/50 hover:bg-blue-500/10 hover:shadow-[0_0_12px_rgba(59,130,246,0.1)]",
               stat.color === 'purple' && "border-purple-500/20 bg-purple-500/5 hover:border-purple-500/50 hover:bg-purple-500/10 hover:shadow-[0_0_12px_rgba(168,85,247,0.1)]",
               stat.color === 'amber' && "border-amber-500/20 bg-amber-500/5 hover:border-amber-500/50 hover:bg-amber-500/10 hover:shadow-[0_0_12px_rgba(245,158,11,0.1)]",
@@ -173,7 +168,7 @@ const GlobalSidebar = ({
 );
 
 function AppShellContent() {
-  const [activeTab, setActiveTab] = useState('browse');
+  const [activeTab, setActiveTab] = useState('lab');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -196,12 +191,9 @@ function AppShellContent() {
   const {
     loading,
     error,
-    entities,
-    crossReferences,
     filteredEntities,
     filteredCrossReferences,
     selectedEntity,
-    selectedEntityId,
     selectedLayer,
     setSelectedLayer,
     selectEntity,
@@ -212,6 +204,7 @@ function AppShellContent() {
   const handleSelectEntity = (entity: Entity) => {
     selectEntity(entity);
     setSidebarOpen(false);
+    setActiveTab('explorer');
   };
 
   const commonSidebarProps = {
@@ -224,7 +217,6 @@ function AppShellContent() {
     selectedLayer,
     setSelectedLayer,
     onSearch: searchInLayer,
-    onSelectEntity: handleSelectEntity,
   };
 
   if (loading) {
@@ -263,7 +255,15 @@ function AppShellContent() {
             </div>
           </div>
 
-          <div className="flex min-w-0 max-w-full items-center gap-2 sm:gap-3">
+
+
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3 ml-auto">
+            <div className="hidden w-64 md:block">
+              <SearchPanel
+                onSearch={searchInLayer}
+                onSelectEntity={handleSelectEntity}
+              />
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -318,30 +318,26 @@ function AppShellContent() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0 gap-0 lg:flex-row">
           <div className="flex w-full shrink-0 flex-col overflow-hidden border-r bg-muted/10 lg:h-full lg:w-[208px] xl:w-[240px]">
             <div className="p-3 sm:p-4 flex flex-col h-full min-h-0 gap-4">
-              <TabsList className="grid h-auto w-full grid-cols-1 gap-1 rounded-3xl border bg-card/10 p-1.5 shadow-sm sm:grid-cols-2 lg:flex lg:flex-col shrink-0">
-                <TabsTrigger value="browse" className="w-full justify-start rounded-2xl px-3 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+              <TabsList className="grid h-auto w-full grid-cols-1 gap-1 rounded-3xl border bg-card/10 p-2 shadow-sm sm:grid-cols-2 lg:flex lg:flex-col shrink-0">
+                <TabsTrigger value="lab" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
                   <BookOpen className="mr-3 h-5 w-5 text-primary" />
-                  <span className="font-black text-sm uppercase tracking-tight">库管理</span>
+                  <span className="font-black text-sm uppercase tracking-tight">本体库</span>
                 </TabsTrigger>
-                <TabsTrigger value="workspace" className="w-full justify-start rounded-2xl px-3 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
-                  <GitBranch className="mr-3 h-5 w-5 text-primary" />
-                  <span className="font-black text-sm uppercase tracking-tight">小故Git</span>
-                </TabsTrigger>
-                <TabsTrigger value="assistant" className="w-full justify-start rounded-2xl px-3 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="assistant" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
                   <MessageSquareText className="mr-3 h-5 w-5 text-primary" />
                   <span className="font-black text-sm uppercase tracking-tight">问答助手</span>
                 </TabsTrigger>
-                <TabsTrigger value="lab" className="w-full justify-start rounded-2xl px-3 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
-                  <Sparkles className="mr-3 h-5 w-5 text-primary" />
-                  <span className="font-black text-sm uppercase tracking-tight">本体分析</span>
-                </TabsTrigger>
-                <TabsTrigger value="explorer" className="w-full justify-start rounded-2xl px-3 py-3 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="explorer" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
                   <Zap className="mr-3 h-5 w-5 text-primary" />
                   <span className="font-black text-sm uppercase tracking-tight">本体图谱</span>
                 </TabsTrigger>
+                <TabsTrigger value="workspace" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+                  <GitBranch className="mr-3 h-5 w-5 text-primary" />
+                  <span className="font-black text-sm uppercase tracking-tight">小故Git</span>
+                </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 flex flex-col justify-end pb-2">
                 {activeTab === 'assistant' ? (
                   <AssistantSidebar
                     sessions={assistantState.sessions}
@@ -358,9 +354,7 @@ function AppShellContent() {
             </div>
           </div>
 
-          <TabsContent value="browse" className="mt-0 h-full flex-1 min-h-0 animate-in fade-in duration-300">
-            <BrowsePage onSelectEntity={handleSelectEntity} />
-          </TabsContent>
+
           <TabsContent value="assistant" className="mt-0 h-full min-h-0 min-w-0 flex-1 animate-in fade-in duration-300">
             <AssistantPage
               activeSession={assistantState.activeSession}

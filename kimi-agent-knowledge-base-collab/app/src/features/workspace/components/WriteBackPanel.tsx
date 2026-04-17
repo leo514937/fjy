@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { RefreshCw, Upload, Maximize2, Check, Hash } from 'lucide-react';
+import { RefreshCw, Upload, Maximize2, Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,7 @@ export function WriteBackPanel({
     try {
       JSON.parse(writeData);
       return false;
-    } catch (e) {
+    } catch {
       return true;
     }
   }, [writeData]);
@@ -76,7 +76,7 @@ export function WriteBackPanel({
               </DialogTrigger>
             <DialogContent className={cn(
               "max-w-full w-screen h-screen flex flex-col rounded-none border-none p-0 gap-0 overflow-hidden shadow-none transition-colors duration-300",
-              isInvalid ? "bg-[#FFF5F5] dark:bg-[#2D1616]" : "bg-white dark:bg-zinc-950"
+              isInvalid ? "bg-[#FFF5F5] dark:bg-[#2D1616]" : "bg-background"
             )}>
               <div className="flex-1 min-h-0 relative">
                 <Textarea 
@@ -84,7 +84,7 @@ export function WriteBackPanel({
                   onChange={(event) => setWriteData(event.target.value)} 
                   className={cn(
                     "w-full h-full font-mono text-lg resize-none border-none focus:ring-0 focus:outline-none leading-relaxed p-12 pr-12 rounded-none transition-all",
-                    isInvalid ? "bg-[#FFF5F5] dark:bg-[#2D1616] text-red-900 dark:text-red-100" : "bg-white dark:bg-zinc-950"
+                    isInvalid ? "bg-[#FFF5F5] dark:bg-[#2D1616] text-red-900 dark:text-red-100" : "bg-background"
                   )}
                   placeholder='{ "id": "001", ... }' 
                 />
@@ -92,7 +92,7 @@ export function WriteBackPanel({
                 <div className="absolute top-6 left-12 flex items-center gap-2 pointer-events-none">
                   <div className={cn(
                     "px-4 py-1.5 rounded-full border shadow-sm transition-all",
-                    isInvalid ? "bg-red-100 border-red-200" : "bg-emerald-50 border-emerald-100 dark:bg-zinc-900 dark:border-zinc-800"
+                    isInvalid ? "bg-red-100 border-red-200" : "bg-emerald-50 border-emerald-100 dark:bg-muted/40 dark:border-border/40"
                   )}>
                     <p className={cn(
                       "text-[10px] font-black uppercase tracking-widest",

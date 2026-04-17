@@ -97,7 +97,7 @@ export function OntologyAnalyzer({ entities, selectedEntity, onSelectEntity }: O
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            本体分析器
+            本体语义解构
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -308,8 +308,8 @@ export function OntologyAnalyzer({ entities, selectedEntity, onSelectEntity }: O
                   <CardContent className="pt-6 space-y-4">
                     {Object.entries(result.ontology_breakdown.formalization).map(([key, value]) => (
                       value ? (
-                        <div key={key} className="rounded-lg bg-slate-950 text-slate-50 p-4">
-                          <p className="text-xs uppercase text-slate-400 mb-2">{key}</p>
+                        <div key={key} className="rounded-lg bg-muted text-foreground p-4 border border-border/40">
+                          <p className="text-xs uppercase text-muted-foreground mb-2">{key}</p>
                           <pre className="whitespace-pre-wrap text-sm">{value}</pre>
                         </div>
                       ) : null

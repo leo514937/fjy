@@ -5,7 +5,7 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 222 47% 1%;    /* #010203 - Max clarity */
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
@@ -15,7 +15,7 @@
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted-foreground: 240 5% 35%; /* Darker for clarity */
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
@@ -35,11 +35,11 @@
   }
 
   .dark {
-    --background: 220 19% 7%;        /* #0F1115 */
+    --background: 220 10% 15%;        /* #22242B - Modern Grey */
     --foreground: 218 55% 97%;       /* #F3F6FB */
-    --card: 221 25% 11%;             /* #151922 */
+    --card: 222 15% 18%;             /* #272B34 - Lighter Grey Card */
     --card-foreground: 218 55% 97%;
-    --popover: 222 28% 15%;          /* #1B2130 */
+    --popover: 222 15% 20%;          /* #2C313C */
     --popover-foreground: 218 55% 97%;
     --primary: 220 10% 90%;          /* Industrial White/Light Grey */
     --primary-foreground: 220 10% 5%; /* Dark Contrast */

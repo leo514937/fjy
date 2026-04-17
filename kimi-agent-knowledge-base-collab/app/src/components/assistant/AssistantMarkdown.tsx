@@ -80,7 +80,7 @@ function CodeBlock({
   };
 
   return (
-    <div className="my-6 overflow-hidden rounded-xl border border-border/40 bg-slate-100 dark:bg-zinc-950 shadow-md group/code">
+    <div className="my-6 overflow-hidden rounded-xl border border-border/40 bg-slate-100 dark:bg-background/80 shadow-md group/code">
       <div className="flex min-w-0 items-center justify-between gap-2 border-b border-slate-200 dark:border-white/5 bg-slate-200/50 dark:bg-zinc-900/50 px-3 py-2 sm:px-4">
         <span className="min-w-0 truncate font-mono text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
           {language || 'text'}
@@ -122,7 +122,7 @@ const markdownComponents: Components = {
     </h3>
   ),
   p: ({ children, ...props }) => (
-    <p className="mb-4 break-words [overflow-wrap:anywhere] text-[17px] leading-[1.7] text-foreground/90 last:mb-0" {...props}>
+    <p className="mb-4 break-words [overflow-wrap:anywhere] text-[17px] leading-[1.7] text-foreground last:mb-0" {...props}>
       {children}
     </p>
   ),
@@ -147,7 +147,7 @@ const markdownComponents: Components = {
     </ol>
   ),
   li: ({ children, ...props }) => (
-    <li className="pl-1 text-[17px] leading-[1.7] text-foreground/90" {...props}>
+    <li className="pl-1 text-[17px] leading-[1.7] text-foreground" {...props}>
       {children}
     </li>
   ),
@@ -253,7 +253,7 @@ export function AssistantMarkdown({
   const processedContent = preprocessMarkdown(content);
 
   return (
-    <div className={cn('min-w-0 break-words [overflow-wrap:anywhere] text-[17px] leading-[1.7] text-foreground/90 selection:bg-primary/20', className)}>
+    <div className={cn('min-w-0 break-words [overflow-wrap:anywhere] text-[17px] leading-[1.7] text-foreground selection:bg-primary/20', className)}>
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={markdownComponents}>
         {processedContent}
       </ReactMarkdown>

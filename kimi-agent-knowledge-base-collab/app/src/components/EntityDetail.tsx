@@ -174,7 +174,7 @@ export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: 
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-8 p-8">
+        <CardContent className="space-y-8 p-8 pb-12">
           {/* 定义 */}
           <section>
             <h4 className="font-black text-xs text-muted-foreground/60 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -300,7 +300,7 @@ export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: 
                   <h4 className="font-black text-xs text-slate-400 uppercase tracking-widest mb-4">
                     {section.title}
                   </h4>
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6">
+                  <div className="rounded-2xl border border-border/40 bg-muted/20 p-6">
                     <MarkdownBlocks
                       blocks={section.blocks}
                       onSelectEntityRef={handleSelectEntityRef}
@@ -313,12 +313,15 @@ export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: 
           ) : null}
 
           {/* 元信息 */}
-          <footer className="rounded-2xl border border-dashed border-border bg-muted/10 p-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest space-y-1">
+          <footer className="rounded-2xl border border-dashed border-border bg-muted/10 p-6 pb-10 text-[10px] font-bold text-muted-foreground uppercase tracking-widest space-y-1">
             <p>Node ID: {entity.id}</p>
             <p>Full Source: {entity.source}</p>
             <p>Knowledge Domain: {entity.domain}</p>
             <p>Storage Layer: {layerLabels[entity.layer]}</p>
           </footer>
+
+          {/* 底部留白，防止滚动到底部时被横条遮挡 */}
+          <div className="h-12" />
         </CardContent>
       </Card>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Maximize2, X, Hash } from 'lucide-react';
+import { RefreshCw, Maximize2, Hash } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,7 +49,7 @@ export function FileContentPanel({ selectedFile, fileContent, onRefresh }: FileC
                 <Maximize2 className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-full w-screen h-screen m-0 rounded-none border-none p-0 bg-white dark:bg-zinc-950 flex flex-col gap-0 overflow-hidden outline-none">
+            <DialogContent className="max-w-full w-screen h-screen m-0 rounded-none border-none p-0 bg-background flex flex-col gap-0 overflow-hidden outline-none">
               {/* White Canvas Content - Read Only */}
               <div className="flex-1 relative">
                 <Textarea 

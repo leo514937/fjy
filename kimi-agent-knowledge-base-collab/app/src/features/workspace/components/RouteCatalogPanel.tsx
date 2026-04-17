@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Network, Search, Hash, Lock, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Badge } from '@/components/ui/badge';
 import { fetchRoutes, type RouteDoc } from '@/features/workspace/api';
 import { cn } from '@/lib/utils';

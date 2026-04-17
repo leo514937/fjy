@@ -1,4 +1,4 @@
-import type { Entity, KnowledgeGraphData, KnowledgeLayer } from '@/types/ontology';
+import type { Entity, KnowledgeLayer } from '@/types/ontology';
 import type { Dispatch, SetStateAction } from 'react';
 
 export interface OntologyContextValue {
