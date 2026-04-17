@@ -216,7 +216,9 @@ function AppShellContent() {
     onSelectEntity: handleSelectEntity,
   };
 
-  if (loading) {
+  // 只有在完全没有数据（初次启动）且正在加载时，才显示全屏 Loading
+  // 之后的后台刷新（refreshKnowledgeGraph）将不再导致整页闪烁
+  if (loading && !filteredEntities?.length) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

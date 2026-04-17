@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent
+WORKSPACE_ROOT = BASE_DIR.parents[1]
 
 
 def _read_env_file(path: Path) -> dict[str, str]:
@@ -110,17 +111,19 @@ def get_settings() -> Settings:
     if env == "production":
         default_host = "0.0.0.0"
         default_port = 8000
-        default_storage_root = str(BASE_DIR / "storage" / "prod")
+        default_storage_root = str(WORKSPACE_ROOT / "knowledge-data" / "store")
         default_docs_enabled = False
         default_reload = False
     else:
         default_host = "127.0.0.1"
         default_port = 8000
-        default_storage_root = str(BASE_DIR / "storage" / "dev")
+        default_storage_root = str(WORKSPACE_ROOT / "knowledge-data" / "store")
         default_docs_enabled = True
         default_reload = True
 
-    storage_root = values.get("XG_STORAGE_ROOT", default_storage_root)
+    knowledge_data_root = values.get("KNOWLEDGE_DATA_ROOT", "").strip()
+    derived_storage_root = str((Path(knowledge_data_root) / "store").resolve()) if knowledge_data_root else default_storage_root
+    storage_root = values.get("XG_STORAGE_ROOT", derived_storage_root)
     storage_path = Path(storage_root)
     if not storage_path.is_absolute():
         storage_path = (BASE_DIR / storage_path).resolve()

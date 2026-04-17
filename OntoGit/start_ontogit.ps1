@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$PythonBin = $env:PYTHON_BIN,
+    [string]$KnowledgeDataRoot = $env:KNOWLEDGE_DATA_ROOT,
     [string]$StorageRoot = $env:XG_STORAGE_ROOT
 )
 
@@ -92,8 +93,13 @@ $WorkingDir = Split-Path -Parent $PSCommandPath
 $Python = Resolve-PythonCommand -ExplicitPythonBin $PythonBin
 $LogDir = Join-Path $WorkingDir ".run-logs"
 $RepoRoot = Split-Path -Parent $WorkingDir
+$ResolvedKnowledgeDataRoot = if ([string]::IsNullOrWhiteSpace($KnowledgeDataRoot)) {
+    Join-Path $RepoRoot "knowledge-data"
+} else {
+    $KnowledgeDataRoot
+}
 $SharedStorageRoot = if ([string]::IsNullOrWhiteSpace($StorageRoot)) {
-    Join-Path $RepoRoot "Ontology_Factory\wiki"
+    Join-Path $ResolvedKnowledgeDataRoot "store"
 } else {
     $StorageRoot
 }
@@ -106,6 +112,7 @@ foreach ($port in @(8000, 5000, 8080)) {
 }
 
 Write-Host "Starting OntoGit service stack from $WorkingDir"
+Write-Host "Knowledge data root: $ResolvedKnowledgeDataRoot"
 Write-Host "XiaoGuGit storage root: $SharedStorageRoot"
 
 Start-OntoGitProcess `
@@ -116,6 +123,7 @@ Start-OntoGitProcess `
     -StdoutPath (Join-Path $LogDir "probability.log") `
     -StderrPath (Join-Path $LogDir "probability_err.log")
 
+$env:KNOWLEDGE_DATA_ROOT = $ResolvedKnowledgeDataRoot
 $env:XG_STORAGE_ROOT = $SharedStorageRoot
 
 Start-OntoGitProcess `

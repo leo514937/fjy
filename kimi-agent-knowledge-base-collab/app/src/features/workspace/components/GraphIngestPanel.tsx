@@ -96,8 +96,6 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
   const {
     selectedEntity,
     refreshKnowledgeGraph,
-    selectEntityById,
-    setSelectedLayer,
   } = useOntologyContext();
 
   const [projectId, setProjectId] = useState('demo');
@@ -178,7 +176,11 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
     }
   };
 
-  const handleCommit = async (): Promise<boolean> => {
+  const handleCommit = async (e?: React.MouseEvent): Promise<boolean> => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!isJsonValid) {
       const errorMessage = 'JSON 格式有误，无法入库';
       setCommitState({ status: 'error', message: errorMessage });
@@ -210,10 +212,11 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
         await onSourceCommitted(projectId, result.sourceWrite.filename);
       }
       await refreshKnowledgeGraph();
-      setSelectedLayer('all');
-      if (result.updatedEntityId) {
-        selectEntityById(result.updatedEntityId);
-      }
+      // 注释掉可能会导致 Tab 跳转或页面重置的操作
+      // setSelectedLayer('all');
+      // if (result.updatedEntityId) {
+      //   selectEntityById(result.updatedEntityId);
+      // }
 
       if (result.status === 'partial') {
         const warningMessage = result.batch
@@ -252,7 +255,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
   };
 
   return (
-    <Card className="border-border/40 bg-card/60 backdrop-blur-md shadow-2xl overflow-hidden flex flex-col rounded-3xl h-[600px]">
+    <Card className="border-border/40 bg-card shadow-2xl overflow-hidden flex flex-col rounded-3xl h-[600px]">
       <CardHeader className="bg-muted/10 border-b border-border/20 px-6 py-3 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -263,7 +266,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
               </CardTitle>
               <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">
                 <span>Target:</span>
-                <Badge variant="outline" className="h-4 border-border/20 px-1 py-0 text-[8px] bg-background/50">{targetLabel}</Badge>
+                <Badge variant="outline" className="h-4 border-border/20 px-1 py-0 text-[8px] bg-background">{targetLabel}</Badge>
               </div>
             </div>
           </div>
@@ -286,7 +289,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
           <div className="flex items-center gap-3 px-1 py-1 bg-muted/5 rounded-2xl border border-border/10 shrink-0">
              <div className="flex items-center gap-2 px-2 border-r border-border/20">
                 <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-tighter">Layer</span>
-                <Badge variant="outline" className="h-6 rounded-md border-primary/20 bg-primary/5 px-2 text-[8px] font-black uppercase tracking-widest text-primary">AUTO</Badge>
+                <Badge variant="outline" className="h-6 rounded-md border-primary/20 bg-primary/10 px-2 text-[8px] font-black uppercase tracking-widest text-primary">AUTO</Badge>
              </div>
              <div className="flex-1 flex items-center gap-2 min-w-0">
                 <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-tighter shrink-0">Slug</span>
@@ -297,7 +300,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
                     setPreviewTargetRef('');
                     resetCommitState();
                   }}
-                  className="h-8 min-w-0 flex-1 rounded-lg border-border/30 bg-background/70 px-3 font-mono text-[12px] font-bold text-primary placeholder:text-muted-foreground/40 focus-visible:ring-1 focus-visible:ring-primary/30"
+                  className="h-8 min-w-0 flex-1 rounded-lg border-border/30 bg-background px-3 font-mono text-[12px] font-bold text-primary placeholder:text-muted-foreground/40 focus-visible:ring-1 focus-visible:ring-primary/30"
                   placeholder={slugPlaceholder}
                 />
              </div>
@@ -344,7 +347,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
                             <Maximize2 className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border-border/40 rounded-3xl flex flex-col shadow-2xl">
+                        <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 overflow-hidden bg-card border-border/40 rounded-3xl flex flex-col shadow-2xl">
                           <DialogHeader className="px-6 py-4 border-b border-border/20 bg-muted/10 shrink-0">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
@@ -357,7 +360,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
                                     </p>
                                   </div>
 
-                                  <div className="flex items-center gap-3 h-10 px-4 bg-background/50 rounded-2xl border border-border/10 shadow-inner text-foreground">
+                                  <div className="flex items-center gap-3 h-10 px-4 bg-background rounded-2xl border border-border/10 shadow-inner text-foreground">
                                      <div className="flex items-center gap-2 border-r border-border/20 pr-4">
                                         <span className="text-[10px] font-black uppercase text-muted-foreground/30">Layer</span>
                                         <Badge variant="outline" className="h-7 rounded-md border-primary/20 bg-primary/5 px-3 text-[9px] font-black uppercase tracking-widest text-primary">AUTO</Badge>
@@ -371,7 +374,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
                                             setPreviewTargetRef('');
                                             resetCommitState();
                                           }}
-                                          className="h-8 w-80 rounded-lg border-border/30 bg-background/80 px-3 font-mono text-[12px] font-bold text-primary placeholder:text-muted-foreground/40 focus-visible:ring-1 focus-visible:ring-primary/30"
+                                          className="h-8 w-80 rounded-lg border-border/30 bg-background px-3 font-mono text-[12px] font-bold text-primary placeholder:text-muted-foreground/40 focus-visible:ring-1 focus-visible:ring-primary/30"
                                           placeholder={slugPlaceholder}
                                         />
                                      </div>
@@ -391,7 +394,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
                             </div>
                           </DialogHeader>
                           
-                          <div className="flex-1 flex flex-col min-h-0 bg-background/50 overflow-hidden relative">
+                          <div className="flex-1 flex flex-col min-h-0 bg-background overflow-hidden relative">
                              {mode === 'json' ? (
                                 <Textarea
                                   value={jsonSource}
@@ -449,9 +452,13 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
                                 size="lg"
                                 className="rounded-2xl gap-3 font-black text-xs uppercase tracking-widest px-8 h-12 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95" 
                                 disabled={saving || !isJsonValid} 
-                                onClick={() => void handleCommit().then((success) => {
-                                  if (success) setIsEnlarged(false);
-                                })}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  void handleCommit(e).then((success) => {
+                                    if (success) setIsEnlarged(false);
+                                  });
+                                }}
                               >
                                 {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                                 确认变更并入库
@@ -490,7 +497,7 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
               
               {/* Floating Warnings if any */}
               {previewWarnings.length > 0 && (
-                <div className="absolute bottom-4 right-4 z-10 max-w-[300px] rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-bottom-2">
+                <div className="absolute bottom-4 right-4 z-10 max-w-[300px] rounded-lg border border-amber-500/30 bg-amber-50 p-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2">
                   <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1 flex items-center gap-2">
                     <Sparkles className="h-3 w-3" /> 规范化建议
                   </p>
@@ -539,7 +546,11 @@ export function GraphIngestPanel({ onSourceCommitted }: GraphIngestPanelProps) {
                       : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
                   )}
                   disabled={saving || !isJsonValid} 
-                  onClick={() => void handleCommit()}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void handleCommit(e);
+                  }}
                 >
                   {saving ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                   确认入库

@@ -103,6 +103,13 @@ async function writeProjectMeta(projectDir, projectId, { agentName, committerNam
   await writeFile(metaPath, `${JSON.stringify(meta, null, 2)}\n`, "utf8");
 }
 
+function serializeFileData(data) {
+  if (typeof data === "string") {
+    return data.endsWith("\n") ? data : `${data}\n`;
+  }
+  return `${JSON.stringify(data, null, 2)}\n`;
+}
+
 export class OntoGitLocalCommitService {
   constructor(options = {}) {
     this.storageRoot = options.storageRoot;
@@ -117,6 +124,7 @@ export class OntoGitLocalCommitService {
     message,
     agentName = this.defaultAgentName,
     committerName = this.defaultCommitterName,
+    timestamp,
   }) {
     const safeProjectId = validateProjectId(projectId);
     const safeFilename = validateFilename(filename);
@@ -129,7 +137,7 @@ export class OntoGitLocalCommitService {
     const basevision = await readLatestVersionId(projectDir, safeFilename);
     const nextVersionId = basevision + 1;
     const filePath = path.join(projectDir, safeFilename);
-    await writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+    await writeFile(filePath, serializeFileData(data), "utf8");
     await writeProjectMeta(projectDir, safeProjectId, {
       agentName,
       committerName,
@@ -149,7 +157,15 @@ export class OntoGitLocalCommitService {
       `XG-CommitterName: ${committerName}`,
     ].join("\n");
 
-    await runGit(projectDir, [
+    const commitEnv = timestamp
+      ? {
+          ...process.env,
+          GIT_AUTHOR_DATE: timestamp,
+          GIT_COMMITTER_DATE: timestamp,
+        }
+      : process.env;
+
+    await execFileAsync("git", [
       "-c",
       `user.name=${committerName}`,
       "-c",
@@ -159,7 +175,11 @@ export class OntoGitLocalCommitService {
       `--author=${committerName} <${committerName}@local>`,
       "-m",
       fullMessage,
-    ]);
+    ], {
+      cwd: projectDir,
+      env: commitEnv,
+      maxBuffer: 20 * 1024 * 1024,
+    });
 
     const commitResult = await runGit(projectDir, ["rev-parse", "HEAD"]);
     return {

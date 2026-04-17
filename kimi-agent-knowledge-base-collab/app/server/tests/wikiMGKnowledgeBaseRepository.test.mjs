@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { mkdtemp } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -8,8 +10,10 @@ import { KnowledgeBaseService } from "../services/knowledgeBaseService.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const workspaceRoot = path.resolve(__dirname, "../../../../Ontology_Factory");
-const wikimgScriptPath = path.join(workspaceRoot, "WIKI_MG", "wikimg");
+const workspaceRoot = path.resolve(__dirname, "../../../../knowledge-data");
+const wikimgCodeRoot = path.resolve(__dirname, "../../../../Ontology_Factory");
+const wikimgScriptPath = path.join(wikimgCodeRoot, "WIKI_MG", "wikimg");
+const ontoGitStorageRoot = await mkdtemp(path.join(os.tmpdir(), "wikimg-store-test-"));
 
 function createRepository() {
   return new WikiMGKnowledgeBaseRepository({
@@ -17,6 +21,7 @@ function createRepository() {
     profile: "kimi",
     wikimgScriptPath,
     pythonBin: process.env.PYTHON_BIN || (process.platform === "win32" ? "python" : "python3"),
+    ontoGitStorageRoot,
   });
 }
 

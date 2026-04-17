@@ -24,6 +24,7 @@ export class WikiMGKnowledgeBaseRepository {
     this.profile = options.profile || "kimi";
     this.wikimgScriptPath = options.wikimgScriptPath;
     this.pythonBin = options.pythonBin || (process.platform === "win32" ? "python" : "python3");
+    this.ontoGitStorageRoot = options.ontoGitStorageRoot || "";
     this.cache = null;
   }
 
@@ -43,12 +44,23 @@ export class WikiMGKnowledgeBaseRepository {
 
   async runWikiMG(args) {
     try {
+      // PYTHONPATH 应该指向 wikimg 文件夹所在的父目录（即 src 目录）
+      const pkgDir = path.dirname(this.wikimgScriptPath);
+      const srcDir = path.dirname(pkgDir);
+      const pythonPath = process.env.PYTHONPATH 
+        ? `${srcDir}${path.delimiter}${process.env.PYTHONPATH}`
+        : srcDir;
+      const commandEnv = { ...process.env, PYTHONPATH: pythonPath };
+      if (this.ontoGitStorageRoot) {
+        commandEnv.WIKIMG_ONTOGIT_STORAGE_ROOT = this.ontoGitStorageRoot;
+      }
+
       const { stdout } = await execFileAsync(
         this.pythonBin,
         [this.wikimgScriptPath, "--root", this.workspaceRoot, ...args],
         {
           cwd: this.workspaceRoot,
-          env: process.env,
+          env: commandEnv,
           maxBuffer: 20 * 1024 * 1024,
         }
       );

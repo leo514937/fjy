@@ -110,6 +110,14 @@ class XiaoGuGitManager:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
+    def _read_file_payload(self, file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            return content
+
     def update_working_copy_fields(self, project_id, filename, fields):
         safe_filename = self._validate_filename(filename)
         if not isinstance(fields, dict) or not fields:
@@ -579,12 +587,14 @@ class XiaoGuGitManager:
         repo = self._get_repo(project_id, create=False)
         if commit_id:
             content = repo.git.show(f"{commit_id}:{safe_filename}")
-            return json.loads(content)
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                return content
         path = os.path.join(self._project_path(project_id), safe_filename)
         if not os.path.exists(path):
             raise FileNotFoundError(f"文件 {safe_filename} 不存在")
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+        return self._read_file_payload(path)
 
     # 3. 日志 (Log) - 查看版本演化
     def get_log(self, project_id, filename=None):

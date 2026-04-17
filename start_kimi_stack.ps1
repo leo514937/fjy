@@ -7,6 +7,7 @@ param(
   [string]$VitePort = $env:VITE_PORT,
   [string]$PythonBin = $env:PYTHON_BIN,
   [string]$WIKIMG_ROOT = $env:WIKIMG_ROOT,
+  [string]$KnowledgeDataRoot = $env:KNOWLEDGE_DATA_ROOT,
   [string]$WIKIMG_PROFILE = $env:WIKIMG_PROFILE,
   [string]$SharedStorageRoot = $env:ONTOGIT_STORAGE_ROOT,
   [string]$KNOWLEDGE_BASE_PROVIDER = $env:KNOWLEDGE_BASE_PROVIDER,
@@ -74,8 +75,13 @@ function Get-Config {
   } else {
     $WIKIMG_ROOT
   }
+  $knowledgeDataRoot = if ([string]::IsNullOrWhiteSpace($KnowledgeDataRoot)) {
+    Join-Path $rootDir 'knowledge-data'
+  } else {
+    $KnowledgeDataRoot
+  }
   $sharedStorageRoot = if ([string]::IsNullOrWhiteSpace($SharedStorageRoot)) {
-    Join-Path $wikiMgRoot 'wiki'
+    Join-Path $knowledgeDataRoot 'store'
   } else {
     $SharedStorageRoot
   }
@@ -96,6 +102,7 @@ function Get-Config {
     FrontendPort = $frontendPort
     PythonBin = Resolve-PythonCommand -ExplicitPythonBin $PythonBin
     WikiMgRoot = $wikiMgRoot
+    KnowledgeDataRoot = $knowledgeDataRoot
     SharedStorageRoot = $sharedStorageRoot
     WikiMgProfile = if ([string]::IsNullOrWhiteSpace($WIKIMG_PROFILE)) { 'kimi' } else { $WIKIMG_PROFILE }
     KnowledgeBaseProvider = if ([string]::IsNullOrWhiteSpace($KNOWLEDGE_BASE_PROVIDER)) { 'wikimg' } else { $KNOWLEDGE_BASE_PROVIDER }
@@ -274,6 +281,7 @@ function Get-ChildArgs {
     '-VitePort', [string]$Config.FrontendPort,
     '-PythonBin', $Config.PythonBin,
     '-WIKIMG_ROOT', $Config.WikiMgRoot,
+    '-KnowledgeDataRoot', $Config.KnowledgeDataRoot,
     '-WIKIMG_PROFILE', $Config.WikiMgProfile,
     '-SharedStorageRoot', $Config.SharedStorageRoot,
     '-KNOWLEDGE_BASE_PROVIDER', $Config.KnowledgeBaseProvider,
@@ -335,7 +343,7 @@ function Start-OntoGitServices {
   }
 
   Write-Host 'Starting OntoGit services...'
-  & $script -PythonBin $Config.PythonBin -StorageRoot $Config.SharedStorageRoot
+  & $script -PythonBin $Config.PythonBin -KnowledgeDataRoot $Config.KnowledgeDataRoot -StorageRoot $Config.SharedStorageRoot
 }
 
 function Invoke-LoggedCommand {
@@ -363,6 +371,7 @@ function Invoke-BackendProcess {
   try {
     $env:KNOWLEDGE_BASE_PROVIDER = $Config.KnowledgeBaseProvider
     $env:WIKIMG_ROOT = $Config.WikiMgRoot
+    $env:KNOWLEDGE_DATA_ROOT = $Config.KnowledgeDataRoot
     $env:WIKIMG_PROFILE = $Config.WikiMgProfile
     $env:ONTOGIT_STORAGE_ROOT = $Config.SharedStorageRoot
     $env:WIKIMG_ONTOGIT_STORAGE_ROOT = $Config.SharedStorageRoot
@@ -399,6 +408,7 @@ function Show-Summary {
     "  Frontend: http://localhost:$($Config.FrontendPort)",
     "  Backend health: http://localhost:$($Config.BackendPort)/api/health",
     "  OntoGit gateway: http://localhost:8080",
+    "  Knowledge data root: $($Config.KnowledgeDataRoot)",
     "  Shared storage: $($Config.SharedStorageRoot)",
     '',
     'Logs',

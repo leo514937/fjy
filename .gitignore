@@ -6,6 +6,13 @@
 **/config.local.yaml
 **/settings.json
 
+# Storage & Data
+OntoGit/xiaogugit/storage/
+knowledge-data/
+Ontology_Factory/wiki/
+/OntoGit/xiaogugit/storage/
+/knowledge-data/
+
 # Dependencies & Build
 node_modules/
 dist/
@@ -19,11 +26,6 @@ venv/
 .run-logs/
 scratch_*.py
 .DS_Store
-
-# Project Specific
-OntoGit/xiaogugit/storage/
-Ontology_Factory/outputs/
-Ontology_Factory/storage/data/*.sqlite3
 
 # IDE
 .vscode/

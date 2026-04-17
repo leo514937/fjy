@@ -462,7 +462,7 @@ async def delete(req: DeleteReq):
         _handle_error(exc)
 
 
-@app.get("/read/{project_id}/{filename}")
+@app.get("/read/{project_id}/{filename:path}")
 async def read(project_id: str, filename: str, commit_id: Optional[str] = Query(None)):
     try:
         data = xg.read_version(project_id, filename, commit_id)

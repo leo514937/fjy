@@ -11,6 +11,7 @@ import { AssistantSessionStateService } from "./services/assistantSessionStateSe
 import { OntoGitLocalCommitService } from "./services/ontoGitLocalCommitService.mjs";
 import { QAgentService } from "./services/qagentService.mjs";
 import { WikiWorkspaceWriterService } from "./services/wikiWorkspaceWriterService.mjs";
+import { ensureKnowledgeDataWorkspace, resolveKnowledgeDataPaths } from "./knowledgeDataPaths.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +20,6 @@ const projectRoot = path.resolve(appRoot, "..");
 const workspaceRoot = path.resolve(projectRoot, "..");
 const qagentRuntimeRoot = path.join(projectRoot, ".qagent-web-runtime");
 const defaultWikiMGRoot = path.resolve(workspaceRoot, "Ontology_Factory");
-const defaultWikiMGScriptPath = path.join(defaultWikiMGRoot, "WIKI_MG", "wikimg");
 
 function resolveQAgentRoot() {
   const candidates = [
@@ -62,9 +62,12 @@ function resolveQAgentCommand(qagentRoot) {
 export function createAppServices() {
   const repositoryMode = process.env.KNOWLEDGE_BASE_PROVIDER || "json";
   const qagentRoot = resolveQAgentRoot();
-  const wikimgRoot = process.env.WIKIMG_ROOT || defaultWikiMGRoot;
-  const wikiDocsRoot = path.join(wikimgRoot, "wiki");
-  const ontoGitStorageRoot = process.env.ONTOGIT_STORAGE_ROOT || wikiDocsRoot;
+  const knowledgeDataPaths = resolveKnowledgeDataPaths({
+    workspaceRoot,
+    env: process.env,
+    defaultWikiMGCodeRoot: defaultWikiMGRoot,
+  });
+  ensureKnowledgeDataWorkspace(knowledgeDataPaths);
 
   let repository;
 
@@ -74,10 +77,11 @@ export function createAppServices() {
     });
   } else if (repositoryMode === "wikimg") {
     repository = new WikiMGKnowledgeBaseRepository({
-      workspaceRoot: wikimgRoot,
+      workspaceRoot: knowledgeDataPaths.wikimgWorkspaceRoot,
       profile: process.env.WIKIMG_PROFILE || "kimi",
-      wikimgScriptPath: process.env.WIKIMG_BIN || defaultWikiMGScriptPath,
+      wikimgScriptPath: knowledgeDataPaths.wikimgScriptPath,
       pythonBin: process.env.PYTHON_BIN || (process.platform === "win32" ? "python" : "python3"),
+      ontoGitStorageRoot: knowledgeDataPaths.ontoGitStorageRoot,
     });
   } else {
     repository = new JsonKnowledgeBaseRepository({
@@ -87,10 +91,10 @@ export function createAppServices() {
   }
 
   const ontoGitCommitService = new OntoGitLocalCommitService({
-    storageRoot: ontoGitStorageRoot,
+    storageRoot: knowledgeDataPaths.ontoGitStorageRoot,
   });
   const wikiWorkspaceWriter = new WikiWorkspaceWriterService({
-    docsRoot: wikiDocsRoot,
+    docsRoot: knowledgeDataPaths.wikiDocsRoot,
   });
 
   return {
