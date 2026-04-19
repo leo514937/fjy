@@ -357,7 +357,6 @@ export function useAssistantController(selectedEntity: Entity | null) {
     }
 
     const conversationHistory: OntologyAssistantHistoryTurn[] = activeSession.messages
-      .slice(-6)
       .map((message) => ({
         question: message.question,
         answer: message.answer,
@@ -521,6 +520,16 @@ export function useAssistantController(selectedEntity: Entity | null) {
         },
         { signal: controller.signal },
       );
+
+      updateActiveSession((session) => (
+        session.loading || session.statusMessage
+          ? {
+            ...session,
+            loading: false,
+            statusMessage: null,
+          }
+          : session
+      ));
     } catch (error) {
       updateActiveSession((session) => ({
         ...session,

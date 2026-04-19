@@ -327,6 +327,7 @@ if (isStream) {
   assert.deepEqual(toolStarts, [{
     callId: "tool-1",
     command: "echo hello",
+    reasoning: undefined,
     cwd: null,
     startedAt: now,
   }]);

@@ -1,15 +1,16 @@
 import { existsSync } from "node:fs";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { ExecutionStageClassifierService, getExecutionStageLabel } from "./executionStageClassifierService.mjs";
 
 const WEB_CHAT_CONVERSATION_STATE_VERSION = 2;
-const DEFAULT_HISTORY_TURN_LIMIT = 6;
 const DEFAULT_STREAM_TIMEOUT_MS = 120_000;
 const DEFAULT_CONTROL_TIMEOUT_MS = 15_000;
 const DEFAULT_EXECUTION_STAGE_DETAIL = "已整理知识库上下文，准备连接 Agent CLI...";
+const WIKIMG_WRAPPER_NAME = "wikimg.sh";
+const WIKIMG_HELP_NAME = "wikimg-help.md";
 
 function asNonEmptyString(value) {
   return typeof value === "string" && value.trim() ? value.trim() : "";
@@ -339,7 +340,7 @@ function baseUrlForProvider(provider) {
     : "https://api.openai.com/v1";
 }
 
-function normalizeConversationHistory(value, limit = DEFAULT_HISTORY_TURN_LIMIT) {
+function normalizeConversationHistory(value, limit = Number.POSITIVE_INFINITY) {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -364,7 +365,11 @@ function normalizeConversationHistory(value, limit = DEFAULT_HISTORY_TURN_LIMIT)
       return { question, answer };
     })
     .filter(Boolean)
-    .slice(-limit);
+  if (limit === Number.POSITIVE_INFINITY) {
+    return normalized;
+  }
+
+  return normalized.slice(-limit);
 }
 
 export class QAgentService {
@@ -865,15 +870,12 @@ export class QAgentService {
               : { message: lastErrorMessage || "QAgent 运行失败" },
         };
 
-        stageQueue
-          .then(() => enqueueExecutionStage(finalStageEvent, { terminal: true }))
-          .then(() => {
-            resolve({
-              raw: rawResult,
-              answer: resolvedAnswer,
-              stderr: stderr.trim(),
-            });
-          });
+        void enqueueExecutionStage(finalStageEvent, { terminal: true });
+        resolve({
+          raw: rawResult,
+          answer: resolvedAnswer,
+          stderr: stderr.trim(),
+        });
       });
     });
   }
@@ -933,6 +935,7 @@ export class QAgentService {
     };
 
     await writeFile(configPath, JSON.stringify(nextConfig, null, 2), "utf8");
+    await this.ensureWikiMGWrapper(targetRuntimeRoot);
   }
 
   async prepareRuntime() {
@@ -1341,5 +1344,73 @@ export class QAgentService {
     } catch (error) {
       // Best-effort cleanup only.
     }
+  }
+
+  async ensureWikiMGWrapper(targetRuntimeRoot) {
+    const wrapperPath = path.join(targetRuntimeRoot, WIKIMG_WRAPPER_NAME);
+    const helpPath = path.join(targetRuntimeRoot, WIKIMG_HELP_NAME);
+    const wikimgRoot = this.resolveWikiMGRoot();
+    const wikimgScript = path.join(wikimgRoot, "wikimg");
+    const wikimgSrc = path.join(wikimgRoot, "src");
+    const workspaceRoot = this.resolveWikimgWorkspaceRoot();
+    const wrapperContent = `#!/usr/bin/env bash
+set -euo pipefail
+
+export WIKIMG_ROOT=${JSON.stringify(wikimgRoot)}
+export WIKIMG_WORKSPACE_ROOT=${JSON.stringify(workspaceRoot)}
+export PYTHONPATH=${JSON.stringify(wikimgSrc)}:${"${PYTHONPATH:-}"}
+
+exec ${JSON.stringify(wikimgScript)} --root ${JSON.stringify(workspaceRoot)} "$@"
+`;
+    const helpContent = `# wikimg.sh
+
+这是一个给 QAgent 在隔离 runtime 中使用的本地封装脚本。
+
+## 固定行为
+
+- 自动把工作目录锁定到：${workspaceRoot}
+- 自动设置 \`PYTHONPATH\`
+- 自动调用仓库里的 \`wikimg\` CLI
+- Wiki 文档实际存放在：${workspaceRoot}/wiki
+
+## 用法
+
+\`\`\`bash
+./wikimg.sh init
+./wikimg.sh list
+./wikimg.sh show common:kimi-demo/平台说明
+./wikimg.sh sync --project-id demo
+./wikimg.sh fetch
+\`\`\`
+
+## 说明
+
+- 这个脚本面向同一个 WIKI 根目录工作，不需要 LLM 自己处理 root。
+- 如果要同步到别的工作区，请让后端重新生成对应 runtime。
+`;
+
+    await writeFile(wrapperPath, wrapperContent, "utf8");
+    await chmod(wrapperPath, 0o755);
+    await writeFile(helpPath, helpContent, "utf8");
+  }
+
+  resolveWikiMGRoot() {
+    const candidates = [
+      process.env.WIKIMG_ROOT,
+      path.resolve(this.projectRoot, "..", "Ontology_Factory", "WIKI_MG"),
+      path.resolve(this.projectRoot, "..", "Ontology_Factory"),
+    ].filter(Boolean);
+
+    return candidates.find((candidate) => existsSync(path.join(candidate, "wikimg")))
+      || candidates[0];
+  }
+
+  resolveWikimgWorkspaceRoot() {
+    const candidates = [
+      process.env.WIKIMG_WORKSPACE_ROOT,
+      path.resolve(this.projectRoot, "..", "Ontology_Factory"),
+    ].filter(Boolean);
+
+    return candidates[0];
   }
 }

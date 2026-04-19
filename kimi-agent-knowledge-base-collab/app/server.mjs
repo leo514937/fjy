@@ -105,6 +105,87 @@ function parseConversationHistory(value) {
     .filter(Boolean);
 }
 
+function normalizeConversationHistoryForPrompt(value, limit = Number.POSITIVE_INFINITY) {
+  const seen = new Set();
+  const history = [];
+
+  for (const item of parseConversationHistory(value)) {
+    const question = typeof item.question === "string" ? item.question.trim() : "";
+    const answer = typeof item.answer === "string" ? item.answer.trim() : "";
+    if (!question || !answer) {
+      continue;
+    }
+
+    const signature = `${question}\u0000${answer}`;
+    if (seen.has(signature)) {
+      continue;
+    }
+
+    seen.add(signature);
+    history.push({ question, answer });
+  }
+
+  if (limit === Number.POSITIVE_INFINITY) {
+    return history;
+  }
+
+  return history.slice(-limit);
+}
+
+function extractPersistedConversationHistory(state, conversationId, limit = Number.POSITIVE_INFINITY) {
+  if (!conversationId || typeof conversationId !== "string") {
+    return [];
+  }
+
+  const sessions = Array.isArray(state?.sessions) ? state.sessions : [];
+  const session = sessions.find((item) => item && typeof item === "object" && item.id === conversationId);
+  const messages = Array.isArray(session?.messages) ? session.messages : [];
+
+  const history = messages
+    .map((message) => {
+      const question = typeof message?.question === "string" ? message.question.trim() : "";
+      const answer = typeof message?.answer === "string" ? message.answer.trim() : "";
+      if (!question || !answer) {
+        return null;
+      }
+      return { question, answer };
+    })
+    .filter(Boolean);
+
+  if (limit === Number.POSITIVE_INFINITY) {
+    return history;
+  }
+
+  return history.slice(-limit);
+}
+
+function mergeConversationHistories(primary, fallback, limit = Number.POSITIVE_INFINITY) {
+  const seen = new Set();
+  const merged = [];
+
+  for (const item of [...fallback, ...primary]) {
+    const question = typeof item?.question === "string" ? item.question.trim() : "";
+    const answer = typeof item?.answer === "string" ? item.answer.trim() : "";
+    if (!question || !answer) {
+      continue;
+    }
+
+    const signature = `${question}\u0000${answer}`;
+    if (seen.has(signature)) {
+      continue;
+    }
+
+    seen.add(signature);
+    merged.push({ question, answer });
+  }
+
+  if (limit === Number.POSITIVE_INFINITY) {
+    return merged;
+  }
+
+  return merged.slice(-limit);
+}
+
 async function readRequestBodyBuffer(req) {
   const chunks = [];
   for await (const chunk of req) {
@@ -407,7 +488,16 @@ const server = createServer(async (req, res) => {
       const conversationId = typeof body.conversationId === "string" ? body.conversationId : undefined;
       const businessPrompt = typeof body.businessPrompt === "string" ? body.businessPrompt : undefined;
       const modelName = typeof body.modelName === "string" ? body.modelName : undefined;
-      const conversationHistory = parseConversationHistory(body.conversationHistory);
+      const requestConversationHistory = normalizeConversationHistoryForPrompt(body.conversationHistory);
+      const persistedState = await assistantSessionStateService.load();
+      const persistedConversationHistory = extractPersistedConversationHistory(
+        persistedState,
+        conversationId,
+      );
+      const conversationHistory = mergeConversationHistories(
+        requestConversationHistory,
+        persistedConversationHistory,
+      );
 
       if (!question) {
         sendJson(res, 400, { error: "question is required" });
@@ -459,7 +549,16 @@ const server = createServer(async (req, res) => {
       const conversationId = typeof body.conversationId === "string" ? body.conversationId : undefined;
       const businessPrompt = typeof body.businessPrompt === "string" ? body.businessPrompt : undefined;
       const modelName = typeof body.modelName === "string" ? body.modelName : undefined;
-      const conversationHistory = parseConversationHistory(body.conversationHistory);
+      const requestConversationHistory = normalizeConversationHistoryForPrompt(body.conversationHistory);
+      const persistedState = await assistantSessionStateService.load();
+      const persistedConversationHistory = extractPersistedConversationHistory(
+        persistedState,
+        conversationId,
+      );
+      const conversationHistory = mergeConversationHistories(
+        requestConversationHistory,
+        persistedConversationHistory,
+      );
 
       if (!question) {
         sendJson(res, 400, { error: "question is required" });
@@ -518,7 +617,17 @@ const server = createServer(async (req, res) => {
           }
         );
 
-        if (!result.ok) {
+        const isGracefulMaxStepStop = (
+          result.raw
+          && typeof result.raw === "object"
+          && result.raw.status === "success"
+          && (
+            result.raw.code === "run.empty_answer"
+            || result.raw.code === "run.completed"
+          )
+        );
+
+        if (!result.ok && !isGracefulMaxStepStop) {
           writeSse(res, "error", {
             message: result.error,
             context,
@@ -534,6 +643,7 @@ const server = createServer(async (req, res) => {
           context,
           raw: result.raw,
           stderr: result.stderr,
+          warning: !result.ok ? result.error : undefined,
         });
         streamCompleted = true;
         res.end();
