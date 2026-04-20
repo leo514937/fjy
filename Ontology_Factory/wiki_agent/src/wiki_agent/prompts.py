@@ -143,7 +143,7 @@ TOOL_SPECS: list[dict[str, Any]] = [
             "可用示例：`pwd`、`ls`、`rg -n 关键词 .`、`cat 文件名`、"
             "`wikimg --help`、`wikimg --root 工作区 search 关键词 --content`、"
             "`python -m ner.cli extract --help`、"
-            "`python -m entity_relation.cli extract --input 文件 --query 关键词 --stdout`、"
+            "`PYTHONPATH=/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/relation/src:/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src python -m entity_relation.cli extract --input 文件 --query 关键词 --stdout`、"
             "`python -m ontology_store.cli query --database storage/data/classification_store.sqlite3 --kind entities --query 关键词 --stdout`、"
             "`python -m ontology_core.cli search --database storage/data/classification_store.sqlite3 --query 关键词 --include-relations --stdout`、"
             "`python -m ontology_negotiator.cli classify --graph graph.json --config dls/config/ontology_negotiator.toml --stdout`、"

@@ -14,14 +14,27 @@ export interface OntologyAssistantResponse {
   stderr?: string;
 }
 
+export interface OntologyAssistantUploadResponse {
+  ok: boolean;
+  conversationId: string;
+  runtimeRoot: string;
+  uploadsDir: string;
+  filePath: string;
+  fileName: string;
+  mimeType: string;
+}
+
 export interface OntologyAssistantHistoryTurn {
   question: string;
   answer: string;
+  toolRuns?: PersistedOntologyAssistantToolRun[];
+  contentBlocks?: PersistedOntologyAssistantContentBlock[];
 }
 
 export interface OntologyAssistantToolStartedEvent {
   callId: string;
   command: string;
+  reasoning?: string;
   cwd: string | null;
   startedAt: string;
 }
@@ -46,6 +59,12 @@ export interface OntologyAssistantToolFinishedEvent {
   durationMs: number | null;
   startedAt: string;
   finishedAt: string;
+}
+
+export interface OntologyAssistantAssistantCompletedEvent {
+  assistantMessageId: string;
+  content: string;
+  createdAt: string;
 }
 
 export type OntologyAssistantSemanticStatus =
@@ -82,6 +101,80 @@ export interface PersistedOntologyAssistantToolRun {
   finishedAt: string | null;
 }
 
+export interface AssistantGraphEntity {
+  entity_id: string;
+  text: string;
+  normalized_text?: string;
+  label?: string;
+  confidence?: number | null;
+  source_sentence?: string;
+  metadata?: Record<string, unknown>;
+  display_level?: number;
+  visible?: boolean;
+  highlight?: boolean;
+  pinned?: boolean;
+  focus?: boolean;
+  start?: number;
+  end?: number;
+}
+
+export interface AssistantGraphRelation {
+  relation_id?: string;
+  source_entity_id?: string;
+  target_entity_id?: string;
+  source_text?: string;
+  target_text?: string;
+  relation_type?: string;
+  confidence?: number | null;
+  evidence_sentence?: string;
+  metadata?: Record<string, unknown>;
+  display_level?: number;
+  visible?: boolean;
+  highlight?: boolean;
+}
+
+export interface AssistantGraphOverlay {
+  version: number;
+  conversationId: string;
+  updatedAt: string;
+  nodes: AssistantGraphEntity[];
+  relations: AssistantGraphRelation[];
+}
+
+export type PersistedOntologyAssistantContentBlock =
+  | {
+      id: string;
+      type: 'assistant';
+      content: string;
+      createdAt: string;
+      completedAt: string | null;
+      phase: 'streaming' | 'completed';
+    }
+  | {
+      id: string;
+      type: 'tool_call';
+      callId: string;
+      command: string;
+      reasoning?: string;
+      toolName?: string;
+      createdAt: string;
+    }
+  | {
+      id: string;
+      type: 'tool_result';
+      callId: string;
+      command: string;
+      toolName?: string;
+      status: 'running' | 'success' | 'error' | 'timeout' | 'cancelled' | 'rejected';
+      stdout: string;
+      stderr: string;
+      exitCode: number | null;
+      cwd: string | null;
+      durationMs: number | null;
+      createdAt: string;
+      finishedAt: string | null;
+    };
+
 export interface PersistedOntologyAssistantMessage {
   id: string;
   question: string;
@@ -89,6 +182,7 @@ export interface PersistedOntologyAssistantMessage {
   relatedNames: string[];
   executionStages: PersistedOntologyAssistantExecutionStage[];
   toolRuns: PersistedOntologyAssistantToolRun[];
+  contentBlocks: PersistedOntologyAssistantContentBlock[];
 }
 
 export type PersistedOntologyAssistantExecutionStage = OntologyAssistantExecutionStageEvent;
@@ -114,6 +208,7 @@ export interface OntologyAssistantStreamHandlers {
   onStatus?: (message: string) => void;
   onContext?: (context: OntologyAssistantContext) => void;
   onAnswerDelta?: (delta: string) => void;
+  onAssistantCompleted?: (event: OntologyAssistantAssistantCompletedEvent) => void;
   onExecutionStage?: (event: OntologyAssistantExecutionStageEvent) => void;
   onToolStarted?: (event: OntologyAssistantToolStartedEvent) => void;
   onToolOutput?: (event: OntologyAssistantToolOutputEvent) => void;
@@ -157,6 +252,40 @@ export async function saveOntologyAssistantState(
   });
 
   return parseJson<OntologyAssistantSessionState>(response);
+}
+
+export async function uploadOntologyAssistantFile(input: {
+  conversationId: string;
+  fileName: string;
+  contentBase64: string;
+  mimeType?: string;
+}): Promise<OntologyAssistantUploadResponse> {
+  const response = await fetch(buildApiUrl('/api/chat/upload'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+
+  return parseJson<OntologyAssistantUploadResponse>(response);
+}
+
+export async function fetchAssistantGraphOverlay(conversationId: string): Promise<AssistantGraphOverlay> {
+  const response = await fetch(buildApiUrl(`/api/chat/graph?conversationId=${encodeURIComponent(conversationId)}`));
+  return parseJson<AssistantGraphOverlay>(response);
+}
+
+export async function saveAssistantGraphOverlay(input: AssistantGraphOverlay): Promise<AssistantGraphOverlay> {
+  const response = await fetch(buildApiUrl('/api/chat/graph'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+
+  return parseJson<AssistantGraphOverlay>(response);
 }
 
 export async function askOntologyAssistantStream(
@@ -213,6 +342,8 @@ export async function askOntologyAssistantStream(
           handlers.onContext?.((parsed.data as OntologyAssistantResponse['context']) ?? {});
         } else if (parsed.event === 'answer_delta') {
           handlers.onAnswerDelta?.(typeof eventData?.delta === 'string' ? eventData.delta : '');
+        } else if (parsed.event === 'assistant_completed') {
+          handlers.onAssistantCompleted?.(parsed.data as OntologyAssistantAssistantCompletedEvent);
         } else if (parsed.event === 'execution_stage') {
           handlers.onExecutionStage?.(parsed.data as OntologyAssistantExecutionStageEvent);
         } else if (parsed.event === 'tool_started') {
@@ -243,4 +374,3 @@ export async function askOntologyAssistantStream(
 
   return finalResponse;
 }
-

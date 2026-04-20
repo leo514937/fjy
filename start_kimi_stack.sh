@@ -112,16 +112,6 @@ start_frontend() {
   wait_for_port "${FRONTEND_PORT}" "前端"
 }
 
-start_ontogit_services() {
-  local onto_script="${ROOT_DIR}/OntoGit/start_ontogit.sh"
-  if [[ -f "${onto_script}" ]]; then
-    echo "启动 OntoGit 本体中台服务栈..."
-    chmod +x "${onto_script}"
-    bash "${onto_script}"
-    sleep 2
-  fi
-}
-
 stop_qagent_gateway() {
   if [[ ! -d "${QAGENT_DIR}" ]]; then
     return
@@ -155,7 +145,6 @@ require_cmd npm
 require_cmd node
 require_cmd curl
 require_cmd lsof
-require_cmd "${PYTHON_BIN}"
 
 if [[ ! -d "${APP_DIR}/node_modules" ]]; then
   echo "缺少依赖目录: ${APP_DIR}/node_modules" >&2
@@ -163,22 +152,10 @@ if [[ ! -d "${APP_DIR}/node_modules" ]]; then
   exit 1
 fi
 
-if [[ ! -d "${WIKIMG_ROOT}" ]]; then
-  echo "未找到 WIKIMG_ROOT: ${WIKIMG_ROOT}" >&2
-  exit 1
-fi
-
 echo "关闭旧进程..."
 stop_qagent_gateway
 stop_port "${BACKEND_PORT}"
 stop_port "${FRONTEND_PORT}"
-
-# Also stop OntoGit ports
-stop_port 8080
-stop_port 8000
-stop_port 5000
-
-start_ontogit_services
 start_backend
 start_frontend
 print_summary

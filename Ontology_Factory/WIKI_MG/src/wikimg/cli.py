@@ -24,7 +24,7 @@ from wikimg.core import (
 )
 from wikimg.ingest import ingest_source
 from wikimg.kimi_profile import export_profile, show_document_json, validate_profile
-from wikimg.ontogit_sync import sync_export_payload
+from wikimg.ontogit_sync import fetch_wiki_directory, sync_export_payload, sync_wiki_directory
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -67,6 +67,28 @@ def build_parser() -> argparse.ArgumentParser:
     export_parser = subparsers.add_parser("export", help="导出 profile 对应的结构化结果。支持 JSON 输出。")
     export_parser.add_argument("--profile", required=True, help="要导出的 profile 名称，例如 'kimi'。")
     export_parser.add_argument("--json", action="store_true", dest="json", help="以 JSON 格式输出结果。")
+
+    sync_parser = subparsers.add_parser("sync", help="将本地 wiki 目录按文件同步到 OntoGit。")
+    sync_parser.add_argument(
+        "--project-id",
+        help="OntoGit 项目 ID。默认使用环境变量 WIKIMG_ONTOGIT_PROJECT_ID 或 demo。",
+    )
+    sync_parser.add_argument(
+        "--wiki-dir",
+        help="要同步的 wiki 目录。默认使用工作区下的 wiki/。",
+    )
+    sync_parser.add_argument("--json", action="store_true", dest="json", help="以 JSON 格式输出结果。")
+
+    fetch_parser = subparsers.add_parser("fetch", help="从 OntoGit 拉取 wiki 目录并写回本地。")
+    fetch_parser.add_argument(
+        "--project-id",
+        help="OntoGit 项目 ID。留空时会拉取 common/domain/private 三个项目。",
+    )
+    fetch_parser.add_argument(
+        "--wiki-dir",
+        help="要写回的 wiki 目录。默认使用工作区下的 wiki/。",
+    )
+    fetch_parser.add_argument("--json", action="store_true", dest="json", help="以 JSON 格式输出结果。")
 
     validate_parser = subparsers.add_parser("validate", help="校验 profile 文档的结构与链接。支持 JSON 输出。")
     validate_parser.add_argument("--profile", required=True, help="要校验的 profile 名称，例如 'kimi'。")
@@ -193,6 +215,38 @@ def main(argv: list[str] | None = None) -> int:
                 print(
                     f"Exported profile={args.profile} entities={statistics['total_entities']} "
                     f"relations={statistics['total_relations']} docs={len(payload['documents'])}"
+                )
+            return 0
+
+        if args.command == "sync":
+            wiki_dir = Path(args.wiki_dir) if args.wiki_dir else workspace.docs_dir
+            result = sync_wiki_directory(
+                workspace_root=workspace.root,
+                wiki_dir=wiki_dir,
+                project_id=args.project_id,
+            )
+            if args.json:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                print(
+                    f"Synced wiki directory -> project={result['project_id']} "
+                    f"written={result['written_count']} deleted={result['deleted_count']}"
+            )
+            return 0
+
+        if args.command == "fetch":
+            wiki_dir = Path(args.wiki_dir) if args.wiki_dir else workspace.docs_dir
+            result = fetch_wiki_directory(
+                workspace_root=workspace.root,
+                wiki_dir=wiki_dir,
+                project_id=args.project_id,
+            )
+            if args.json:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                print(
+                    f"Fetched wiki directory -> project={args.project_id or 'common/domain/private'} "
+                    f"written={result['fetched_count']} skipped={result['skipped_count']}"
                 )
             return 0
 

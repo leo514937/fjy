@@ -4,11 +4,11 @@
     "description": "",
     "status": "开发中",
     "created_at": "2026-04-17 14:15:45",
-    "updated_at": "2026-04-18 15:29:30",
+    "updated_at": "2026-04-19 00:31:51",
     "official_recommendations": {},
     "official_history": {},
     "last_agent": "wikimg-export",
     "last_committer": "wikimg-export",
     "last_message": "System: append WiKiMG export snapshot",
-    "last_basevision": 33
+    "last_basevision": 0
 }

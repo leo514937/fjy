@@ -12,7 +12,7 @@ param(
   [string]$SharedStorageRoot = $env:ONTOGIT_STORAGE_ROOT,
   [string]$KNOWLEDGE_BASE_PROVIDER = $env:KNOWLEDGE_BASE_PROVIDER,
   [switch]$SkipInstall,
-  [switch]$SkipOntoGit
+  [switch]$SkipOntoGit = $true
 )
 
 Set-StrictMode -Version Latest
@@ -328,24 +328,6 @@ function Stop-QAgentGateway {
   }
 }
 
-function Start-OntoGitServices {
-  param([Parameter(Mandatory)][psobject]$Config)
-
-  if ($SkipOntoGit) {
-    Write-Host 'Skipping OntoGit services.'
-    return
-  }
-
-  $script = Join-Path $Config.RootDir 'OntoGit\start_ontogit.ps1'
-  if (-not (Test-Path -LiteralPath $script -PathType Leaf)) {
-    Write-Host 'OntoGit startup script not found; skipping OntoGit services.'
-    return
-  }
-
-  Write-Host 'Starting OntoGit services...'
-  & $script -PythonBin $Config.PythonBin -KnowledgeDataRoot $Config.KnowledgeDataRoot -StorageRoot $Config.SharedStorageRoot
-}
-
 function Invoke-LoggedCommand {
   param(
     [Parameter(Mandatory)][string]$LogPath,
@@ -407,14 +389,12 @@ function Show-Summary {
     'Startup complete',
     "  Frontend: http://localhost:$($Config.FrontendPort)",
     "  Backend health: http://localhost:$($Config.BackendPort)/api/health",
-    "  OntoGit gateway: http://localhost:8080",
     "  Knowledge data root: $($Config.KnowledgeDataRoot)",
     "  Shared storage: $($Config.SharedStorageRoot)",
     '',
     'Logs',
     "  Frontend: $($Config.FrontendLogFile)",
     "  Backend: $($Config.BackendLogFile)",
-    "  OntoGit:  $($Config.RootDir)\OntoGit\.run-logs"
   ) | ForEach-Object { Write-Host $_ }
 }
 
@@ -429,7 +409,6 @@ function Start-KimiStack {
   Stop-QAgentGateway -Config $Config
   Stop-PortListeners -Port $Config.BackendPort
   Stop-PortListeners -Port $Config.FrontendPort
-  Start-OntoGitServices -Config $Config
   Write-Host 'Starting backend...'
   Start-DetachedProcess -Config $Config -ChildMode 'RunBackend' -CurrentLogFile $Config.BackendLogFile -PidFile $Config.BackendPidFile | Out-Null
   Wait-ForHttpReady -Url "http://localhost:$($Config.BackendPort)/api/health" -Name 'Backend'

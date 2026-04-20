@@ -88,6 +88,7 @@ export function KnowledgeGraph({
     domain: 'Domain',
     private: 'Private',
   };
+  const isVisibleEntity = (entity: Entity) => entity.visible !== false;
 
   // 初始化节点和链接
   useEffect(() => {
@@ -98,8 +99,15 @@ export function KnowledgeGraph({
     }
 
     // 创建节点
-    const initialNodes: Node[] = entities.map((entity, index) => {
-      const angle = (index / entities.length) * 2 * Math.PI;
+    const visibleEntities = entities.filter(isVisibleEntity);
+    if (visibleEntities.length === 0) {
+      setNodes([]);
+      setLinks([]);
+      return;
+    }
+    const initialNodes: Node[] = visibleEntities.map((entity, index) => {
+      const angle = (index / visibleEntities.length) * 2 * Math.PI;
+      const displayLevel = entity.display_level ?? 2;
       return {
         id: entity.id,
         name: entity.name,
@@ -107,7 +115,7 @@ export function KnowledgeGraph({
         y: height / 2 + Math.sin(angle) * initialOrbitRadius,
         vx: 0,
         vy: 0,
-        radius: 20, // Constant radius to prevent physics "pops" on selection
+        radius: displayLevel <= 1 ? 23 : displayLevel >= 3 ? 17 : 20,
         color: domainColors[entity.domain] || '#6b7280',
         entity: entity
       };
@@ -192,18 +200,24 @@ export function KnowledgeGraph({
         });
 
         // 更新位置
+        let totalSpeed = 0;
         newNodes.forEach(node => {
           if (node.id !== draggedNode) {
             node.vx *= velocityDamping; // 阻尼
             node.vy *= velocityDamping;
             node.x += node.vx;
             node.y += node.vy;
+            totalSpeed += Math.abs(node.vx) + Math.abs(node.vy);
 
             // 极简边界限制 (只有 5px 内边距)
             node.x = Math.max(node.radius + 5, Math.min(width - node.radius - 5, node.x));
             node.y = Math.max(node.radius + 5, Math.min(height - node.radius - 5, node.y));
           }
         });
+
+        if (draggedNode === null && totalSpeed < 0.6) {
+          clearInterval(simulation);
+        }
 
         return newNodes;
       });
@@ -295,6 +309,9 @@ export function KnowledgeGraph({
               const sourceNode = nodes.find(n => n.id === link.source);
               const targetNode = nodes.find(n => n.id === link.target);
               if (!sourceNode || !targetNode) return null;
+              if (!isVisibleEntity(sourceNode.entity) || !isVisibleEntity(targetNode.entity)) return null;
+              const displayLevel = Math.max(sourceNode.entity.display_level ?? 2, targetNode.entity.display_level ?? 2);
+              const muted = displayLevel >= 3;
 
               return (
                 <g key={index}>
@@ -304,7 +321,8 @@ export function KnowledgeGraph({
                     x2={targetNode.x}
                     y2={targetNode.y}
                     className="stroke-muted-foreground/30"
-                    strokeWidth={1.5}
+                    strokeWidth={muted ? 0.8 : 1.5}
+                    opacity={muted ? 0.35 : 1}
                   />
                   {/* 关系标签 */}
                   <text
@@ -312,7 +330,7 @@ export function KnowledgeGraph({
                     y={(sourceNode.y + targetNode.y) / 2}
                     textAnchor="middle"
                     className="text-[10px] fill-muted-foreground font-medium"
-                    style={{ textShadow: '0 0 4px hsl(var(--background))' }}
+                    style={{ textShadow: '0 0 4px hsl(var(--background))', opacity: muted ? 0.45 : 1 }}
                   >
                     {link.relation}
                   </text>
@@ -328,6 +346,7 @@ export function KnowledgeGraph({
                 onMouseDown={() => handleMouseDown(node.id)}
                 onClick={() => onSelectEntity(node.entity)}
                 className="cursor-pointer"
+                opacity={node.entity.visible === false ? 0.2 : node.entity.display_level === 3 ? 0.55 : 1}
               >
                 {/* 选中光环 */}
                 {node.id === selectedEntityId && (
@@ -335,8 +354,8 @@ export function KnowledgeGraph({
                     r={node.radius + 6}
                     fill="none"
                     stroke="currentColor"
-                    className="text-primary"
-                    strokeWidth={2.5}
+                    className={node.entity.highlight ? 'text-cyan-500' : 'text-primary'}
+                    strokeWidth={node.entity.highlight ? 3 : 2.5}
                     strokeDasharray="4,4"
                   >
                     <animateTransform
@@ -356,6 +375,7 @@ export function KnowledgeGraph({
                   fill={node.color}
                   stroke={layerStrokeColors[node.entity.layer]}
                   strokeWidth={node.entity.layer === 'private' ? 4 : 2.5}
+                  opacity={node.entity.display_level === 3 ? 0.7 : 1}
                   className="hover:opacity-80 transition-opacity"
                 />
                 {/* Removed default title tooltip */}
@@ -364,7 +384,12 @@ export function KnowledgeGraph({
                   textAnchor="middle"
                   dy={node.radius + 18}
                   className="text-xs fill-foreground font-bold"
-                  style={{ fontSize: '13px', pointerEvents: 'none', textShadow: '0 1px 2px hsl(var(--background))' }}
+                  style={{
+                    fontSize: node.entity.display_level === 1 ? '14px' : '13px',
+                    pointerEvents: 'none',
+                    textShadow: '0 1px 2px hsl(var(--background))',
+                    opacity: node.entity.display_level === 3 ? 0.7 : 1,
+                  }}
                 >
                   {node.name}
                 </text>

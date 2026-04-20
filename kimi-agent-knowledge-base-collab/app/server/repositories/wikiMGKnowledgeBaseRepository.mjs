@@ -21,6 +21,7 @@ function safeObject(value, fallback = {}) {
 export class WikiMGKnowledgeBaseRepository {
   constructor(options = {}) {
     this.workspaceRoot = options.workspaceRoot;
+    this.sourceWorkspaceRoot = options.sourceWorkspaceRoot || options.workspaceRoot;
     this.profile = options.profile || "kimi";
     this.wikimgScriptPath = options.wikimgScriptPath;
     this.pythonBin = options.pythonBin || (process.platform === "win32" ? "python" : "python3");
@@ -42,7 +43,7 @@ export class WikiMGKnowledgeBaseRepository {
     return payload;
   }
 
-  async runWikiMG(args) {
+  async runWikiMG(args, workspaceRoot = this.workspaceRoot) {
     try {
       // PYTHONPATH 应该指向 wikimg 文件夹所在的父目录（即 src 目录）
       const pkgDir = path.dirname(this.wikimgScriptPath);
@@ -57,9 +58,9 @@ export class WikiMGKnowledgeBaseRepository {
 
       const { stdout } = await execFileAsync(
         this.pythonBin,
-        [this.wikimgScriptPath, "--root", this.workspaceRoot, ...args],
+        [this.wikimgScriptPath, "--root", workspaceRoot, ...args],
         {
-          cwd: this.workspaceRoot,
+          cwd: workspaceRoot,
           env: commandEnv,
           maxBuffer: 20 * 1024 * 1024,
         }
@@ -122,6 +123,107 @@ export class WikiMGKnowledgeBaseRepository {
   async getKnowledgeGraph() {
     const dataset = await this.loadDataset();
     return dataset.knowledgeGraph;
+  }
+
+  async showDocument(reference, workspaceRoot = this.sourceWorkspaceRoot) {
+    const payload = await this.runWikiMG(["show", reference, "--json"], workspaceRoot);
+    return payload?.document || null;
+  }
+
+  async getKnowledgeGraphSlice(refs) {
+    const normalizedRefs = Array.isArray(refs)
+      ? [...new Set(refs.map((ref) => String(ref || "").trim()).filter(Boolean))]
+      : [];
+
+    if (normalizedRefs.length === 0) {
+      return {
+        viewedRefs: [],
+        missingRefs: [],
+        entities: [],
+        crossReferences: [],
+      };
+    }
+
+    const documents = [];
+    const missingRefs = [];
+
+    for (const ref of normalizedRefs) {
+      try {
+        const document = await this.showDocument(ref, this.sourceWorkspaceRoot);
+        if (document) {
+          documents.push(document);
+        } else {
+          missingRefs.push(ref);
+        }
+      } catch {
+        missingRefs.push(ref);
+      }
+    }
+
+    const visibleRefs = new Set(normalizedRefs);
+    const documentByRef = new Map();
+    const entityByRef = new Map();
+    const entities = [];
+
+    for (const document of documents) {
+      const ref = String(document?.ref || "").trim();
+      const entity = document?.kimiwa || null;
+      if (!ref || !entity) {
+        continue;
+      }
+
+      documentByRef.set(ref, document);
+      entityByRef.set(ref, entity);
+      entities.push(entity);
+    }
+
+    const crossReferences = [];
+    const seenEdges = new Set();
+
+    for (const [sourceRef, document] of documentByRef.entries()) {
+      const sourceEntity = entityByRef.get(sourceRef);
+      if (!sourceEntity) {
+        continue;
+      }
+
+      const relations = Array.isArray(document.relations) ? document.relations : [];
+      for (const relation of relations) {
+        const targetRef = String(relation?.target_ref || "").trim();
+        if (!targetRef || !visibleRefs.has(targetRef)) {
+          continue;
+        }
+
+        const targetEntity = entityByRef.get(targetRef);
+        if (!targetEntity) {
+          continue;
+        }
+
+        const key = [
+          sourceEntity.id,
+          targetEntity.id,
+          String(relation?.relation || "相关"),
+          String(relation?.description || ""),
+        ].join("\u001f");
+
+        if (seenEdges.has(key)) {
+          continue;
+        }
+        seenEdges.add(key);
+        crossReferences.push({
+          source: sourceEntity.id,
+          target: targetEntity.id,
+          relation: String(relation?.relation || "相关"),
+          description: String(relation?.description || ""),
+        });
+      }
+    }
+
+    return {
+      viewedRefs: normalizedRefs,
+      missingRefs,
+      entities,
+      crossReferences,
+    };
   }
 
   async getOntologies() {

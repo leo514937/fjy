@@ -10,13 +10,15 @@ export function useOntologyData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshKnowledgeGraph = async () => {
+  const refreshKnowledgeGraph = async (options: { silent?: boolean; forceRefresh?: boolean } = {}) => {
     try {
-      setLoading(true);
+      if (!options.silent) {
+        setLoading(true);
+      }
       setError(null);
 
       const [kgData, ontologies] = await Promise.all([
-        fetchKnowledgeGraph(),
+        fetchKnowledgeGraph({ refresh: options.forceRefresh }),
         fetchOntologies(),
       ]);
 
@@ -27,12 +29,22 @@ export function useOntologyData() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      if (!options.silent) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     void refreshKnowledgeGraph();
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void refreshKnowledgeGraph({ silent: true, forceRefresh: true });
+    }, 10000);
+
+    return () => window.clearInterval(interval);
   }, []);
 
   const getEntityById = (id: string): Entity | undefined => {

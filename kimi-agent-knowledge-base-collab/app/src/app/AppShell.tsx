@@ -33,6 +33,7 @@ import { ExplorerPage } from '@/app/pages/ExplorerPage';
 import { AssistantPage } from '@/app/pages/AssistantPage';
 import { LabPage } from '@/app/pages/LabPage';
 import { WorkspacePage } from '@/app/pages/WorkspacePage';
+import { EnterGateIntro } from '@/components/EnterGateIntro';
 import { SearchPanel } from '@/components/SearchPanel';
 import type { Entity } from '@/types/ontology';
 
@@ -242,6 +243,7 @@ function AppShellContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground overflow-y-auto lg:h-screen lg:overflow-hidden">
+      <EnterGateIntro />
       <header className="border-b bg-card text-card-foreground sticky top-0 z-40">
         <div className="flex min-h-16 w-full flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2 sm:px-4 lg:px-6">
           <div className="flex min-w-0 max-w-full items-center gap-2 sm:gap-3">
@@ -367,6 +369,7 @@ function AppShellContent() {
               onBusinessPromptChange={assistantState.setBusinessPrompt}
               onDraftChange={assistantState.onDraftChange}
               onModelNameChange={assistantState.setModelName}
+              onUploadFile={assistantState.onUploadFile}
               onStop={assistantState.onStop}
               selectedEntityName={selectedEntity?.name}
             />
@@ -395,7 +398,5 @@ export function AppShell() {
     </OntologyProvider>
   );
 }
-
-
 
 

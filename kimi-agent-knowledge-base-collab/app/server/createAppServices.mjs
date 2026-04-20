@@ -8,6 +8,7 @@ import { DatabaseKnowledgeBaseRepository } from "./repositories/databaseKnowledg
 import { WikiMGKnowledgeBaseRepository } from "./repositories/wikiMGKnowledgeBaseRepository.mjs";
 import { KnowledgeBaseService } from "./services/knowledgeBaseService.mjs";
 import { AssistantSessionStateService } from "./services/assistantSessionStateService.mjs";
+import { ConversationGraphStateService } from "./services/conversationGraphStateService.mjs";
 import { OntoGitLocalCommitService } from "./services/ontoGitLocalCommitService.mjs";
 import { QAgentService } from "./services/qagentService.mjs";
 import { WikiWorkspaceWriterService } from "./services/wikiWorkspaceWriterService.mjs";
@@ -78,6 +79,7 @@ export function createAppServices() {
   } else if (repositoryMode === "wikimg") {
     repository = new WikiMGKnowledgeBaseRepository({
       workspaceRoot: knowledgeDataPaths.wikimgWorkspaceRoot,
+      sourceWorkspaceRoot: knowledgeDataPaths.wikimgCodeRoot,
       profile: process.env.WIKIMG_PROFILE || "kimi",
       wikimgScriptPath: knowledgeDataPaths.wikimgScriptPath,
       pythonBin: process.env.PYTHON_BIN || (process.platform === "win32" ? "python" : "python3"),
@@ -115,6 +117,9 @@ export function createAppServices() {
       ),
     }),
     assistantSessionStateService: new AssistantSessionStateService({
+      runtimeRoot: qagentRuntimeRoot,
+    }),
+    conversationGraphStateService: new ConversationGraphStateService({
       runtimeRoot: qagentRuntimeRoot,
     }),
     localWorkspaceService: ontoGitCommitService,

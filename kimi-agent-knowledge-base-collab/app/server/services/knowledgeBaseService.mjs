@@ -10,6 +10,19 @@ export class KnowledgeBaseService {
     return this.repository.getKnowledgeGraph();
   }
 
+  async getKnowledgeGraphSlice(refs) {
+    if (typeof this.repository.getKnowledgeGraphSlice === "function") {
+      return this.repository.getKnowledgeGraphSlice(refs);
+    }
+
+    return {
+      viewedRefs: [],
+      missingRefs: Array.isArray(refs) ? refs : [],
+      entities: [],
+      crossReferences: [],
+    };
+  }
+
   async getOntologies() {
     return this.repository.getOntologies();
   }

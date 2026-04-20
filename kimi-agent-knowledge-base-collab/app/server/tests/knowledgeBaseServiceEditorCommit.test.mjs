@@ -173,7 +173,7 @@ test("KnowledgeBaseService commitEditorDraft writes every batch item to its infe
     wikiWriter: async (input) => {
       calls.push({ kind: "wiki", input });
       return {
-        path: `wiki/${input.layer}/${input.slug}.md`,
+        path: `wiki/${input.layer}/${input.slug}.json`,
         ref: `${input.layer}:${input.slug}`,
       };
     },

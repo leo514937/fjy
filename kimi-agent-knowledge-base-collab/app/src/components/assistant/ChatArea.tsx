@@ -1,19 +1,462 @@
 import React, { useRef, useEffect } from 'react';
-import { Sparkles, AlertCircle, Copy, Check, ArrowUp, ArrowDown, Square } from 'lucide-react';
+import {
+  Sparkles,
+  AlertCircle,
+  Copy,
+  Check,
+  ArrowUp,
+  ArrowDown,
+  Square,
+  Terminal,
+  CheckCircle2,
+  AlertTriangle,
+  LoaderCircle,
+  Paperclip,
+  Eye,
+  GitCompareArrows,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AssistantMarkdown, copyCodeToClipboard } from './AssistantMarkdown';
 import { cn } from '@/lib/utils';
+import type {
+  PersistedOntologyAssistantContentBlock,
+  PersistedOntologyAssistantToolRun,
+} from '@/features/assistant/api';
 
 interface ChatAreaProps {
   activeSession: any;
   onAsk: (question?: string) => void;
   onStop: () => void;
   onDraftChange: (value: string) => void;
+  onUploadFile: (file: File) => Promise<void>;
   isBusy: boolean;
   selectedEntityName?: string;
   renderSettings?: () => React.ReactNode;
   renderExtraActions?: () => React.ReactNode;
+}
+
+const TOOL_OUTPUT_PREVIEW_LIMIT = 4000;
+
+function hasVisibleText(value: string | null | undefined) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function formatToolRunStatus(toolRun: PersistedOntologyAssistantToolRun) {
+  switch (toolRun.status) {
+    case 'success':
+      return {
+        label: '成功',
+        className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+        icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+      };
+    case 'error':
+      return {
+        label: '失败',
+        className: 'bg-rose-500/10 text-rose-700 dark:text-rose-300',
+        icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      };
+    case 'timeout':
+      return {
+        label: '超时',
+        className: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+        icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      };
+    case 'cancelled':
+      return {
+        label: '已取消',
+        className: 'bg-slate-500/10 text-slate-700 dark:text-slate-300',
+        icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      };
+    case 'rejected':
+      return {
+        label: '已拒绝',
+        className: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+        icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      };
+    case 'running':
+    default:
+      return {
+        label: '进行中',
+        className: 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
+        icon: <LoaderCircle className="h-3.5 w-3.5 animate-spin" />,
+      };
+  }
+}
+
+function buildToolOutputPreview(content: string) {
+  const normalized = content.replace(/\s+$/g, '');
+  if (normalized.length <= TOOL_OUTPUT_PREVIEW_LIMIT) {
+    return {
+      content: normalized,
+      truncated: false,
+    };
+  }
+
+  return {
+    content: `${normalized.slice(0, TOOL_OUTPUT_PREVIEW_LIMIT)}\n...`,
+    truncated: true,
+  };
+}
+
+function ToolOutputBlock({
+  label,
+  content,
+  tone,
+}: {
+  label: string;
+  content: string;
+  tone: 'default' | 'danger';
+}) {
+  const preview = buildToolOutputPreview(content);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70">
+        {label}
+      </div>
+      <pre
+        className={cn(
+          'max-h-56 overflow-auto rounded-2xl border px-3 py-2.5 text-[12px] leading-5 shadow-sm whitespace-pre-wrap [overflow-wrap:anywhere]',
+          tone === 'danger'
+            ? 'border-rose-500/20 bg-rose-500/5 text-rose-950 dark:text-rose-100'
+            : 'border-border/40 bg-muted/30 text-foreground/85'
+        )}
+      >
+        {preview.content}
+      </pre>
+      {preview.truncated && (
+        <div className="text-[11px] text-muted-foreground/70">
+          输出较长，当前只展示前 {TOOL_OUTPUT_PREVIEW_LIMIT} 个字符。
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ToolRunDetails({ toolRuns }: { toolRuns: PersistedOntologyAssistantToolRun[] }) {
+  if (toolRuns.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-5 space-y-3">
+      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground/80">
+        <Terminal className="h-3.5 w-3.5" />
+        <span>本轮工具过程</span>
+      </div>
+
+      {toolRuns.map((toolRun, index) => {
+        const statusMeta = formatToolRunStatus(toolRun);
+        const hasStdout = hasVisibleText(toolRun.stdout);
+        const hasStderr = hasVisibleText(toolRun.stderr);
+        const hasOutput = hasStdout || hasStderr;
+
+        return (
+          <div
+            key={toolRun.callId || `tool-run-${index}`}
+            className="space-y-2 rounded-3xl border border-border/40 bg-card/80 p-3 shadow-sm"
+          >
+            <div className="rounded-2xl border border-border/40 bg-background/80 p-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white dark:bg-slate-200 dark:text-slate-900">
+                  tool_call
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  第 {index + 1} 次调用
+                </span>
+              </div>
+              <div className="rounded-2xl bg-muted/40 px-3 py-2 font-mono text-[12px] leading-5 text-foreground/90 [overflow-wrap:anywhere]">
+                {toolRun.command || '等待工具参数...'}
+              </div>
+              {toolRun.cwd && (
+                <div className="mt-2 text-[11px] text-muted-foreground/80 [overflow-wrap:anywhere]">
+                  cwd: {toolRun.cwd}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-border/40 bg-background/80 p-3">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <span className="rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                  tool_result
+                </span>
+                <div
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                    statusMeta.className
+                  )}
+                >
+                  {statusMeta.icon}
+                  <span>{statusMeta.label}</span>
+                  {typeof toolRun.exitCode === 'number' && (
+                    <span className="font-mono opacity-80">exit {toolRun.exitCode}</span>
+                  )}
+                  {typeof toolRun.durationMs === 'number' && (
+                    <span className="font-mono opacity-80">{(toolRun.durationMs / 1000).toFixed(2)}s</span>
+                  )}
+                </div>
+              </div>
+
+              {hasStdout && (
+                <ToolOutputBlock label="stdout" content={toolRun.stdout} tone="default" />
+              )}
+              {hasStderr && (
+                <ToolOutputBlock label="stderr" content={toolRun.stderr} tone="danger" />
+              )}
+              {!hasOutput && (
+                <div className="text-[12px] text-muted-foreground/80">
+                  {toolRun.status === 'running' ? '工具正在运行，等待返回结果...' : '本次工具调用没有可展示的输出。'}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ToolCallBlock({
+  block,
+}: {
+  block: Extract<PersistedOntologyAssistantContentBlock, { type: 'tool_call' }>;
+}) {
+  const isNer = block.toolName === 'ner';
+  const isRe = block.toolName === 're';
+
+  if (isNer || isRe) {
+    return (
+      <div className="relative overflow-hidden rounded-[28px] border border-border/30 bg-card/80 p-4 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.55)] backdrop-blur-sm">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.10),transparent_38%)]" />
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black tracking-[0.24em] uppercase text-white shadow-sm',
+                  isNer ? 'bg-cyan-600' : 'bg-indigo-600',
+                )}
+              >
+                {isNer ? <Eye className="h-3.5 w-3.5" /> : <GitCompareArrows className="h-3.5 w-3.5" />}
+                {isNer ? '观察中' : '对比分析中'}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {block.createdAt ? new Date(block.createdAt).toLocaleTimeString([], { hour12: false }) : ''}
+              </span>
+            </div>
+            <div className="max-w-[30rem] text-[13px] leading-6 text-foreground/80">
+              {isNer
+                ? '正在识别实体并把它们整理进图谱，右侧会同步出现可连接的节点。'
+                : '正在对照实体关系与上下文，准备把对比结果连成一条可读的关系链。'}
+            </div>
+          </div>
+          <div className={cn(
+            'rounded-2xl border px-3 py-2 text-[11px] font-bold',
+            isNer
+              ? 'border-cyan-500/20 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
+              : 'border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300',
+          )}>
+            {isNer ? 'NER' : 'RE'}
+          </div>
+        </div>
+        <div className="relative mt-4 rounded-2xl border border-dashed border-border/40 bg-background/60 px-4 py-3 text-[12px] leading-6 text-muted-foreground">
+          {isNer ? '观察实体抽取过程，并等待节点落图。' : '观察关系对照过程，并等待关系落线。'}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border/40 bg-card/80 p-3 shadow-sm">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white dark:bg-slate-200 dark:text-slate-900">
+          tool_call
+        </span>
+        <span className="text-[11px] text-muted-foreground">
+          {block.createdAt ? new Date(block.createdAt).toLocaleTimeString([], { hour12: false }) : ''}
+        </span>
+      </div>
+      <div className="rounded-2xl bg-muted/40 px-3 py-2 font-mono text-[12px] leading-5 text-foreground/90 [overflow-wrap:anywhere]">
+        {block.command || '等待工具参数...'}
+      </div>
+      {hasVisibleText(block.reasoning) && (
+        <div className="mt-2 text-[12px] leading-5 text-muted-foreground [overflow-wrap:anywhere]">
+          reason: {block.reasoning}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ToolResultBlock({
+  block,
+}: {
+  block: Extract<PersistedOntologyAssistantContentBlock, { type: 'tool_result' }>;
+}) {
+  const isNer = block.toolName === 'ner';
+  const isRe = block.toolName === 're';
+  const statusMeta = formatToolRunStatus({
+    callId: block.callId,
+    command: block.command,
+    status: block.status,
+    stdout: block.stdout,
+    stderr: block.stderr,
+    exitCode: block.exitCode,
+    cwd: block.cwd,
+    durationMs: block.durationMs,
+    truncated: false,
+    startedAt: block.createdAt,
+    finishedAt: block.finishedAt,
+  });
+  const hasStdout = hasVisibleText(block.stdout);
+  const hasStderr = hasVisibleText(block.stderr);
+
+  if (isNer || isRe) {
+    return (
+      <div className="rounded-[28px] border border-border/30 bg-card/80 p-4 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.55)]">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black tracking-[0.24em] uppercase text-white shadow-sm',
+                isNer ? 'bg-cyan-600' : 'bg-indigo-600',
+              )}
+            >
+              {isNer ? <Eye className="h-3.5 w-3.5" /> : <GitCompareArrows className="h-3.5 w-3.5" />}
+              {isNer ? '观察完成' : '对比完成'}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {typeof block.durationMs === 'number' ? `${(block.durationMs / 1000).toFixed(2)}s` : '已结束'}
+            </span>
+          </div>
+          <div
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold',
+              statusMeta.className,
+            )}
+          >
+            {statusMeta.icon}
+            <span>{statusMeta.label}</span>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-2xl border border-border/40 bg-background/70 p-3">
+            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70">
+              {isNer ? '抽取结果' : '关系对照'}
+            </div>
+            {hasStdout ? (
+              <ToolOutputBlock label="stdout" content={block.stdout} tone="default" />
+            ) : (
+              <div className="text-[12px] text-muted-foreground/80">
+                本次没有可直接渲染的结构化输出。
+              </div>
+            )}
+          </div>
+          <div className="rounded-2xl border border-dashed border-border/40 bg-muted/20 p-3">
+            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70">
+              图谱联动
+            </div>
+            <div className="space-y-2 text-[12px] leading-6 text-muted-foreground">
+              <div>
+                {isNer ? '左侧已转为观察卡，右侧图谱会追加新节点。' : '左侧已转为对比卡，右侧图谱会尝试连出关系线。'}
+              </div>
+              <div className="rounded-xl bg-background/70 px-3 py-2 text-foreground/80">
+                {isNer ? '节点正在落图' : '关系正在成线'}
+              </div>
+            </div>
+          </div>
+        </div>
+        {hasStderr && (
+          <div className="mt-3">
+            <ToolOutputBlock label="stderr" content={block.stderr} tone="danger" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border/40 bg-card/80 p-3 shadow-sm">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <span className="rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white">
+          tool_result
+        </span>
+        <div
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold',
+            statusMeta.className
+          )}
+        >
+          {statusMeta.icon}
+          <span>{statusMeta.label}</span>
+          {typeof block.exitCode === 'number' && (
+            <span className="font-mono opacity-80">exit {block.exitCode}</span>
+          )}
+          {typeof block.durationMs === 'number' && (
+            <span className="font-mono opacity-80">{(block.durationMs / 1000).toFixed(2)}s</span>
+          )}
+        </div>
+      </div>
+
+      {hasStdout && (
+        <ToolOutputBlock label="stdout" content={block.stdout} tone="default" />
+      )}
+      {hasStderr && (
+        <ToolOutputBlock label="stderr" content={block.stderr} tone="danger" />
+      )}
+      {!hasStdout && !hasStderr && (
+        <div className="text-[12px] text-muted-foreground/80">
+          本次工具调用没有可展示的输出。
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MessageContentBlocks({
+  blocks,
+}: {
+  blocks: PersistedOntologyAssistantContentBlock[];
+}) {
+  if (blocks.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3">
+      {blocks.map((block) => {
+        if (block.type === 'assistant') {
+          if (!hasVisibleText(block.content)) {
+            return null;
+          }
+
+          return (
+            <div key={block.id} className="group/msg flex flex-col items-start">
+              <div className="flex-1 min-w-0 w-full text-foreground/90">
+                <AssistantMarkdown content={block.content} />
+              </div>
+              {block.phase === 'completed' && (
+                <div className="mt-1 animate-in fade-in duration-500">
+                  <MessageCopyButton content={block.content} />
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        if (block.type === 'tool_call') {
+          return <ToolCallBlock key={block.id} block={block} />;
+        }
+
+        if (block.type === 'tool_result') {
+          return <ToolResultBlock key={block.id} block={block} />;
+        }
+
+        return null;
+      })}
+    </div>
+  );
 }
 
 function MessageCopyButton({ content }: { content: string }) {
@@ -44,12 +487,14 @@ export function ChatArea({
   onAsk,
   onStop,
   onDraftChange,
+  onUploadFile,
   isBusy,
   renderSettings,
   renderExtraActions
 }: ChatAreaProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showScrollButton, setShowScrollButton] = React.useState(false);
   const { messages, draftQuestion, loading, error, statusMessage } = activeSession;
   const lastMessage = messages[messages.length - 1];
@@ -96,6 +541,19 @@ export function ChatArea({
     }
   };
 
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      await onUploadFile(file);
+    } finally {
+      event.target.value = '';
+    }
+  };
+
   return (
     <div className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground">
       {/* Floating Header for Settings/Flow Toggle */}
@@ -133,6 +591,11 @@ export function ChatArea({
             {messages.map((message: any, index: number) => {
               const prevMessage = index > 0 ? messages[index - 1] : null;
               const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
+              const contentBlocks = Array.isArray(message.contentBlocks) ? message.contentBlocks : [];
+              const toolRuns = Array.isArray(message.toolRuns) ? message.toolRuns : [];
+              const hasAssistantAnswer = hasVisibleText(message.answer);
+              const hasContentBlocks = contentBlocks.length > 0;
+              const hasAssistantContent = hasContentBlocks || hasAssistantAnswer || toolRuns.length > 0;
 
               const isUserFollowUp = prevMessage && !prevMessage.answer;
               const hasConsecutiveUser = nextMessage && !message.answer;
@@ -154,13 +617,20 @@ export function ChatArea({
                     )}
                   </div>
 
-                  {/* Agent Message — Only show if there is an answer */}
-                  {message.answer && (
+                  {/* Agent Message — Show answer and inline tool trace for the same round */}
+                  {hasAssistantContent && (
                     <div className="group/msg flex flex-col items-start px-1 mt-8 transition-all">
                       <div className="flex-1 min-w-0 w-full text-foreground/90">
-                        <AssistantMarkdown content={message.answer} />
+                        {hasContentBlocks ? (
+                          <MessageContentBlocks blocks={contentBlocks} />
+                        ) : (
+                          <ToolRunDetails toolRuns={toolRuns} />
+                        )}
+                        {!hasContentBlocks && hasAssistantAnswer && (
+                          <AssistantMarkdown content={message.answer} />
+                        )}
                       </div>
-                      {(!loading || index < messages.length - 1) && (
+                      {!hasContentBlocks && hasAssistantAnswer && (!loading || index < messages.length - 1) && (
                         <div className="mt-1 animate-in fade-in duration-500">
                           <MessageCopyButton content={message.answer} />
                         </div>
@@ -230,6 +700,23 @@ export function ChatArea({
             {/* Toolbar Row */}
             <div className="flex items-center justify-end px-1">
               <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(event) => {
+                    void handleFileChange(event);
+                  }}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-10 h-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                  title="上传文件到当前会话 runtime"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
                 <Button
                   size="icon"
                   onClick={() => (loading ? onStop() : onAsk())}

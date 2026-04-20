@@ -17,8 +17,14 @@ venv/
 # Logs & Temp
 *.log
 .run-logs/
+tmp-qagent-stream-debug/
 scratch_*.py
 .DS_Store
+
+# Generated knowledge exports
+knowledge-data/store/**/wikimg_export.json
+Ontology_Factory/wiki/**/wikimg_export.json
+OntoGit/xiaogugit/storage/**/wikimg_export.json
 
 # IDE
 .vscode/

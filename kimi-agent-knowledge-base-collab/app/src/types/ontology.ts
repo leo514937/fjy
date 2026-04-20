@@ -50,6 +50,11 @@ export interface Entity {
   definition: string;
   properties: Record<string, any>;
   formatted_sections?: FormattedSection[];
+  display_level?: number;
+  visible?: boolean;
+  highlight?: boolean;
+  pinned?: boolean;
+  focus?: boolean;
 }
 
 export interface Relation {
@@ -98,6 +103,9 @@ export interface CrossReference {
   target: string;
   relation: string;
   description: string;
+  display_level?: number;
+  visible?: boolean;
+  highlight?: boolean;
 }
 
 export interface OntologyModule {

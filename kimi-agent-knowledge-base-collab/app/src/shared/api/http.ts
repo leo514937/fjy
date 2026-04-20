@@ -1,6 +1,17 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+const ENV_API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+const DEV_FALLBACK_API_BASE = typeof window !== 'undefined' && (
+  window.location.port === '5173'
+  || window.location.port === '4173'
+)
+  ? 'http://localhost:8787'
+  : '';
+const API_BASE = ENV_API_BASE || DEV_FALLBACK_API_BASE;
 
 export function buildApiUrl(path: string): string {
+  if (!API_BASE) {
+    return path;
+  }
+
   return `${API_BASE}${path}`;
 }
 

@@ -5,7 +5,11 @@ import json
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
+import urllib.parse
+from contextlib import contextmanager
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 
@@ -79,6 +83,135 @@ def run_git(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         check=False,
     )
+
+
+@contextmanager
+def fake_ontogit_gateway() -> dict[str, object]:
+    state: dict[str, object] = {
+        "writes": [],
+        "deletes": [],
+        "versions": {},
+        "api_keys": [],
+    }
+
+    class Handler(BaseHTTPRequestHandler):
+        server_version = "FakeOntoGit/1.0"
+
+        def log_message(self, format: str, *args: object) -> None:
+            return
+
+        def _read_json(self) -> dict[str, object]:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            raw = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
+            return json.loads(raw)
+
+        def _write_json(self, status_code: int, payload: dict[str, object]) -> None:
+            rendered = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(status_code)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(rendered)))
+            self.end_headers()
+            self.wfile.write(rendered)
+
+        def do_POST(self) -> None:
+            state["api_keys"].append(self.headers.get("X-API-Key", ""))
+            if self.path == "/xg/write":
+                payload = self._read_json()
+                state["writes"].append(payload)
+                key = (str(payload["project_id"]), str(payload["filename"]))
+                versions = state["versions"].setdefault(key, [])
+                next_version = len(versions) + 1
+                versions.append(
+                    {
+                        "version_id": next_version,
+                        "data": payload["data"],
+                        "basevision": payload["basevision"],
+                    }
+                )
+                self._write_json(
+                    200,
+                    {
+                        "status": "success",
+                        "version_id": next_version,
+                        "currvision": next_version,
+                        "basevision": payload["basevision"],
+                        "commit_id": f"commit-{next_version}",
+                    },
+                )
+                return
+            if self.path == "/xg/delete":
+                payload = self._read_json()
+                state.setdefault("deletes", []).append(payload)
+                key = (str(payload["project_id"]), str(payload["filename"]))
+                versions = state["versions"].setdefault(key, [])
+                next_version = len(versions) + 1
+                versions.append(
+                    {
+                        "version_id": next_version,
+                        "data": None,
+                        "basevision": len(versions),
+                    }
+                )
+                self._write_json(
+                    200,
+                    {
+                        "status": "success",
+                        "version_id": next_version,
+                        "currvision": next_version,
+                        "basevision": payload.get("basevision", len(versions) - 1),
+                        "commit_id": f"delete-{next_version}",
+                    },
+                )
+                return
+            self._write_json(404, {"detail": "not found"})
+
+        def do_GET(self) -> None:
+            state["api_keys"].append(self.headers.get("X-API-Key", ""))
+            if self.path.startswith("/xg/timelines/"):
+                project_id = urllib.parse.unquote(self.path[len("/xg/timelines/"):])
+                filenames = sorted(
+                    {
+                        filename
+                        for stored_project_id, filename in state["versions"].keys()
+                        if stored_project_id == project_id
+                    }
+                )
+                timelines = []
+                for filename in filenames:
+                    versions = state["versions"].get((project_id, filename), [])
+                    timelines.append(
+                        {
+                            "filename": filename,
+                            "version_count": len(versions),
+                            "latest_version_id": versions[-1]["version_id"] if versions else 0,
+                            "history": versions,
+                        }
+                    )
+                self._write_json(200, {"timelines": timelines})
+                return
+            if self.path.startswith("/xg/read/"):
+                tail = self.path[len("/xg/read/"):]
+                project_id, _, filename = tail.partition("/")
+                project_id = urllib.parse.unquote(project_id)
+                filename = urllib.parse.unquote(filename)
+                versions = state["versions"].get((project_id, filename), [])
+                if not versions:
+                    self._write_json(404, {"detail": "not found"})
+                    return
+                self._write_json(200, {"data": versions[-1]["data"]})
+                return
+            self._write_json(404, {"detail": "not found"})
+
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    state["gateway_url"] = f"http://127.0.0.1:{httpd.server_address[1]}"
+    try:
+        yield state
+    finally:
+        httpd.shutdown()
+        thread.join(timeout=5)
+        httpd.server_close()
 
 
 class WikiCliTests(unittest.TestCase):
@@ -442,12 +575,13 @@ class WikiCliTests(unittest.TestCase):
             self.assertIn("bad-markdown-link", codes)
 
     @unittest.skipIf(sys.version_info[:2] < (3, 10), "wikimg requires Python 3.10+")
-    def test_export_json_appends_snapshot_to_ontogit_history(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.TemporaryDirectory() as storage_dir:
+    def test_export_json_syncs_payload_to_real_ontogit_api(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, fake_ontogit_gateway() as gateway:
             workspace = Path(temp_dir)
             create_minimal_kimi_workspace(workspace)
             extra_env = {
-                "WIKIMG_ONTOGIT_STORAGE_ROOT": storage_dir,
+                "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                "WIKIMG_ONTOGIT_API_KEY": "test-key",
                 "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
                 "WIKIMG_ONTOGIT_FILENAME": "wikimg_export.json",
             }
@@ -455,34 +589,164 @@ class WikiCliTests(unittest.TestCase):
             export_result = run_cli("export", "--profile", "kimi", "--json", cwd=workspace, extra_env=extra_env)
             self.assertEqual(export_result.returncode, 0, export_result.stdout)
 
-            project_dir = Path(storage_dir) / "demo"
-            self.assertTrue((project_dir / ".git").exists())
-
-            export_file = project_dir / "wikimg_export.json"
-            self.assertTrue(export_file.exists())
-            stored_payload = json.loads(export_file.read_text(encoding="utf-8"))
-            self.assertEqual(stored_payload["project_id"], "demo")
-            self.assertEqual(stored_payload["filename"], "wikimg_export.json")
-            self.assertEqual(len(stored_payload["history"]), 1)
-            self.assertEqual(stored_payload["history"][0]["sequence"], 1)
-            self.assertEqual(stored_payload["history"][0]["profile"], "kimi")
-            self.assertEqual(
-                stored_payload["history"][0]["payload"]["knowledgeGraph"]["statistics"]["total_entities"],
-                1,
-            )
-
-            log_result = run_git("log", "--format=%B", "-1", cwd=project_dir)
-            self.assertEqual(log_result.returncode, 0, log_result.stderr)
-            self.assertIn("XG-Filename: wikimg_export.json", log_result.stdout)
-            self.assertIn("XG-VersionId: 1", log_result.stdout)
+            payload = json.loads(export_result.stdout)
+            self.assertEqual(len(gateway["writes"]), 1)
 
     @unittest.skipIf(sys.version_info[:2] < (3, 10), "wikimg requires Python 3.10+")
-    def test_export_json_keeps_existing_history_and_increments_version(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.TemporaryDirectory() as storage_dir:
+    def test_sync_wiki_directory_writes_files_and_removes_deleted_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, fake_ontogit_gateway() as gateway:
+            workspace = Path(temp_dir)
+            result = run_cli("init", cwd=workspace)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            doc_a = workspace / "wiki" / "common" / "alpha.md"
+            doc_a.parent.mkdir(parents=True, exist_ok=True)
+            doc_a.write_text("# Alpha\n\nFirst version.\n", encoding="utf-8")
+
+            doc_b = workspace / "wiki" / "domain" / "beta.json"
+            doc_b.parent.mkdir(parents=True, exist_ok=True)
+            doc_b.write_text(json.dumps({"name": "beta", "value": 1}, ensure_ascii=False), encoding="utf-8")
+
+            first_sync = run_cli(
+                "sync",
+                "--project-id",
+                "demo",
+                cwd=workspace,
+                extra_env={
+                    "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                    "WIKIMG_ONTOGIT_API_KEY": "test-key",
+                    "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
+                },
+            )
+            self.assertEqual(first_sync.returncode, 0, first_sync.stdout)
+            self.assertIn("written=2", first_sync.stdout)
+            self.assertEqual(len(gateway["writes"]), 2)
+
+            doc_a.write_text("# Alpha\n\nSecond version.\n", encoding="utf-8")
+            doc_b.unlink()
+
+            second_sync = run_cli(
+                "sync",
+                "--project-id",
+                "demo",
+                cwd=workspace,
+                extra_env={
+                    "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                    "WIKIMG_ONTOGIT_API_KEY": "test-key",
+                    "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
+                },
+            )
+            self.assertEqual(second_sync.returncode, 0, second_sync.stdout)
+            self.assertIn("written=1", second_sync.stdout)
+            self.assertIn("deleted=1", second_sync.stdout)
+            self.assertEqual(len(gateway["deletes"]), 1)
+            self.assertEqual(gateway["deletes"][0]["filename"], "beta.json")
+            self.assertEqual(gateway["writes"][0]["filename"], "alpha.json")
+            self.assertEqual(gateway["writes"][1]["filename"], "beta.json")
+            self.assertEqual(gateway["writes"][0]["project_id"], "common")
+            self.assertEqual(gateway["writes"][1]["project_id"], "domain")
+            self.assertEqual(gateway["writes"][0]["basevision"], 0)
+            self.assertEqual(gateway["writes"][1]["basevision"], 0)
+            self.assertEqual(gateway["writes"][2]["filename"], "alpha.json")
+            self.assertEqual(gateway["writes"][2]["project_id"], "common")
+            self.assertEqual(gateway["writes"][2]["basevision"], 1)
+            self.assertEqual(gateway["writes"][0]["data"], {"content": "# Alpha\n\nFirst version.\n"})
+            self.assertEqual(gateway["writes"][2]["data"], {"content": "# Alpha\n\nSecond version.\n"})
+            self.assertTrue(all(item == "test-key" for item in gateway["api_keys"]))
+
+    @unittest.skipIf(sys.version_info[:2] < (3, 10), "wikimg requires Python 3.10+")
+    def test_fetch_wiki_directory_writes_local_md_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, fake_ontogit_gateway() as gateway:
+            workspace = Path(temp_dir)
+            result = run_cli("init", cwd=workspace)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            doc = workspace / "wiki" / "common" / "alpha.md"
+            doc.parent.mkdir(parents=True, exist_ok=True)
+            doc.write_text("# Alpha\n\nFirst version.\n", encoding="utf-8")
+
+            sync_result = run_cli(
+                "sync",
+                "--project-id",
+                "demo",
+                cwd=workspace,
+                extra_env={
+                    "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                    "WIKIMG_ONTOGIT_API_KEY": "test-key",
+                    "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
+                },
+            )
+            self.assertEqual(sync_result.returncode, 0, sync_result.stdout)
+
+            doc.unlink()
+            fetch_result = run_cli(
+                "fetch",
+                "--project-id",
+                "common",
+                cwd=workspace,
+                extra_env={
+                    "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                    "WIKIMG_ONTOGIT_API_KEY": "test-key",
+                    "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
+                },
+            )
+            self.assertEqual(fetch_result.returncode, 0, fetch_result.stdout)
+            self.assertIn("written=1", fetch_result.stdout)
+            self.assertTrue((workspace / "wiki" / "common" / "alpha.md").exists())
+            self.assertEqual(
+                (workspace / "wiki" / "common" / "alpha.md").read_text(encoding="utf-8"),
+                "# Alpha\n\nFirst version.\n",
+            )
+
+    @unittest.skipIf(sys.version_info[:2] < (3, 10), "wikimg requires Python 3.10+")
+    def test_sync_wiki_directory_is_idempotent_when_files_do_not_change(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, fake_ontogit_gateway() as gateway:
+            workspace = Path(temp_dir)
+            result = run_cli("init", cwd=workspace)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            doc_a = workspace / "wiki" / "common" / "alpha.md"
+            doc_a.parent.mkdir(parents=True, exist_ok=True)
+            doc_a.write_text("# Alpha\n\nFirst version.\n", encoding="utf-8")
+
+            first_sync = run_cli(
+                "sync",
+                "--project-id",
+                "demo",
+                cwd=workspace,
+                extra_env={
+                    "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                    "WIKIMG_ONTOGIT_API_KEY": "test-key",
+                    "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
+                },
+            )
+            self.assertEqual(first_sync.returncode, 0, first_sync.stdout)
+            self.assertIn("written=1", first_sync.stdout)
+            self.assertEqual(len(gateway["writes"]), 1)
+
+            second_sync = run_cli(
+                "sync",
+                "--project-id",
+                "demo",
+                cwd=workspace,
+                extra_env={
+                    "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                    "WIKIMG_ONTOGIT_API_KEY": "test-key",
+                    "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
+                },
+            )
+            self.assertEqual(second_sync.returncode, 0, second_sync.stdout)
+            self.assertIn("written=0", second_sync.stdout)
+            self.assertEqual(len(gateway["writes"]), 1)
+
+    @unittest.skipIf(sys.version_info[:2] < (3, 10), "wikimg requires Python 3.10+")
+    def test_export_json_reads_latest_basevision_before_write(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, fake_ontogit_gateway() as gateway:
             workspace = Path(temp_dir)
             create_minimal_kimi_workspace(workspace)
             extra_env = {
-                "WIKIMG_ONTOGIT_STORAGE_ROOT": storage_dir,
+                "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                "WIKIMG_ONTOGIT_API_KEY": "test-key",
                 "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
                 "WIKIMG_ONTOGIT_FILENAME": "wikimg_export.json",
             }
@@ -493,48 +757,40 @@ class WikiCliTests(unittest.TestCase):
             second_export = run_cli("export", "--profile", "kimi", "--json", cwd=workspace, extra_env=extra_env)
             self.assertEqual(second_export.returncode, 0, second_export.stdout)
 
-            export_file = Path(storage_dir) / "demo" / "wikimg_export.json"
-            stored_payload = json.loads(export_file.read_text(encoding="utf-8"))
-            self.assertEqual(len(stored_payload["history"]), 2)
-            self.assertEqual(stored_payload["history"][0]["sequence"], 1)
-            self.assertEqual(stored_payload["history"][1]["sequence"], 2)
-            self.assertEqual(
-                stored_payload["history"][0]["payload"]["knowledgeGraph"]["statistics"]["total_entities"],
-                stored_payload["history"][1]["payload"]["knowledgeGraph"]["statistics"]["total_entities"],
-            )
-
-            log_result = run_git("log", "--format=%B", "-1", cwd=Path(storage_dir) / "demo")
-            self.assertEqual(log_result.returncode, 0, log_result.stderr)
-            self.assertIn("XG-VersionId: 2", log_result.stdout)
+            self.assertEqual(len(gateway["writes"]), 2)
+            self.assertEqual(gateway["writes"][0]["basevision"], 0)
+            self.assertEqual(gateway["writes"][1]["basevision"], 1)
+            versions = gateway["versions"][("demo", "wikimg_export.json")]
+            self.assertEqual(len(versions), 2)
+            self.assertEqual(versions[-1]["version_id"], 2)
 
     @unittest.skipIf(sys.version_info[:2] < (3, 10), "wikimg requires Python 3.10+")
-    def test_export_json_does_not_overwrite_invalid_ontogit_file(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.TemporaryDirectory() as storage_dir:
+    def test_export_json_warns_when_ontogit_sync_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
             create_minimal_kimi_workspace(workspace)
-            project_dir = Path(storage_dir) / "demo"
-            project_dir.mkdir(parents=True, exist_ok=True)
-            export_file = project_dir / "wikimg_export.json"
-            export_file.write_text('{"broken": true}\n', encoding="utf-8")
             extra_env = {
-                "WIKIMG_ONTOGIT_STORAGE_ROOT": storage_dir,
+                "WIKIMG_ONTOGIT_GATEWAY_URL": "http://127.0.0.1:9",
+                "WIKIMG_ONTOGIT_API_KEY": "test-key",
                 "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
                 "WIKIMG_ONTOGIT_FILENAME": "wikimg_export.json",
+                "WIKIMG_ONTOGIT_TIMEOUT_SECONDS": "0.2",
             }
 
             export_result = run_cli("export", "--profile", "kimi", "--json", cwd=workspace, extra_env=extra_env)
             self.assertEqual(export_result.returncode, 0, export_result.stdout)
             export_payload = json.loads(export_result.stdout)
             self.assertEqual(export_payload["knowledgeGraph"]["statistics"]["total_entities"], 1)
-            self.assertEqual(export_file.read_text(encoding="utf-8"), '{"broken": true}\n')
+            self.assertIn("Warning: OntoGit sync failed:", export_result.stderr)
 
     @unittest.skipIf(sys.version_info[:2] < (3, 10), "wikimg requires Python 3.10+")
     def test_export_summary_output_still_syncs_to_ontogit(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir, tempfile.TemporaryDirectory() as storage_dir:
+        with tempfile.TemporaryDirectory() as temp_dir, fake_ontogit_gateway() as gateway:
             workspace = Path(temp_dir)
             create_minimal_kimi_workspace(workspace)
             extra_env = {
-                "WIKIMG_ONTOGIT_STORAGE_ROOT": storage_dir,
+                "WIKIMG_ONTOGIT_GATEWAY_URL": str(gateway["gateway_url"]),
+                "WIKIMG_ONTOGIT_API_KEY": "test-key",
                 "WIKIMG_ONTOGIT_PROJECT_ID": "demo",
                 "WIKIMG_ONTOGIT_FILENAME": "wikimg_export.json",
             }
@@ -542,10 +798,7 @@ class WikiCliTests(unittest.TestCase):
             export_result = run_cli("export", "--profile", "kimi", cwd=workspace, extra_env=extra_env)
             self.assertEqual(export_result.returncode, 0, export_result.stdout)
             self.assertIn("Exported profile=kimi entities=1 relations=0 docs=1", export_result.stdout)
-
-            export_file = Path(storage_dir) / "demo" / "wikimg_export.json"
-            stored_payload = json.loads(export_file.read_text(encoding="utf-8"))
-            self.assertEqual(len(stored_payload["history"]), 1)
+            self.assertEqual(len(gateway["writes"]), 1)
 
     @unittest.skipIf(sys.version_info[:2] < (3, 10), "wikimg requires Python 3.10+")
     def test_ingest_json_normalizes_to_standard_markdown(self) -> None:

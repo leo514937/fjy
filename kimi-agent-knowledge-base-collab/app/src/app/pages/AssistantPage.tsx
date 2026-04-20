@@ -11,6 +11,7 @@ interface AssistantPageProps {
   onBusinessPromptChange: (value: string) => void;
   onDraftChange: (value: string) => void;
   onModelNameChange: (value: string) => void;
+  onUploadFile: (file: File) => Promise<void>;
   onStop: () => void;
   selectedEntityName?: string;
 }

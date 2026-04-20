@@ -23,14 +23,21 @@ export class WikiWorkspaceWriterService {
       throw new Error("slug 非法，禁止路径穿越");
     }
 
-    const filePath = path.resolve(this.docsRoot, normalizedLayer, `${safeSlug}.md`);
+    const flattenedName = safeSlug.replace(/\//g, "_");
+    const jsonFileName = flattenedName.toLowerCase().endsWith(".json")
+      ? flattenedName
+      : `${path.posix.parse(flattenedName).name}.json`;
+    const filePath = path.resolve(this.docsRoot, normalizedLayer, jsonFileName);
     const layerRoot = path.resolve(this.docsRoot, normalizedLayer);
     if (!filePath.startsWith(layerRoot)) {
       throw new Error("slug 非法，目标路径越界");
     }
 
     await mkdir(path.dirname(filePath), { recursive: true });
-    await writeFile(filePath, String(markdown || ""), "utf8");
+    const payload = {
+      content: String(markdown || ""),
+    };
+    await writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
     return {
       status: "success",
       path: filePath,

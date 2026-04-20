@@ -206,37 +206,7 @@ const markdownComponents: Components = {
 };
 
 function preprocessMarkdown(content: string): string {
-  if (!content) return content;
-
-  // Improved greedy heuristic: find potential JSON blocks starting with { or [ and ending with } or ]
-  // We use a broader search to capture nested structures that non-greedy might miss.
-  const jsonPattern = /(\{[^]*\}|\[[^]*\])/g;
-  
-  return content.replace(jsonPattern, (match) => {
-    const trimmed = match.trim();
-    if (trimmed.length < 10) return match;
-
-    // Avoid double-processing if already in a code block
-    if (content.indexOf('```' + trimmed) !== -1 || content.indexOf('```json\n' + trimmed) !== -1) {
-      return match;
-    }
-
-    try {
-      // Attempt to parse the block. We need to be careful as greediness might catch non-json text around it.
-      // So we'll try to refine the match to find the valid JSON subset.
-      const parsed = JSON.parse(trimmed);
-      
-      // If parsed successfully as object/array, format and wrap
-      if (typeof parsed === 'object' && parsed !== null) {
-        return `\n\n\`\`\`json\n${JSON.stringify(parsed, null, 2)}\n\`\`\`\n\n`;
-      }
-    } catch (e) {
-      // If parsing fails, try to find the *first* valid JSON within this block if it was too greedy
-      // This helps if there is trailing text like "JSON error: { ... } please check logs"
-    }
-    
-    return match;
-  });
+  return content;
 }
 
 export function AssistantMarkdown({

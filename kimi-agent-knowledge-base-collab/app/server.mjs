@@ -1,5 +1,5 @@
 import { createServer, request as httpRequest } from "node:http";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
@@ -15,6 +15,7 @@ const XG_GATEWAY_API_KEY = process.env.XG_GATEWAY_API_KEY || process.env.GATEWAY
 const {
   knowledgeBaseService,
   assistantSessionStateService,
+  conversationGraphStateService,
   localWorkspaceService,
   qagentService,
   appRoot,
@@ -99,10 +100,108 @@ function parseConversationHistory(value) {
         ? {
             question: typeof item.question === "string" ? item.question : "",
             answer: typeof item.answer === "string" ? item.answer : "",
+            toolRuns: Array.isArray(item.toolRuns) ? item.toolRuns : [],
+            contentBlocks: Array.isArray(item.contentBlocks) ? item.contentBlocks : [],
           }
         : null
     ))
     .filter(Boolean);
+}
+
+function normalizeConversationHistoryForPrompt(value, limit = Number.POSITIVE_INFINITY) {
+  const seen = new Set();
+  const history = [];
+
+  for (const item of parseConversationHistory(value)) {
+    const question = typeof item.question === "string" ? item.question.trim() : "";
+    const answer = typeof item.answer === "string" ? item.answer.trim() : "";
+    if (!question || !answer) {
+      continue;
+    }
+
+    const signature = `${question}\u0000${answer}`;
+    if (seen.has(signature)) {
+      continue;
+    }
+
+    seen.add(signature);
+    history.push({
+      question,
+      answer,
+      toolRuns: Array.isArray(item.toolRuns) ? item.toolRuns : [],
+      contentBlocks: Array.isArray(item.contentBlocks) ? item.contentBlocks : [],
+    });
+  }
+
+  if (limit === Number.POSITIVE_INFINITY) {
+    return history;
+  }
+
+  return history.slice(-limit);
+}
+
+function extractPersistedConversationHistory(state, conversationId, limit = Number.POSITIVE_INFINITY) {
+  if (!conversationId || typeof conversationId !== "string") {
+    return [];
+  }
+
+  const sessions = Array.isArray(state?.sessions) ? state.sessions : [];
+  const session = sessions.find((item) => item && typeof item === "object" && item.id === conversationId);
+  const messages = Array.isArray(session?.messages) ? session.messages : [];
+
+  const history = messages
+    .map((message) => {
+    const question = typeof message?.question === "string" ? message.question.trim() : "";
+    const answer = typeof message?.answer === "string" ? message.answer.trim() : "";
+    if (!question || !answer) {
+      return null;
+    }
+    return {
+      question,
+      answer,
+      toolRuns: Array.isArray(message?.toolRuns) ? message.toolRuns : [],
+      contentBlocks: Array.isArray(message?.contentBlocks) ? message.contentBlocks : [],
+    };
+  })
+  .filter(Boolean);
+
+  if (limit === Number.POSITIVE_INFINITY) {
+    return history;
+  }
+
+  return history.slice(-limit);
+}
+
+function mergeConversationHistories(primary, fallback, limit = Number.POSITIVE_INFINITY) {
+  const seen = new Set();
+  const merged = [];
+
+  for (const item of [...fallback, ...primary]) {
+    const question = typeof item?.question === "string" ? item.question.trim() : "";
+    const answer = typeof item?.answer === "string" ? item.answer.trim() : "";
+    if (!question || !answer) {
+      continue;
+    }
+
+    const signature = `${question}\u0000${answer}`;
+    if (seen.has(signature)) {
+      continue;
+    }
+
+    seen.add(signature);
+    merged.push({
+      question,
+      answer,
+      toolRuns: Array.isArray(item?.toolRuns) ? item.toolRuns : [],
+      contentBlocks: Array.isArray(item?.contentBlocks) ? item.contentBlocks : [],
+    });
+  }
+
+  if (limit === Number.POSITIVE_INFINITY) {
+    return merged;
+  }
+
+  return merged.slice(-limit);
 }
 
 async function readRequestBodyBuffer(req) {
@@ -162,7 +261,17 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/knowledge-graph") {
+      if (url.searchParams.get("refresh") === "1" && typeof knowledgeBaseService.repository?.invalidateCache === "function") {
+        knowledgeBaseService.repository.invalidateCache();
+      }
       sendJson(res, 200, await knowledgeBaseService.getKnowledgeGraph());
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/knowledge-graph/slice") {
+      const body = await parseBody(req);
+      const refs = Array.isArray(body?.refs) ? body.refs.filter((ref) => typeof ref === "string") : [];
+      sendJson(res, 200, await knowledgeBaseService.getKnowledgeGraphSlice(refs));
       return;
     }
 
@@ -407,7 +516,16 @@ const server = createServer(async (req, res) => {
       const conversationId = typeof body.conversationId === "string" ? body.conversationId : undefined;
       const businessPrompt = typeof body.businessPrompt === "string" ? body.businessPrompt : undefined;
       const modelName = typeof body.modelName === "string" ? body.modelName : undefined;
-      const conversationHistory = parseConversationHistory(body.conversationHistory);
+      const requestConversationHistory = normalizeConversationHistoryForPrompt(body.conversationHistory);
+      const persistedState = await assistantSessionStateService.load();
+      const persistedConversationHistory = extractPersistedConversationHistory(
+        persistedState,
+        conversationId,
+      );
+      const conversationHistory = mergeConversationHistories(
+        requestConversationHistory,
+        persistedConversationHistory,
+      );
 
       if (!question) {
         sendJson(res, 400, { error: "question is required" });
@@ -452,6 +570,71 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && url.pathname === "/api/chat/graph") {
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "";
+      if (!conversationId) {
+        sendJson(res, 400, { error: "conversationId is required" });
+        return;
+      }
+
+      sendJson(res, 200, await conversationGraphStateService.load(conversationId));
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/chat/graph") {
+      const body = await parseBody(req);
+      const conversationId = typeof body.conversationId === "string" ? body.conversationId.trim() : "";
+      if (!conversationId) {
+        sendJson(res, 400, { error: "conversationId is required" });
+        return;
+      }
+
+      sendJson(res, 200, await conversationGraphStateService.save(body));
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/chat/upload") {
+      const body = await parseBody(req);
+      const conversationId = typeof body.conversationId === "string" ? body.conversationId.trim() : "";
+      const fileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
+      const contentBase64 = typeof body.contentBase64 === "string" ? body.contentBase64.trim() : "";
+      const mimeType = typeof body.mimeType === "string" ? body.mimeType.trim() : "application/octet-stream";
+
+      if (!conversationId) {
+        sendJson(res, 400, { error: "conversationId is required" });
+        return;
+      }
+      if (!fileName) {
+        sendJson(res, 400, { error: "fileName is required" });
+        return;
+      }
+      if (!contentBase64) {
+        sendJson(res, 400, { error: "contentBase64 is required" });
+        return;
+      }
+
+      const runtimeRoot = qagentService.getConversationRuntimeRoot(conversationId);
+      const uploadsDir = path.join(runtimeRoot, "uploads");
+      const safeFileName = fileName.replace(/[\\/]+/g, "_").replace(/\0/g, "").trim() || "upload.bin";
+      const filePath = path.join(uploadsDir, safeFileName);
+
+      await mkdir(uploadsDir, { recursive: true });
+      await writeFile(filePath, Buffer.from(contentBase64, "base64"));
+
+      sendJson(res, 200, {
+        ok: true,
+        conversationId,
+        runtimeRoot,
+        uploadsDir,
+        filePath,
+        fileName: safeFileName,
+        mimeType,
+      });
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/chat/stream") {
       const body = await parseBody(req);
       const question = typeof body.question === "string" ? body.question.trim() : "";
@@ -459,7 +642,16 @@ const server = createServer(async (req, res) => {
       const conversationId = typeof body.conversationId === "string" ? body.conversationId : undefined;
       const businessPrompt = typeof body.businessPrompt === "string" ? body.businessPrompt : undefined;
       const modelName = typeof body.modelName === "string" ? body.modelName : undefined;
-      const conversationHistory = parseConversationHistory(body.conversationHistory);
+      const requestConversationHistory = normalizeConversationHistoryForPrompt(body.conversationHistory);
+      const persistedState = await assistantSessionStateService.load();
+      const persistedConversationHistory = extractPersistedConversationHistory(
+        persistedState,
+        conversationId,
+      );
+      const conversationHistory = mergeConversationHistories(
+        requestConversationHistory,
+        persistedConversationHistory,
+      );
 
       if (!question) {
         sendJson(res, 400, { error: "question is required" });
@@ -493,6 +685,9 @@ const server = createServer(async (req, res) => {
             onAnswerDelta(delta) {
               writeSse(res, "answer_delta", { delta });
             },
+            onAssistantCompleted(assistantTurn) {
+              writeSse(res, "assistant_completed", assistantTurn);
+            },
             onToolStarted(toolRun) {
               writeSse(res, "tool_started", toolRun);
             },
@@ -515,7 +710,17 @@ const server = createServer(async (req, res) => {
           }
         );
 
-        if (!result.ok) {
+        const isGracefulMaxStepStop = (
+          result.raw
+          && typeof result.raw === "object"
+          && result.raw.status === "success"
+          && (
+            result.raw.code === "run.empty_answer"
+            || result.raw.code === "run.completed"
+          )
+        );
+
+        if (!result.ok && !isGracefulMaxStepStop) {
           writeSse(res, "error", {
             message: result.error,
             context,
@@ -531,6 +736,7 @@ const server = createServer(async (req, res) => {
           context,
           raw: result.raw,
           stderr: result.stderr,
+          warning: !result.ok ? result.error : undefined,
         });
         streamCompleted = true;
         res.end();

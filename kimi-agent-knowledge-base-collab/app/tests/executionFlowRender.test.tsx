@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { ExecutionFlow } from '../src/components/assistant/ExecutionFlow';
 
-test('ExecutionFlow 优先展示语义状态，并保留调试信息展开区', () => {
+test('ExecutionFlow 优先展示语义状态和阶段明细', () => {
   const html = renderToStaticMarkup(
     <ExecutionFlow
       executionStages={[
@@ -51,7 +51,6 @@ test('ExecutionFlow 优先展示语义状态，并保留调试信息展开区', 
   assert.match(html, /思考中\.\.\./);
   assert.match(html, /观察中\.\.\./);
   assert.match(html, /正在整理上下文/);
-  assert.match(html, /dir/);
-  assert.match(html, /file-a/);
+  assert.match(html, /0.13s/);
   assert.doesNotMatch(html, />success</);
 });

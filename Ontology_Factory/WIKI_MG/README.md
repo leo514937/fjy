@@ -49,6 +49,7 @@ wikimg doctor
 wikimg show domain:getting-started --json
 wikimg export --profile kimi --json
 wikimg validate --profile kimi --json
+wikimg sync --project-id demo
 ```
 
 ## Commands
@@ -66,6 +67,7 @@ wikimg validate --profile kimi --json
 - `wikimg show <ref> --json`
 - `wikimg export --profile <name> --json`
 - `wikimg validate --profile <name> --json`
+- `wikimg sync --project-id <project_id>`
 
 ## Document References
 
@@ -103,6 +105,18 @@ not marked as `page_kind: meta`. The document `layer` is derived from the
 top-level directory and exported alongside each entity. Export statistics also
 include `layers` and `layer_counts` so downstream applications can distinguish
 shared knowledge, business nodes, and private drafts.
+
+## OntoGit Sync
+
+If you want to mirror the local `wiki/` directory into OntoGit, use:
+
+```bash
+wikimg sync --project-id demo
+```
+
+The sync command walks the `wiki/` tree and writes each file to OntoGit by
+relative path. OntoGit handles versioning, so `wikimg` only needs to keep the
+local tree and resync on changes.
 
 Example:
 

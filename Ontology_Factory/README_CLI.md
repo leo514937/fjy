@@ -28,8 +28,8 @@ export PYTHONPATH=".:WIKI_MG/src:storage/src:wiki_agent/src:ontology_core/src:ev
 ```bash
 wikimg --help
 wikimg search --help
-python -m ner.cli --help
-python -m ner.cli extract --help
+PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m ner.cli --help
+PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m ner.cli extract --help
 python -m ontology_negotiator.cli classify --help
 python -m mm_denoise.cli --help
 ```
@@ -90,12 +90,12 @@ Wiki 内容目录：
 入口：
 
 ```bash
-python -m ner.cli extract
+PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m ner.cli extract
 ```
 
 代码位置：
 
-- [`/Users/qiuboyu/Documents/Ontology_Factory/ner/src/ner/cli.py`](/Users/qiuboyu/Documents/Ontology_Factory/ner/src/ner/cli.py)
+- [`/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src/ner/cli.py`](/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src/ner/cli.py)
 
 支持参数：
 
@@ -112,8 +112,8 @@ python -m ner.cli extract
 示例：
 
 ```bash
-python -m ner.cli extract --input /Users/qiuboyu/Documents/Ontology_Factory/preprocess/鱼家第一阶段.txt --stdout
-python -m ner.cli extract --input /Users/qiuboyu/Documents/Ontology_Factory/preprocess/鱼家第一阶段.txt --query 光照 --max-sentences 4 --stdout
+PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m ner.cli extract --input /Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/preprocess/鱼家第一阶段.txt --stdout
+PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m ner.cli extract --input /Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/preprocess/鱼家第一阶段.txt --query 光照 --max-sentences 4 --stdout
 ```
 
 输出：
@@ -125,12 +125,12 @@ python -m ner.cli extract --input /Users/qiuboyu/Documents/Ontology_Factory/prep
 入口：
 
 ```bash
-python -m entity_relation.cli extract
+PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/relation/src:/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m entity_relation.cli extract
 ```
 
 代码位置：
 
-- [`/Users/qiuboyu/Documents/Ontology_Factory/relation/src/entity_relation/cli.py`](/Users/qiuboyu/Documents/Ontology_Factory/relation/src/entity_relation/cli.py)
+- [`/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/relation/src/entity_relation/cli.py`](/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/relation/src/entity_relation/cli.py)
 
 支持参数：
 
@@ -144,8 +144,8 @@ python -m entity_relation.cli extract
 示例：
 
 ```bash
-python -m entity_relation.cli extract --input /Users/qiuboyu/Documents/Ontology_Factory/preprocess/鱼家第一阶段.txt --stdout
-python -m entity_relation.cli extract --input /Users/qiuboyu/Documents/Ontology_Factory/preprocess/鱼家第一阶段.txt --query 光照 --max-sentences 6 --stdout
+PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/relation/src:/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m entity_relation.cli extract --input /Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/preprocess/鱼家第一阶段.txt --stdout
+PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/relation/src:/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m entity_relation.cli extract --input /Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/preprocess/鱼家第一阶段.txt --query 光照 --max-sentences 6 --stdout
 ```
 
 输出：
@@ -381,8 +381,8 @@ python -m mm_denoise.cli --config preprocess/mm_denoise/config.yaml --input /pat
 如果是人工调试，推荐顺序：
 
 1. `rg` / `cat` 看原文
-2. `python -m ner.cli extract` 看实体
-3. `python -m entity_relation.cli extract` 看关系
+2. `PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m ner.cli extract` 看实体
+3. `PYTHONPATH="/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/relation/src:/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src" python -m entity_relation.cli extract` 看关系
 4. `python -m ontology_store.cli query` 看库存量结果
 5. `python -m ontology_core.cli search` 看 canonical 结果
 6. `wikimg search/show` 看现有 wiki 页面

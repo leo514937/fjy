@@ -800,12 +800,11 @@ export class HeadAgentRuntime {
         if (mode === "idle") {
           const nextStatus = this.kind === "task" ? "completed" : "idle";
           const nextDetail = this.kind === "task" ? "任务已完成" : detail;
-          await this.setStatusInternal(nextStatus, nextDetail);
-          await this.refreshSessionState();
           if (this.options.callbacks.onRunLoopCompleted) {
             await this.options.callbacks.onRunLoopCompleted(this);
-            await this.refreshSessionState();
           }
+          await this.setStatusInternal(nextStatus, nextDetail);
+          await this.refreshSessionState();
           return;
         }
         await this.setStatusInternal(mode, detail);

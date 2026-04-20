@@ -549,7 +549,7 @@ class WikiAgentRuntime:
                 thought="系统或项目主题适合再补一层关系线索。",
                 action_name="run_command",
                 action_input={
-                    "command": f"python -m entity_relation.cli extract --input {shlex.quote(document_path)} --query {topic_query} --max-sentences 6 --stdout"
+                    "command": f"PYTHONPATH=/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/relation/src:/Users/qiuboyu/CodeLearning/new_fjy/fjy/Ontology_Factory/ner/src python -m entity_relation.cli extract --input {shlex.quote(document_path)} --query {topic_query} --max-sentences 6 --stdout"
                 },
             ), {}
         if (

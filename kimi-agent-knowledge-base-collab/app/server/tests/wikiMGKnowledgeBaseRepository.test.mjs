@@ -59,6 +59,30 @@ test("WikiMG repository exports kimi-compatible knowledge graph", async () => {
   assert.equal(education.featured_topic.title, "怎样把 Markdown 文档变成可检索的知识工作台？");
 });
 
+test("WikiMG repository can build a markdown graph slice without export cache", async () => {
+  const repository = createRepository();
+
+  const slice = await repository.getKnowledgeGraphSlice([
+    "common:kimi-demo/控制安全规则",
+    "common:kimi-demo/遥测字段规范",
+  ]);
+
+  assert.deepEqual(slice.viewedRefs, [
+    "common:kimi-demo/控制安全规则",
+    "common:kimi-demo/遥测字段规范",
+  ]);
+  assert.deepEqual(slice.missingRefs, []);
+  assert.ok(slice.entities.some((entity) => entity.id === "common:kimi-demo/控制安全规则"));
+  assert.ok(slice.entities.some((entity) => entity.id === "common:kimi-demo/遥测字段规范"));
+  assert.ok(
+    slice.crossReferences.some(
+      (edge) =>
+        edge.source === "common:kimi-demo/控制安全规则"
+        && edge.target === "common:kimi-demo/遥测字段规范",
+    )
+  );
+});
+
 test("KnowledgeBaseService keeps existing response shapes on top of wikimg provider", async () => {
   const repository = createRepository();
   const service = new KnowledgeBaseService(repository);
