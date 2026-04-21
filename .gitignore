@@ -34,4 +34,5 @@ OntoGit/xiaogugit/storage/**/wikimg_export.json
 
 # Custom Ignores
 doc/
+!doc/progress.md
 docs/superpowers/
