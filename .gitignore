@@ -1,5 +1,6 @@
 # Agent & Configs
-**/.agent/
+**/.agent/*
+!**/.agent/skills/
 **/.qagent-web-runtime/
 **/.env*
 !**/.env.example

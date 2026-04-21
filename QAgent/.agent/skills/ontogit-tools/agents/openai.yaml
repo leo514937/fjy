@@ -1,0 +1,7 @@
+interface:
+  display_name: "OntoGit Tools CLI"
+  short_description: "Guide qagent to use OntoGit CLI reliably"
+  default_prompt: "Use $ontogit-tools-cli when the user asks about OntoGit project versions, official/community recommendations, timelines, or probability reasoning; resolve `..\\OntoGit\\ontogit_tools.py` from the QAgent repo root and choose `list/read/write/timeline/infer` before continuing."
+
+policy:
+  allow_implicit_invocation: true
