@@ -264,11 +264,12 @@
 - **.gitignore Policy Update**: Added `!**/.env.example` exception to allow example environment configuration files while keeping actual secrets ignored.
 - **File Upload**: Tracked and committed `OntoGit/agent/.env.example`.
 
-## 2026-04-21: Data Snapshot Synchronization (Latest)
+## 2026-04-21: Data Snapshot & Agent Skills Synchronization (Latest)
 
 ### Actions Taken
 - **Data Sync**: Updated the subproject pointer for `OntoGit/xiaogugit/storage/demo` to include the latest WiKiMG export snapshots.
-- **Code Push**: Committed and pushed the latest data synchronization and progress updates to the `main` branch.
+- **Agent Skills**: Modified `.gitignore` to unignore the `**/.agent/skills/` directory and tracked the new skill definitions for `git-query-agent` and `ontogit-tools`.
+- **Code Push**: Committed and pushed the latest synchronization and progress updates to the `main` branch.
 
 ### Status
 - **Remote**: `https://github.com/leo514937/fjy.git`
