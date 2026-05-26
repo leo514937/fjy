@@ -1,19 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import path from "node:path";
-import { execSync } from "node:child_process";
+import { runTypeScriptCheck } from "./testPaths.mjs";
 
-test("AboutKnowledgeBase 组件可以通过独立类型检查", () => {
-  const appRoot = "D:/code/FJY/kimi-agent-knowledge-base-collab/app";
-  const configPath = path.join(appRoot, "tests/tsconfig.aboutKnowledgeBase.json");
-  const tscPath = path.join(appRoot, "node_modules/.bin/tsc.cmd");
-  const command = `cmd /d /s /c ""${tscPath}" -p "${configPath}" --pretty false"`;
-
+test("EnterGateIntro 组件可以通过独立类型检查", () => {
   assert.doesNotThrow(() => {
-    execSync(command, {
-      cwd: appRoot,
-      encoding: "utf8",
-      stdio: "pipe",
-    });
+    runTypeScriptCheck("tests/tsconfig.aboutKnowledgeBase.json");
   });
 });

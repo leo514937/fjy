@@ -1,7 +1,0 @@
-interface:
-  display_name: "Git Query Agent CLI"
-  short_description: "Guide qagent to query git safely"
-  default_prompt: "Use $git-query-agent-cli when the user asks about Git status, branches, commits, diffs, or file history; prefer `git -C <repo>` for stable path handling, and if you need the专用 CLI, resolve `..\\OntoGit\\agent\\run_git_query_agent.sh` or `..\\OntoGit\\agent\\run_git_tool.sh` from the QAgent repo root."
-
-policy:
-  allow_implicit_invocation: true

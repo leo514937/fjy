@@ -1,6 +1,6 @@
 {
   "extends": "../tsconfig.app.json",
   "include": [
-    "../src/components/AboutKnowledgeBase.tsx"
+    "../src/components/EnterGateIntro.tsx"
   ]
 }

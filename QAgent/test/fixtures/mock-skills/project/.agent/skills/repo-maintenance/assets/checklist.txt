@@ -1,3 +1,0 @@
-release checklist
-verify branch
-verify tests

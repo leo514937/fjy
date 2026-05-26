@@ -29,7 +29,7 @@ test('AssistantMarkdown 正确渲染标题、加粗、列表、行内代码与�
   assert.match(html, /<ul[^>]*>/);
   assert.equal((html.match(/<li/g) || []).length, 2);
   assert.match(html, /<code[^>]*>file_name<\/code>/);
-  assert.match(html, /复制代码/);
+  assert.match(html, />复制<\/button>/);
   assert.match(html, />ts<\/span>/);
   assert.match(html, /const answer = 42;/);
 });

@@ -1,4 +1,12 @@
-import type { Entity, KnowledgeGraphData, KnowledgeLayer } from '@/types/ontology';
+import type { Entity, KnowledgeGraphData, KnowledgeLayer } from '../../types/ontology.ts';
+
+import {
+  selectOntologyEntityViews,
+  selectOntologyFilteredCrossReferences,
+  selectOntologyFilteredStatistics,
+  selectOntologyRelatedEntities,
+  selectOntologySelectedEntity,
+} from './stateSelectors.ts';
 
 export interface OntologyAppState {
   entities: Entity[];
@@ -7,6 +15,7 @@ export interface OntologyAppState {
   filteredCrossReferences: Array<{ source: string; target: string; relation: string; description: string }>;
   selectedEntity: Entity | null;
   relatedEntities: Entity[];
+  filteredStatistics: KnowledgeGraphData['statistics'] | null;
 }
 
 export function buildOntologyAppState(input: {
@@ -14,30 +23,17 @@ export function buildOntologyAppState(input: {
   selectedLayer: 'all' | KnowledgeLayer;
   selectedEntityId: string | null;
 }): OntologyAppState {
-  const entities = input.knowledgeGraph ? Object.values(input.knowledgeGraph.entity_index) : [];
+  const { entities, filteredEntities, visibleEntityIndex } = selectOntologyEntityViews(
+    input.knowledgeGraph,
+    input.selectedLayer,
+  );
   const crossReferences = input.knowledgeGraph?.cross_references || [];
-  const filteredEntities = entities.filter((entity) => (
-    input.selectedLayer === 'all' || entity.layer === input.selectedLayer
-  ));
-  const visibleEntityIds = new Set(filteredEntities.map((entity) => entity.id));
-  const filteredCrossReferences = crossReferences.filter((reference) => (
-    visibleEntityIds.has(reference.source) && visibleEntityIds.has(reference.target)
-  ));
-  const selectedEntity = filteredEntities.find((entity) => entity.id === input.selectedEntityId)
-    ?? filteredEntities[0]
-    ?? null;
-  const relatedEntities = selectedEntity
-    ? filteredCrossReferences
-      .map((reference) => {
-        const relatedId = reference.source === selectedEntity.id
-          ? reference.target
-          : reference.target === selectedEntity.id
-            ? reference.source
-            : null;
-        return relatedId ? filteredEntities.find((entity) => entity.id === relatedId) || null : null;
-      })
-      .filter((entity): entity is Entity => Boolean(entity))
-    : [];
+  const filteredCrossReferences = selectOntologyFilteredCrossReferences(crossReferences, visibleEntityIndex);
+  const selectedEntity = selectOntologySelectedEntity(filteredEntities, input.selectedEntityId, visibleEntityIndex);
+  const relatedEntities = selectOntologyRelatedEntities(selectedEntity, filteredCrossReferences, visibleEntityIndex);
+  const filteredStatistics = input.knowledgeGraph
+    ? selectOntologyFilteredStatistics(filteredEntities, filteredCrossReferences)
+    : null;
 
   return {
     entities,
@@ -46,5 +42,6 @@ export function buildOntologyAppState(input: {
     filteredCrossReferences,
     selectedEntity,
     relatedEntities,
+    filteredStatistics,
   };
 }

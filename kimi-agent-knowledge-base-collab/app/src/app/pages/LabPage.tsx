@@ -5,6 +5,7 @@ import { OntologyAnalyzer } from '@/components/OntologyAnalyzer';
 import { SystemsOntologyView } from '@/components/SystemsOntologyView';
 import { OntologyBrowser } from '@/components/OntologyBrowser';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useOntologyContext } from '@/features/ontology/useOntologyContext';
 import type { Entity } from '@/types/ontology';
 
@@ -12,8 +13,42 @@ interface LabPageProps {
   onSelectEntity: (entity: Entity) => void;
 }
 
+function LabPageLoadingState() {
+  return (
+    <div className="p-6 space-y-8 pb-32">
+      <div className="w-full rounded-3xl border border-border/40 bg-card/60 p-5 shadow-sm">
+        <Skeleton className="h-6 w-56 rounded-full" />
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+        </div>
+      </div>
+      <div className="w-full rounded-3xl border border-border/40 bg-muted/10 p-1 shadow-inner backdrop-blur-sm">
+        <div className="border-b border-border/40 bg-card/60 px-6 py-4 rounded-t-3xl">
+          <Skeleton className="h-8 w-64 rounded-full" />
+        </div>
+        <div className="p-6 space-y-4">
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <Skeleton className="h-[520px] w-full rounded-3xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LabPage({ onSelectEntity }: LabPageProps) {
-  const { filteredEntities, filteredCrossReferences, selectedEntity } = useOntologyContext();
+  const { filteredEntities, filteredCrossReferences, selectedEntity, loading } = useOntologyContext();
+  const showLoading = loading && filteredEntities.length === 0;
+
+  if (showLoading) {
+    return (
+      <div className="h-full overflow-y-auto scrollbar-thin">
+        <LabPageLoadingState />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto scrollbar-thin">
@@ -60,6 +95,7 @@ export function LabPage({ onSelectEntity }: LabPageProps) {
               <TabsContent value="systems" className="mt-0 flex-1">
                 <SystemsOntologyView
                   entities={filteredEntities}
+                  crossReferences={filteredCrossReferences}
                   selectedEntity={selectedEntity}
                   onSelectEntity={onSelectEntity}
                 />

@@ -1,72 +1,47 @@
 # FJY 综合本体知识库系统
 
+## 当前仓库说明
+
+当前仓库已经收敛为以 `kimi-agent-knowledge-base-collab/app` 为主的前后端应用。
+
+- OntoGit 默认走远端在线服务
+- 本地不再强依赖 `OntoGit`、`QAgent`、`Ontology_Factory`
+- 根目录启动脚本已经支持“远端 OntoGit 模式”
+
 ## 环境要求
 
-推荐统一准备以下环境：
-
-- `Git`
 - `Node.js 20+`
 - `npm 10+`
-- `Python 3.10` 或 `Python 3.11`
-
-平台补充：
-
 - Windows：`PowerShell 5.1+` 或 `PowerShell 7+`
 - Linux/macOS：`bash`、`curl`、`lsof`
 
+只有在你准备恢复本地 OntoGit 全链路时，才额外需要：
 
-## 各模块初始化和启动
+- `Python 3.10` 或 `Python 3.11`
+- 本地 `OntoGit` 目录
 
-### 1. `kimi-agent-knowledge-base-collab/app`
-
-初始化：
-
-```powershell
-cd .\kimi-agent-knowledge-base-collab\app
-npm install
-```
+## 直接启动应用
 
 ```bash
 cd ./kimi-agent-knowledge-base-collab/app
 npm install
-```
-
-启动前端：
-
-```powershell
-npm run dev
-```
-
-
-启动后端：
-
-```powershell
 npm run server
+npm run dev -- --host 127.0.0.1
 ```
 
+常用入口：
 
-### 2. `QAgent`
+- 前端：`http://127.0.0.1:5173`
+- 后端健康检查：`http://127.0.0.1:8787/api/health`
 
-初始化：
+如果 `8787` 已被占用，可以换端口：
 
-```powershell
-cd .\QAgent
-npm install
+```bash
+cd ./kimi-agent-knowledge-base-collab/app
+PORT=8788 npm run server
 ```
 
-启动：
-```
-npm run dev
-```
-
-
-## 快速启动
-
-完成下面这些初始化后即可直接一键启动主链路：
-
-- `OntoGit`
-- `Ontology_Factory/WIKI_MG`
-- `kimi-agent-knowledge-base-collab/app`
+## 一键启动
 
 ### Windows
 
@@ -74,7 +49,6 @@ npm run dev
 cd D:\code\FJY
 .\start_kimi_stack.ps1
 ```
-
 
 ### Linux/macOS
 
@@ -84,20 +58,18 @@ chmod +x ./start_kimi_stack.sh
 ./start_kimi_stack.sh
 ```
 
-指定环境变量：
+脚本默认行为：
+
+- 如果本地 `OntoGit/xiaogugit`、`OntoGit/probability`、`OntoGit/gateway` 不存在，就自动切到远端 OntoGit 模式
+- 如果这些目录都存在，则继续兼容本地 OntoGit 启动
+
+如需强制使用远端 OntoGit：
 
 ```bash
-cd /path/to/FJY
-PORT=8787 VITE_PORT=5173 PYTHON_BIN=python3 WIKIMG_ROOT="$(pwd)/Ontology_Factory" ./start_kimi_stack.sh
+USE_REMOTE_ONTOGIT=true ./start_kimi_stack.sh
 ```
 
-启动完成后常用入口：
-
-- 前端：`http://localhost:5173`
-- 后端健康检查：`http://localhost:8787/api/health`
-- OntoGit gateway：`http://localhost:8080`
-
-查看日志：
+## 查看日志
 
 ```powershell
 Get-Content -Wait .\.run-logs\kimi-frontend.log

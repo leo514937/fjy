@@ -33,6 +33,38 @@ test("normalizeXgProjectsResponse 能兼容 gateway 返回的 projects 包装结
   ]);
 });
 
+test("normalizeXgProjectsResponse 会按 projectId 去重并保留更完整的名称", () => {
+  const projects = normalizeXgProjectsResponse({
+    projects: [
+      {
+        project_id: "demo",
+        name: "demo",
+        description: "",
+        status: "",
+        updated_at: "2026-04-14 15:41:45",
+      },
+      {
+        project_id: "demo",
+        name: "演示项目",
+        description: "主项目",
+        status: "开发中",
+        updated_at: "2026-04-15 08:00:00",
+      },
+    ],
+  });
+
+  assert.deepEqual(projects, [
+    {
+      id: "demo",
+      projectId: "demo",
+      name: "演示项目",
+      description: "主项目",
+      status: "开发中",
+      updatedAt: "2026-04-14 15:41:45",
+    },
+  ]);
+});
+
 test("normalizeXgTimelinesResponse 能把 history 转成前端 commits 结构", () => {
   const timelines = normalizeXgTimelinesResponse({
     timelines: [

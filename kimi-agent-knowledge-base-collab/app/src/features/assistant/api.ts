@@ -1,4 +1,4 @@
-import { buildApiUrl, parseJson, parseSseEvent, asObject } from '@/shared/api/http';
+import { apiFetch, parseJson, parseSseEvent, asObject } from '@/shared/api/http';
 import type { Entity } from '@/types/ontology';
 
 export interface OntologyAssistantContext {
@@ -216,34 +216,15 @@ export interface OntologyAssistantStreamHandlers {
   onComplete?: (response: OntologyAssistantResponse) => void;
 }
 
-export async function askOntologyAssistant(input: {
-  question: string;
-  entityId?: string;
-  conversationId?: string;
-  businessPrompt?: string;
-  modelName?: string;
-  conversationHistory?: OntologyAssistantHistoryTurn[];
-}): Promise<OntologyAssistantResponse> {
-  const response = await fetch(buildApiUrl('/api/chat'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(input),
-  });
-
-  return parseJson(response);
-}
-
 export async function fetchOntologyAssistantState(): Promise<OntologyAssistantSessionState> {
-  const response = await fetch(buildApiUrl('/api/chat/state'));
+  const response = await apiFetch('/api/chat/state');
   return parseJson<OntologyAssistantSessionState>(response);
 }
 
 export async function saveOntologyAssistantState(
   input: OntologyAssistantSessionState,
 ): Promise<OntologyAssistantSessionState> {
-  const response = await fetch(buildApiUrl('/api/chat/state'), {
+  const response = await apiFetch('/api/chat/state', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -260,7 +241,7 @@ export async function uploadOntologyAssistantFile(input: {
   contentBase64: string;
   mimeType?: string;
 }): Promise<OntologyAssistantUploadResponse> {
-  const response = await fetch(buildApiUrl('/api/chat/upload'), {
+  const response = await apiFetch('/api/chat/upload', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -272,12 +253,12 @@ export async function uploadOntologyAssistantFile(input: {
 }
 
 export async function fetchAssistantGraphOverlay(conversationId: string): Promise<AssistantGraphOverlay> {
-  const response = await fetch(buildApiUrl(`/api/chat/graph?conversationId=${encodeURIComponent(conversationId)}`));
+  const response = await apiFetch(`/api/chat/graph?conversationId=${encodeURIComponent(conversationId)}`);
   return parseJson<AssistantGraphOverlay>(response);
 }
 
 export async function saveAssistantGraphOverlay(input: AssistantGraphOverlay): Promise<AssistantGraphOverlay> {
-  const response = await fetch(buildApiUrl('/api/chat/graph'), {
+  const response = await apiFetch('/api/chat/graph', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -302,7 +283,7 @@ export async function askOntologyAssistantStream(
     signal?: AbortSignal;
   } = {},
 ): Promise<OntologyAssistantResponse> {
-  const response = await fetch(buildApiUrl('/api/chat/stream'), {
+  const response = await apiFetch('/api/chat/stream', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

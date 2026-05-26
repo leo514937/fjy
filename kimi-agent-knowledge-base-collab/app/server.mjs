@@ -3,42 +3,70 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import { createAppServices } from "./server/createAppServices.mjs";
+import { DEFAULT_GATEWAY_URL, createAppServices } from "./server/createAppServices.mjs";
+import { createGatewayAccessTokenManager } from "./server/gatewayAuth.mjs";
 import {
   buildGatewayProxyHeaders,
   shouldRetryWithServiceAuthFallback,
 } from "./server/xgProxy.mjs";
+import { validateWorkflowEntityFileData } from "./server/workflowEntityFormat.mjs";
 
 const PORT = Number(process.env.PORT || 8787);
-const XG_GATEWAY_URL = process.env.XG_GATEWAY_URL || process.env.GATEWAY_URL || "http://127.0.0.1:8080";
-const XG_GATEWAY_API_KEY = process.env.XG_GATEWAY_API_KEY || process.env.GATEWAY_SERVICE_API_KEY || "change-me";
+const XG_GATEWAY_URL = process.env.ONTOGIT_GATEWAY_URL || process.env.XG_GATEWAY_URL || process.env.GATEWAY_URL || DEFAULT_GATEWAY_URL;
+const XG_GATEWAY_API_KEY_RAW = process.env.XG_GATEWAY_API_KEY || process.env.GATEWAY_SERVICE_API_KEY || "";
+const XG_GATEWAY_API_KEY = XG_GATEWAY_API_KEY_RAW && XG_GATEWAY_API_KEY_RAW !== "change-me" ? XG_GATEWAY_API_KEY_RAW : "";
+const XG_GATEWAY_AUTH_USERNAME = process.env.ONTOGIT_AUTH_USERNAME || process.env.XG_AUTH_USERNAME || "mogong";
+const XG_GATEWAY_AUTH_PASSWORD = process.env.ONTOGIT_AUTH_PASSWORD || process.env.XG_AUTH_PASSWORD || "123456";
+const gatewayAuth = createGatewayAccessTokenManager({
+  gatewayUrl: XG_GATEWAY_URL,
+  username: XG_GATEWAY_AUTH_USERNAME,
+  password: XG_GATEWAY_AUTH_PASSWORD,
+});
 const {
   knowledgeBaseService,
   assistantSessionStateService,
   conversationGraphStateService,
-  localWorkspaceService,
-  qagentService,
+  workflowService,
+  workflowV2Service,
   appRoot,
 } = createAppServices();
+const workflowControllers = new Map();
+const workflowV2Controllers = new Map();
+const workflowV2Subscribers = new Map();
 
-function sendJson(res, status, payload) {
-  res.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
+function getCorsHeaders() {
+  return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS,DELETE",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type,Authorization,X-API-Key,X-File-Name,X-Conversation-Id",
+  };
+}
+
+function writeWithCors(res, status, headers, body) {
+  res.writeHead(status, {
+    ...headers,
+    ...getCorsHeaders(),
   });
-  res.end(JSON.stringify(payload));
+  res.end(body);
+}
+
+function sendJson(res, status, payload) {
+  writeWithCors(res, status, {
+    "Content-Type": "application/json; charset=utf-8",
+  }, JSON.stringify(payload));
 }
 
 function sendText(res, status, text, contentType = "text/plain; charset=utf-8") {
-  res.writeHead(status, {
+  writeWithCors(res, status, {
     "Content-Type": contentType,
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS,DELETE",
-    "Access-Control-Allow-Headers": "Content-Type",
-  });
-  res.end(text);
+  }, text);
+}
+
+function sendGatewayError(res, error) {
+  const message = error instanceof Error && error.message.trim()
+    ? error.message.trim()
+    : "Gateway error";
+  sendJson(res, 502, { error: message });
 }
 
 function openSse(res) {
@@ -46,9 +74,7 @@ function openSse(res) {
     "Content-Type": "text/event-stream; charset=utf-8",
     "Cache-Control": "no-cache, no-transform",
     Connection: "keep-alive",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS,DELETE",
-    "Access-Control-Allow-Headers": "Content-Type",
+    ...getCorsHeaders(),
   });
   res.write(": connected\n\n");
 }
@@ -60,6 +86,55 @@ function writeSse(res, event, payload) {
 
   res.write(`event: ${event}\n`);
   res.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+function addWorkflowV2Subscriber(conversationId, res) {
+  const subscribers = workflowV2Subscribers.get(conversationId) ?? new Set();
+  subscribers.add(res);
+  workflowV2Subscribers.set(conversationId, subscribers);
+  const cleanup = () => {
+    const current = workflowV2Subscribers.get(conversationId);
+    if (!current) {
+      return;
+    }
+    current.delete(res);
+    if (current.size === 0) {
+      workflowV2Subscribers.delete(conversationId);
+    }
+  };
+  res.on("close", cleanup);
+  res.on("error", cleanup);
+  return cleanup;
+}
+
+function broadcastWorkflowV2Event(conversationId, event, payload) {
+  const subscribers = workflowV2Subscribers.get(conversationId);
+  if (!subscribers || subscribers.size === 0) {
+    return;
+  }
+  for (const res of [...subscribers]) {
+    if (res.writableEnded || res.destroyed) {
+      subscribers.delete(res);
+      continue;
+    }
+    writeSse(res, event, payload);
+  }
+  if (subscribers.size === 0) {
+    workflowV2Subscribers.delete(conversationId);
+  }
+}
+
+function closeWorkflowV2Subscribers(conversationId) {
+  const subscribers = workflowV2Subscribers.get(conversationId);
+  if (!subscribers) {
+    return;
+  }
+  for (const res of [...subscribers]) {
+    if (!res.writableEnded) {
+      res.end();
+    }
+  }
+  workflowV2Subscribers.delete(conversationId);
 }
 
 async function parseBody(req) {
@@ -87,121 +162,6 @@ function getContentType(filePath) {
   if (filePath.endsWith(".json")) return "application/json; charset=utf-8";
   if (filePath.endsWith(".svg")) return "image/svg+xml";
   return "application/octet-stream";
-}
-
-function parseConversationHistory(value) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => (
-      item && typeof item === "object"
-        ? {
-            question: typeof item.question === "string" ? item.question : "",
-            answer: typeof item.answer === "string" ? item.answer : "",
-            toolRuns: Array.isArray(item.toolRuns) ? item.toolRuns : [],
-            contentBlocks: Array.isArray(item.contentBlocks) ? item.contentBlocks : [],
-          }
-        : null
-    ))
-    .filter(Boolean);
-}
-
-function normalizeConversationHistoryForPrompt(value, limit = Number.POSITIVE_INFINITY) {
-  const seen = new Set();
-  const history = [];
-
-  for (const item of parseConversationHistory(value)) {
-    const question = typeof item.question === "string" ? item.question.trim() : "";
-    const answer = typeof item.answer === "string" ? item.answer.trim() : "";
-    if (!question || !answer) {
-      continue;
-    }
-
-    const signature = `${question}\u0000${answer}`;
-    if (seen.has(signature)) {
-      continue;
-    }
-
-    seen.add(signature);
-    history.push({
-      question,
-      answer,
-      toolRuns: Array.isArray(item.toolRuns) ? item.toolRuns : [],
-      contentBlocks: Array.isArray(item.contentBlocks) ? item.contentBlocks : [],
-    });
-  }
-
-  if (limit === Number.POSITIVE_INFINITY) {
-    return history;
-  }
-
-  return history.slice(-limit);
-}
-
-function extractPersistedConversationHistory(state, conversationId, limit = Number.POSITIVE_INFINITY) {
-  if (!conversationId || typeof conversationId !== "string") {
-    return [];
-  }
-
-  const sessions = Array.isArray(state?.sessions) ? state.sessions : [];
-  const session = sessions.find((item) => item && typeof item === "object" && item.id === conversationId);
-  const messages = Array.isArray(session?.messages) ? session.messages : [];
-
-  const history = messages
-    .map((message) => {
-    const question = typeof message?.question === "string" ? message.question.trim() : "";
-    const answer = typeof message?.answer === "string" ? message.answer.trim() : "";
-    if (!question || !answer) {
-      return null;
-    }
-    return {
-      question,
-      answer,
-      toolRuns: Array.isArray(message?.toolRuns) ? message.toolRuns : [],
-      contentBlocks: Array.isArray(message?.contentBlocks) ? message.contentBlocks : [],
-    };
-  })
-  .filter(Boolean);
-
-  if (limit === Number.POSITIVE_INFINITY) {
-    return history;
-  }
-
-  return history.slice(-limit);
-}
-
-function mergeConversationHistories(primary, fallback, limit = Number.POSITIVE_INFINITY) {
-  const seen = new Set();
-  const merged = [];
-
-  for (const item of [...fallback, ...primary]) {
-    const question = typeof item?.question === "string" ? item.question.trim() : "";
-    const answer = typeof item?.answer === "string" ? item.answer.trim() : "";
-    if (!question || !answer) {
-      continue;
-    }
-
-    const signature = `${question}\u0000${answer}`;
-    if (seen.has(signature)) {
-      continue;
-    }
-
-    seen.add(signature);
-    merged.push({
-      question,
-      answer,
-      toolRuns: Array.isArray(item?.toolRuns) ? item.toolRuns : [],
-      contentBlocks: Array.isArray(item?.contentBlocks) ? item.contentBlocks : [],
-    });
-  }
-
-  if (limit === Number.POSITIVE_INFINITY) {
-    return merged;
-  }
-
-  return merged.slice(-limit);
 }
 
 async function readRequestBodyBuffer(req) {
@@ -237,6 +197,48 @@ function proxyRequest(targetUrl, method, headers, bodyBuffer) {
   });
 }
 
+async function buildServiceGatewayHeaders(sourceHeaders, targetHost) {
+  const headers = buildGatewayProxyHeaders(sourceHeaders, {
+    host: targetHost,
+    apiKey: XG_GATEWAY_API_KEY,
+  });
+
+  try {
+    const accessToken = await gatewayAuth.ensureGatewayAccessToken();
+    delete headers["X-API-Key"];
+    delete headers["x-api-key"];
+    delete headers.cookie;
+    delete headers.Cookie;
+    headers.Authorization = `Bearer ${accessToken}`;
+  } catch (error) {
+    const hasAuthHeader = Boolean(
+      headers.Authorization
+      || headers.authorization
+      || headers["X-API-Key"]
+      || headers["x-api-key"]
+      || headers.Cookie
+      || headers.cookie,
+    );
+    if (!hasAuthHeader) {
+      throw error instanceof Error ? error : new Error("Gateway authentication is unavailable");
+    }
+  }
+
+  const hasAuthHeader = Boolean(
+    headers.Authorization
+    || headers.authorization
+    || headers["X-API-Key"]
+    || headers["x-api-key"]
+    || headers.Cookie
+    || headers.cookie,
+  );
+  if (!hasAuthHeader) {
+    throw new Error("Gateway authentication is unavailable");
+  }
+
+  return headers;
+}
+
 const server = createServer(async (req, res) => {
   try {
     if (!req.url) {
@@ -254,107 +256,108 @@ const server = createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/health") {
       sendJson(res, 200, {
         ok: true,
-        qagentAvailable: true,
-        provider: process.env.KNOWLEDGE_BASE_PROVIDER || "json",
+        workflowAvailable: true,
+        workflowMode: "linear",
+        provider: "ontogit",
+        knowledgeGraphSource: "ontogit-gateway",
       });
       return;
     }
 
-    if (req.method === "GET" && url.pathname === "/api/knowledge-graph") {
-      if (url.searchParams.get("refresh") === "1" && typeof knowledgeBaseService.repository?.invalidateCache === "function") {
-        knowledgeBaseService.repository.invalidateCache();
+    if (req.method === "GET" && url.pathname === "/api/workflow/config") {
+      await workflowService.refreshWorkflowConfigFromResolver();
+      const config = workflowService.getWorkflowConfig();
+      sendJson(res, 200, { ...config, version: "v1.0.1-10percent-fix" });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/workflow/config") {
+      const body = await parseBody(req);
+      const workflowModel = typeof body?.workflowModel === "string" ? body.workflowModel.trim() : undefined;
+      const workflowModelA = typeof body?.workflowModelA === "string" ? body.workflowModelA.trim() : undefined;
+      const workflowModelB = typeof body?.workflowModelB === "string" ? body.workflowModelB.trim() : undefined;
+      const workflowParallelCount = body?.workflowParallelCount;
+      const workflowDebateRounds = body?.workflowDebateRounds;
+
+      if (
+        workflowModel === undefined
+        && workflowModelA === undefined
+        && workflowModelB === undefined
+        && workflowParallelCount === undefined
+        && workflowDebateRounds === undefined
+      ) {
+        sendJson(res, 400, { error: "workflow config payload is required" });
+        return;
       }
-      sendJson(res, 200, await knowledgeBaseService.getKnowledgeGraph());
+
+      sendJson(res, 200, workflowService.setWorkflowConfig({
+        workflowModel,
+        workflowModelA,
+        workflowModelB,
+        workflowParallelCount,
+        workflowDebateRounds,
+      }));
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/workflow/v2/config") {
+      await workflowV2Service.refreshWorkflowConfigFromResolver();
+      sendJson(res, 200, workflowV2Service.getWorkflowConfig());
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/workflow/v2/config") {
+      const body = await parseBody(req);
+      sendJson(res, 200, workflowV2Service.setWorkflowConfig({
+        workflowModel: typeof body?.workflowModel === "string" ? body.workflowModel.trim() : undefined,
+        workflowModelA: typeof body?.workflowModelA === "string" ? body.workflowModelA.trim() : undefined,
+        workflowModelB: typeof body?.workflowModelB === "string" ? body.workflowModelB.trim() : undefined,
+        workflowJudgeModel: typeof body?.workflowJudgeModel === "string" ? body.workflowJudgeModel.trim() : undefined,
+        chunkMaxChars: body?.chunkMaxChars,
+        chunkMinChars: body?.chunkMinChars,
+        windowSize: body?.windowSize,
+        windowStep: body?.windowStep,
+        parallelWindows: body?.parallelWindows,
+      }));
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/workflow/v2/session") {
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "";
+      if (!conversationId) {
+        sendJson(res, 400, { error: "conversationId is required" });
+        return;
+      }
+      try {
+        const payload = await workflowV2Service.getFileWorkflowSession(conversationId);
+        sendJson(res, 200, payload);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "workflow V2 session not found";
+        if (/ENOENT/i.test(message)) {
+          sendJson(res, 404, { error: "workflow V2 session snapshot not found" });
+          return;
+        }
+        sendJson(res, 500, { error: message });
+      }
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/knowledge-graph") {
+      const projectId = url.searchParams.get("project_id") || undefined;
+      if (url.searchParams.get("refresh") === "1" && typeof knowledgeBaseService.repository?.invalidateCache === "function") {
+        knowledgeBaseService.repository.invalidateCache(projectId);
+      }
+      sendJson(res, 200, await knowledgeBaseService.getKnowledgeGraph(projectId));
       return;
     }
 
     if (req.method === "POST" && url.pathname === "/api/knowledge-graph/slice") {
       const body = await parseBody(req);
       const refs = Array.isArray(body?.refs) ? body.refs.filter((ref) => typeof ref === "string") : [];
-      sendJson(res, 200, await knowledgeBaseService.getKnowledgeGraphSlice(refs));
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/workspace/projects") {
-      sendJson(res, 200, { projects: await localWorkspaceService.listProjects() });
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/workspace/projects/init") {
-      const body = await parseBody(req);
-      const projectId = typeof body.project_id === "string" ? body.project_id : "";
-      const name = typeof body.name === "string" ? body.name : undefined;
-      const description = typeof body.description === "string" ? body.description : "";
-
-      if (!projectId.trim()) {
-        sendJson(res, 400, { error: "project_id is required" });
-        return;
-      }
-
-      sendJson(res, 200, await localWorkspaceService.initProject({ projectId, name, description }));
-      return;
-    }
-
-    const localProjectMatch = url.pathname.match(/^\/api\/workspace\/projects\/([^/]+)$/);
-    if (req.method === "PATCH" && localProjectMatch) {
-      const projectId = decodeURIComponent(localProjectMatch[1]);
-      const body = await parseBody(req);
-      const name = typeof body.name === "string" ? body.name : "";
-      if (!name.trim()) {
-        sendJson(res, 400, { error: "name is required" });
-        return;
-      }
-
-      const result = await localWorkspaceService.updateProjectName(projectId, name);
-      if (!result) {
-        sendJson(res, 404, { error: `Project not found: ${projectId}` });
-        return;
-      }
-
-      sendJson(res, 200, result);
-      return;
-    }
-
-    const localDeleteProjectMatch = localProjectMatch;
-    if (req.method === "DELETE" && localDeleteProjectMatch) {
-      const projectId = decodeURIComponent(localDeleteProjectMatch[1]);
-      sendJson(res, 200, await localWorkspaceService.deleteProject(projectId));
-      return;
-    }
-
-    const localTimelinesMatch = url.pathname.match(/^\/api\/workspace\/projects\/([^/]+)\/timelines$/);
-    if (req.method === "GET" && localTimelinesMatch) {
-      const projectId = decodeURIComponent(localTimelinesMatch[1]);
-      const timelines = await localWorkspaceService.getJsonFileTimelines(projectId);
-      if (!timelines) {
-        sendJson(res, 404, { error: `Project not found: ${projectId}` });
-        return;
-      }
-
-      sendJson(res, 200, { timelines });
-      return;
-    }
-
-    const localReadMatch = url.pathname.match(/^\/api\/workspace\/projects\/([^/]+)\/read\/(.+)$/);
-    if (req.method === "GET" && localReadMatch) {
-      const projectId = decodeURIComponent(localReadMatch[1]);
-      const filename = decodeURIComponent(localReadMatch[2]);
-      const commitId = url.searchParams.get("commit_id") || undefined;
-      let data;
-      try {
-        data = await localWorkspaceService.readJsonFile(projectId, filename, commitId);
-      } catch (error) {
-        sendJson(res, 404, {
-          error: error instanceof Error ? error.message : `File not found: ${filename}`,
-        });
-        return;
-      }
-      if (data === null) {
-        sendJson(res, 404, { error: `Project not found: ${projectId}` });
-        return;
-      }
-
-      sendJson(res, 200, { data });
+      const projectId = typeof body?.project_id === "string" ? body.project_id : undefined;
+      sendJson(res, 200, await knowledgeBaseService.getKnowledgeGraphSlice(refs, projectId));
       return;
     }
 
@@ -364,17 +367,53 @@ const server = createServer(async (req, res) => {
 
       try {
         const bodyBuffer = await readRequestBodyBuffer(req);
+        if (req.method === "POST" && url.pathname === "/api/xg/write-and-infer") {
+          const parsed = bodyBuffer.byteLength > 0 ? JSON.parse(bodyBuffer.toString("utf8")) : {};
+          const validation = validateWorkflowEntityFileData(parsed?.data);
+          if (!validation.ok) {
+            sendJson(res, 400, {
+              error: "Only workflow entity JSON format is accepted",
+              detail: validation.error,
+            });
+            return;
+          }
+        }
+
+        let gatewayHeaders = await buildServiceGatewayHeaders(req.headers, targetUrl.host);
+        const usingServiceAuth = Boolean(gatewayHeaders.Authorization);
+
         let proxyRes = await proxyRequest(
           targetUrl,
           req.method,
-          buildGatewayProxyHeaders(req.headers, {
-            host: targetUrl.host,
-            apiKey: XG_GATEWAY_API_KEY,
-          }),
+          gatewayHeaders,
           bodyBuffer,
         );
 
-        if (shouldRetryWithServiceAuthFallback(req.headers, proxyRes.statusCode, XG_GATEWAY_API_KEY)) {
+        if (proxyRes.statusCode === 401 && usingServiceAuth) {
+          gatewayAuth.resetGatewayAccessToken();
+          gatewayHeaders = await buildServiceGatewayHeaders(req.headers, targetUrl.host);
+          proxyRes = await proxyRequest(
+            targetUrl,
+            req.method,
+            gatewayHeaders,
+            bodyBuffer,
+          );
+        } else if (proxyRes.statusCode === 401) {
+          const accessToken = await gatewayAuth.ensureGatewayAccessToken();
+          proxyRes = await proxyRequest(
+            targetUrl,
+            req.method,
+            {
+              ...buildGatewayProxyHeaders(req.headers, {
+                host: targetUrl.host,
+                apiKey: XG_GATEWAY_API_KEY,
+                forceApiKey: true,
+              }),
+              Authorization: `Bearer ${accessToken}`,
+            },
+            bodyBuffer,
+          );
+        } else if (shouldRetryWithServiceAuthFallback(req.headers, proxyRes.statusCode, XG_GATEWAY_API_KEY)) {
           proxyRes = await proxyRequest(
             targetUrl,
             req.method,
@@ -387,10 +426,31 @@ const server = createServer(async (req, res) => {
           );
         }
 
-        res.writeHead(proxyRes.statusCode, proxyRes.headers);
-        res.end(proxyRes.body);
+        writeWithCors(res, proxyRes.statusCode, proxyRes.headers, proxyRes.body);
       } catch (err) {
-        sendJson(res, 502, { error: "Gateway error", detail: err.message });
+        sendGatewayError(res, err);
+      }
+      return;
+    }
+
+    if (url.pathname.startsWith("/auth/")) {
+      const targetUrl = new URL(url.pathname + url.search, XG_GATEWAY_URL);
+
+      try {
+        const bodyBuffer = await readRequestBodyBuffer(req);
+        const proxyRes = await proxyRequest(
+          targetUrl,
+          req.method,
+          buildGatewayProxyHeaders(req.headers, {
+            host: targetUrl.host,
+            apiKey: XG_GATEWAY_API_KEY,
+          }),
+          bodyBuffer,
+        );
+
+        writeWithCors(res, proxyRes.statusCode, proxyRes.headers, proxyRes.body);
+      } catch (err) {
+        sendGatewayError(res, err);
       }
       return;
     }
@@ -398,22 +458,38 @@ const server = createServer(async (req, res) => {
     if (url.pathname.startsWith("/api/probability/")) {
       const targetPath = url.pathname.replace("/api/probability/", "/probability/");
       const targetUrl = new URL(targetPath + url.search, XG_GATEWAY_URL);
-      
-      const proxyReq = httpRequest(targetUrl, {
-        method: req.method,
-        headers: buildGatewayProxyHeaders(req.headers, {
-          host: targetUrl.host,
-        }),
-      }, (proxyRes) => {
-        res.writeHead(proxyRes.statusCode, proxyRes.headers);
-        proxyRes.pipe(res);
-      });
 
-      proxyReq.on("error", (err) => {
-        sendJson(res, 502, { error: "Gateway error", detail: err.message });
-      });
+      try {
+        const bodyBuffer = await readRequestBodyBuffer(req);
+        let gatewayHeaders = await buildServiceGatewayHeaders(req.headers, targetUrl.host);
+        const usingServiceAuth = Boolean(gatewayHeaders.Authorization);
 
-      req.pipe(proxyReq);
+        let proxyRes = await proxyRequest(targetUrl, req.method, gatewayHeaders, bodyBuffer);
+        if (proxyRes.statusCode === 401 && usingServiceAuth) {
+          gatewayAuth.resetGatewayAccessToken();
+          gatewayHeaders = await buildServiceGatewayHeaders(req.headers, targetUrl.host);
+          proxyRes = await proxyRequest(targetUrl, req.method, gatewayHeaders, bodyBuffer);
+        } else if (proxyRes.statusCode === 401) {
+          const accessToken = await gatewayAuth.ensureGatewayAccessToken();
+          proxyRes = await proxyRequest(
+            targetUrl,
+            req.method,
+            {
+              ...buildGatewayProxyHeaders(req.headers, {
+                host: targetUrl.host,
+                apiKey: XG_GATEWAY_API_KEY,
+                forceApiKey: true,
+              }),
+              Authorization: `Bearer ${accessToken}`,
+            },
+            bodyBuffer,
+          );
+        }
+
+        writeWithCors(res, proxyRes.statusCode, proxyRes.headers, proxyRes.body);
+      } catch (err) {
+        sendGatewayError(res, err);
+      }
       return;
     }
 
@@ -422,27 +498,9 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    if (req.method === "GET" && url.pathname === "/api/entities") {
-      sendJson(res, 200, await knowledgeBaseService.listEntities());
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname.startsWith("/api/entities/")) {
-      const entityId = decodeURIComponent(url.pathname.replace("/api/entities/", ""));
-      const detail = await knowledgeBaseService.getEntityDetail(entityId);
-
-      if (!detail) {
-        sendJson(res, 404, { error: `Entity not found: ${entityId}` });
-        return;
-      }
-
-      sendJson(res, 200, detail);
-      return;
-    }
-
     if (req.method === "GET" && url.pathname === "/api/search") {
       const query = url.searchParams.get("q") || "";
-      sendJson(res, 200, await knowledgeBaseService.searchEntities(query));
+      sendJson(res, 200, await knowledgeBaseService.searchEntities(query, url.searchParams.get("project_id") || undefined));
       return;
     }
 
@@ -473,11 +531,6 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    if (req.method === "GET" && url.pathname === "/api/about") {
-      sendJson(res, 200, await knowledgeBaseService.getAboutContent());
-      return;
-    }
-
     if (req.method === "GET" && url.pathname === "/api/editor/workspace") {
       sendJson(res, 200, await knowledgeBaseService.getEditorWorkspace(url.searchParams.get("entityId") || undefined));
       return;
@@ -485,9 +538,18 @@ const server = createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/editor/preview") {
       const body = await parseBody(req);
+      if (body.mode && body.mode !== "json") {
+        sendJson(res, 400, { error: "仅支持标准工作流实体 JSON（mode 必须为 json）" });
+        return;
+      }
+      const validation = validateWorkflowEntityFileData(body.source);
+      if (!validation.ok) {
+        sendJson(res, 400, { error: `仅支持标准工作流实体 JSON。${validation.error}` });
+        return;
+      }
       sendJson(res, 200, await knowledgeBaseService.previewEditorDraft({
         entityId: typeof body.entityId === "string" ? body.entityId : undefined,
-        mode: typeof body.mode === "string" ? body.mode : "json",
+        mode: "json",
         layer: typeof body.layer === "string" ? body.layer : undefined,
         slug: typeof body.slug === "string" ? body.slug : "",
         source: body.source,
@@ -497,65 +559,24 @@ const server = createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/editor/commit") {
       const body = await parseBody(req);
+      if (body.mode && body.mode !== "json") {
+        sendJson(res, 400, { error: "仅支持标准工作流实体 JSON（mode 必须为 json）" });
+        return;
+      }
+      const validation = validateWorkflowEntityFileData(body.source);
+      if (!validation.ok) {
+        sendJson(res, 400, { error: `仅支持标准工作流实体 JSON。${validation.error}` });
+        return;
+      }
       sendJson(res, 200, await knowledgeBaseService.commitEditorDraft({
         entityId: typeof body.entityId === "string" ? body.entityId : undefined,
-        mode: typeof body.mode === "string" ? body.mode : "json",
+        mode: "json",
         projectId: typeof body.projectId === "string" ? body.projectId : "demo",
         layer: typeof body.layer === "string" ? body.layer : undefined,
         slug: typeof body.slug === "string" ? body.slug : "",
         message: typeof body.message === "string" ? body.message : "",
         source: body.source,
       }));
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/chat") {
-      const body = await parseBody(req);
-      const question = typeof body.question === "string" ? body.question.trim() : "";
-      const entityId = typeof body.entityId === "string" ? body.entityId : undefined;
-      const conversationId = typeof body.conversationId === "string" ? body.conversationId : undefined;
-      const businessPrompt = typeof body.businessPrompt === "string" ? body.businessPrompt : undefined;
-      const modelName = typeof body.modelName === "string" ? body.modelName : undefined;
-      const requestConversationHistory = normalizeConversationHistoryForPrompt(body.conversationHistory);
-      const persistedState = await assistantSessionStateService.load();
-      const persistedConversationHistory = extractPersistedConversationHistory(
-        persistedState,
-        conversationId,
-      );
-      const conversationHistory = mergeConversationHistories(
-        requestConversationHistory,
-        persistedConversationHistory,
-      );
-
-      if (!question) {
-        sendJson(res, 400, { error: "question is required" });
-        return;
-      }
-
-      const context = await knowledgeBaseService.collectChatContext(question, entityId);
-      const result = await qagentService.ask(question, context, {
-        conversationId,
-        businessPrompt,
-        modelName,
-        conversationHistory,
-      });
-
-      if (!result.ok) {
-        sendJson(res, 502, {
-          error: result.error,
-          context,
-          raw: result.raw,
-          stderr: result.stderr,
-        });
-        return;
-      }
-
-      sendJson(res, 200, {
-        answer: result.answer,
-        context,
-        raw: result.raw,
-        stderr: result.stderr,
-      });
       return;
     }
 
@@ -615,7 +636,7 @@ const server = createServer(async (req, res) => {
         return;
       }
 
-      const runtimeRoot = qagentService.getConversationRuntimeRoot(conversationId);
+      const runtimeRoot = workflowService.getConversationRuntimeRoot(conversationId);
       const uploadsDir = path.join(runtimeRoot, "uploads");
       const safeFileName = fileName.replace(/[\\/]+/g, "_").replace(/\0/g, "").trim() || "upload.bin";
       const filePath = path.join(uploadsDir, safeFileName);
@@ -635,23 +656,373 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "POST" && url.pathname === "/api/workflow/file/run") {
+      const fileName = typeof url.searchParams.get("fileName") === "string"
+        ? url.searchParams.get("fileName").trim()
+        : "";
+      const projectId = typeof url.searchParams.get("projectId") === "string"
+        ? url.searchParams.get("projectId").trim()
+        : "";
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "";
+      const bodyBuffer = await readRequestBodyBuffer(req);
+
+      if (!fileName) {
+        sendJson(res, 400, { error: "fileName is required" });
+        return;
+      }
+      if (bodyBuffer.byteLength === 0) {
+        sendJson(res, 400, { error: "file content is empty" });
+        return;
+      }
+      if (!projectId) {
+        sendJson(res, 400, { error: "projectId is required" });
+        return;
+      }
+
+      const result = await workflowService.runFileWorkflow({
+        fileName: decodeURIComponent(fileName),
+        projectId: decodeURIComponent(projectId),
+        mimeType: typeof req.headers["content-type"] === "string"
+          ? req.headers["content-type"]
+          : "application/octet-stream",
+        content: bodyBuffer,
+        conversationId,
+      });
+
+      if (typeof knowledgeBaseService.repository?.invalidateCache === "function") {
+        knowledgeBaseService.repository.invalidateCache(decodeURIComponent(projectId));
+      }
+
+      sendJson(res, result.ok ? 200 : 502, result);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/workflow/file/run/stream") {
+      const fileName = typeof url.searchParams.get("fileName") === "string"
+        ? url.searchParams.get("fileName").trim()
+        : "";
+      const projectId = typeof url.searchParams.get("projectId") === "string"
+        ? url.searchParams.get("projectId").trim()
+        : "";
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "";
+      const bodyBuffer = await readRequestBodyBuffer(req);
+
+      if (!fileName) {
+        sendJson(res, 400, { error: "fileName is required" });
+        return;
+      }
+      if (bodyBuffer.byteLength === 0) {
+        sendJson(res, 400, { error: "file content is empty" });
+        return;
+      }
+      if (!projectId) {
+        sendJson(res, 400, { error: "projectId is required" });
+        return;
+      }
+
+      openSse(res);
+      writeSse(res, "status", {
+        message: "文件已接收，准备启动八阶段工作流",
+      });
+
+      const controller = new AbortController();
+      const runKey = conversationId || "default";
+      workflowControllers.set(runKey, controller);
+
+      try {
+        const result = await workflowService.runFileWorkflow({
+          fileName: decodeURIComponent(fileName),
+          projectId: decodeURIComponent(projectId),
+          mimeType: typeof req.headers["content-type"] === "string"
+            ? req.headers["content-type"]
+            : "application/octet-stream",
+          content: bodyBuffer,
+          conversationId,
+          signal: controller.signal,
+          handlers: {
+            onStatus(payload) {
+              writeSse(res, "status", typeof payload === "string" ? { message: payload } : payload);
+            },
+            onStageUpdate(stageResult) {
+              writeSse(res, "workflow_stage", stageResult);
+            },
+          },
+        });
+
+        if (typeof knowledgeBaseService.repository?.invalidateCache === "function") {
+          knowledgeBaseService.repository.invalidateCache(decodeURIComponent(projectId));
+        }
+
+        writeSse(res, "complete", result);
+        res.end();
+        res.end();
+      } finally {
+        if (workflowControllers.get(runKey) === controller) {
+          workflowControllers.delete(runKey);
+        }
+      }
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/workflow/terminate") {
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "default";
+      const controller = workflowControllers.get(conversationId);
+      if (controller) {
+        controller.abort();
+        workflowControllers.delete(conversationId);
+        sendJson(res, 200, { ok: true, message: "Workflow termination signal sent" });
+      } else {
+        sendJson(res, 404, { error: "No running workflow found for this conversation" });
+      }
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/workflow/file/retry/stream") {
+      const projectId = typeof url.searchParams.get("projectId") === "string"
+        ? url.searchParams.get("projectId").trim()
+        : "";
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "";
+      const startStage = typeof url.searchParams.get("startStage") === "string"
+        ? url.searchParams.get("startStage").trim()
+        : "";
+
+      if (!projectId) {
+        sendJson(res, 400, { error: "projectId is required" });
+        return;
+      }
+      if (!conversationId) {
+        sendJson(res, 400, { error: "conversationId is required" });
+        return;
+      }
+      if (!startStage) {
+        sendJson(res, 400, { error: "startStage is required" });
+        return;
+      }
+
+      openSse(res);
+      writeSse(res, "status", {
+        message: `正在从 ${startStage} 重试工作流`,
+      });
+
+      const controller = new AbortController();
+      const runKey = conversationId;
+      workflowControllers.set(runKey, controller);
+
+      try {
+        const result = await workflowService.retryFileWorkflowFromStage({
+          projectId: decodeURIComponent(projectId),
+          conversationId,
+          startStage,
+          signal: controller.signal,
+          handlers: {
+            onStatus(payload) {
+              writeSse(res, "status", typeof payload === "string" ? { message: payload } : payload);
+            },
+            onStageUpdate(stageResult) {
+              writeSse(res, "workflow_stage", stageResult);
+            },
+          },
+        });
+
+        if (typeof knowledgeBaseService.repository?.invalidateCache === "function") {
+          knowledgeBaseService.repository.invalidateCache(decodeURIComponent(projectId));
+        }
+
+        writeSse(res, "complete", result);
+        res.end();
+        res.end();
+      } finally {
+        if (workflowControllers.get(runKey) === controller) {
+          workflowControllers.delete(runKey);
+        }
+      }
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/workflow/v2/file/run/stream") {
+      const fileName = typeof url.searchParams.get("fileName") === "string"
+        ? url.searchParams.get("fileName").trim()
+        : "";
+      const projectId = typeof url.searchParams.get("projectId") === "string"
+        ? url.searchParams.get("projectId").trim()
+        : "";
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "";
+      const bodyBuffer = await readRequestBodyBuffer(req);
+
+      if (!fileName) {
+        sendJson(res, 400, { error: "fileName is required" });
+        return;
+      }
+      if (bodyBuffer.byteLength === 0) {
+        sendJson(res, 400, { error: "file content is empty" });
+        return;
+      }
+      if (!projectId) {
+        sendJson(res, 400, { error: "projectId is required" });
+        return;
+      }
+
+      openSse(res);
+      addWorkflowV2Subscriber(conversationId || "default", res);
+      writeSse(res, "status", {
+        message: "文件已接收，准备启动 V2 六阶段分析工作流",
+      });
+
+      const controller = new AbortController();
+      const runKey = conversationId || "default";
+      workflowV2Controllers.set(runKey, controller);
+
+      try {
+        const result = await workflowV2Service.runFileWorkflow({
+          fileName: decodeURIComponent(fileName),
+          projectId: decodeURIComponent(projectId),
+          mimeType: typeof req.headers["content-type"] === "string"
+            ? req.headers["content-type"]
+            : "application/octet-stream",
+          content: bodyBuffer,
+          conversationId,
+          signal: controller.signal,
+          handlers: {
+            onStatus(payload) {
+              broadcastWorkflowV2Event(runKey, "status", typeof payload === "string" ? { message: payload } : payload);
+            },
+            onStageUpdate(stageResult) {
+              broadcastWorkflowV2Event(runKey, "workflow_stage", stageResult);
+            },
+          },
+        });
+
+        broadcastWorkflowV2Event(runKey, "complete", result);
+        closeWorkflowV2Subscribers(runKey);
+      } catch (error) {
+        broadcastWorkflowV2Event(runKey, "error", {
+          message: error instanceof Error ? error.message : "V2 workflow server error",
+        });
+        closeWorkflowV2Subscribers(runKey);
+      } finally {
+        if (workflowV2Controllers.get(runKey) === controller) {
+          workflowV2Controllers.delete(runKey);
+        }
+      }
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/workflow/v2/attach/stream") {
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "";
+      if (!conversationId) {
+        sendJson(res, 400, { error: "conversationId is required" });
+        return;
+      }
+      if (!workflowV2Controllers.has(conversationId)) {
+        sendJson(res, 404, { error: "No running workflow V2 found for this conversation" });
+        return;
+      }
+      openSse(res);
+      addWorkflowV2Subscriber(conversationId, res);
+      writeSse(res, "status", {
+        message: "已重新连接到正在运行的 V2 工作流",
+      });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/workflow/v2/terminate") {
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "default";
+      const controller = workflowV2Controllers.get(conversationId);
+      if (controller) {
+        controller.abort();
+        workflowV2Controllers.delete(conversationId);
+        closeWorkflowV2Subscribers(conversationId);
+        sendJson(res, 200, { ok: true, message: "Workflow V2 termination signal sent" });
+      } else {
+        sendJson(res, 404, { error: "No running workflow V2 found for this conversation" });
+      }
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/workflow/v2/file/retry/stream") {
+      const projectId = typeof url.searchParams.get("projectId") === "string"
+        ? url.searchParams.get("projectId").trim()
+        : "";
+      const conversationId = typeof url.searchParams.get("conversationId") === "string"
+        ? url.searchParams.get("conversationId").trim()
+        : "";
+      const startStage = typeof url.searchParams.get("startStage") === "string"
+        ? url.searchParams.get("startStage").trim()
+        : "";
+
+      if (!projectId) {
+        sendJson(res, 400, { error: "projectId is required" });
+        return;
+      }
+      if (!conversationId) {
+        sendJson(res, 400, { error: "conversationId is required" });
+        return;
+      }
+      if (!startStage) {
+        sendJson(res, 400, { error: "startStage is required" });
+        return;
+      }
+
+      openSse(res);
+      addWorkflowV2Subscriber(conversationId, res);
+      writeSse(res, "status", {
+        message: `正在从 ${startStage} 重试 V2 工作流`,
+      });
+
+      const controller = new AbortController();
+      const runKey = conversationId;
+      workflowV2Controllers.set(runKey, controller);
+
+      try {
+        const result = await workflowV2Service.retryFileWorkflowFromStage({
+          projectId: decodeURIComponent(projectId),
+          conversationId,
+          startStage,
+          signal: controller.signal,
+          handlers: {
+            onStatus(payload) {
+              broadcastWorkflowV2Event(runKey, "status", typeof payload === "string" ? { message: payload } : payload);
+            },
+            onStageUpdate(stageResult) {
+              broadcastWorkflowV2Event(runKey, "workflow_stage", stageResult);
+            },
+          },
+        });
+        broadcastWorkflowV2Event(runKey, "complete", result);
+        closeWorkflowV2Subscribers(runKey);
+      } catch (error) {
+        broadcastWorkflowV2Event(runKey, "error", {
+          message: error instanceof Error ? error.message : "V2 workflow retry server error",
+        });
+        closeWorkflowV2Subscribers(runKey);
+      } finally {
+        if (workflowV2Controllers.get(runKey) === controller) {
+          workflowV2Controllers.delete(runKey);
+        }
+      }
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/chat/stream") {
       const body = await parseBody(req);
       const question = typeof body.question === "string" ? body.question.trim() : "";
       const entityId = typeof body.entityId === "string" ? body.entityId : undefined;
       const conversationId = typeof body.conversationId === "string" ? body.conversationId : undefined;
       const businessPrompt = typeof body.businessPrompt === "string" ? body.businessPrompt : undefined;
-      const modelName = typeof body.modelName === "string" ? body.modelName : undefined;
-      const requestConversationHistory = normalizeConversationHistoryForPrompt(body.conversationHistory);
-      const persistedState = await assistantSessionStateService.load();
-      const persistedConversationHistory = extractPersistedConversationHistory(
-        persistedState,
-        conversationId,
-      );
-      const conversationHistory = mergeConversationHistories(
-        requestConversationHistory,
-        persistedConversationHistory,
-      );
 
       if (!question) {
         sendJson(res, 400, { error: "question is required" });
@@ -671,11 +1042,11 @@ const server = createServer(async (req, res) => {
       openSse(res);
       writeSse(res, "context", context);
       writeSse(res, "status", {
-        message: "已整理知识库上下文，准备连接 Agent CLI...",
+        message: "已整理知识库上下文，准备执行固定线性工作流...",
       });
 
       try {
-        const result = await qagentService.askStream(
+        const result = await workflowService.askStream(
           question,
           context,
           {
@@ -704,8 +1075,6 @@ const server = createServer(async (req, res) => {
           {
             conversationId,
             businessPrompt,
-            modelName,
-            conversationHistory,
             signal: abortController.signal,
           }
         );

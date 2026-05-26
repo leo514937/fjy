@@ -48,13 +48,36 @@ function asNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+function normalizeProjectName(name: unknown, projectId: string): string {
+  const value = asString(name, "").trim();
+  if (!value) {
+    return projectId;
+  }
+  return value;
+}
+
+function mergeProjectRecord(existing: XgProject, candidate: XgProject): XgProject {
+  const existingName = existing.name.trim();
+  const candidateName = candidate.name.trim();
+  const existingLooksLikeId = !existingName || existingName === existing.id;
+  const candidateLooksLikeId = !candidateName || candidateName === candidate.id;
+
+  return {
+    ...existing,
+    name: existingLooksLikeId && !candidateLooksLikeId ? candidateName : existingName || candidateName || existing.id,
+    description: existing.description.trim() ? existing.description : candidate.description,
+    status: existing.status || candidate.status,
+    updatedAt: existing.updatedAt || candidate.updatedAt,
+  };
+}
+
 export function normalizeXgProjectsResponse(payload: unknown): XgProject[] {
   const wrapper = asRecord(payload);
   const projects = Array.isArray(payload)
     ? payload
     : asArray(wrapper?.projects);
 
-  const normalized: XgProject[] = [];
+  const normalized = new Map<string, XgProject>();
   for (const project of projects) {
     const record = asRecord(project);
     if (!record) {
@@ -66,17 +89,25 @@ export function normalizeXgProjectsResponse(payload: unknown): XgProject[] {
       continue;
     }
 
-    normalized.push({
+    const candidate: XgProject = {
       id: projectId,
       projectId,
-      name: asString(record.name, projectId),
+      name: normalizeProjectName(record.name, projectId),
       description: asString(record.description),
       status: asString(record.status) || undefined,
       updatedAt: asString(record.updated_at) || undefined,
-    });
+    };
+
+    const existing = normalized.get(projectId);
+    if (!existing) {
+      normalized.set(projectId, candidate);
+      continue;
+    }
+
+    normalized.set(projectId, mergeProjectRecord(existing, candidate));
   }
 
-  return normalized;
+  return [...normalized.values()];
 }
 
 export function normalizeXgTimelinesResponse(payload: unknown): XgTimeline[] {

@@ -7,16 +7,16 @@ import test from "node:test";
 
 import { OntoGitLocalCommitService } from "../services/ontoGitLocalCommitService.mjs";
 
-test("OntoGitLocalCommitService keeps markdown source files as raw text", async () => {
+test("OntoGitLocalCommitService keeps text source files as raw text", async () => {
   const storageRoot = await mkdtemp(path.join(os.tmpdir(), "ontogit-local-"));
   const service = new OntoGitLocalCommitService({ storageRoot });
-  const markdown = "# 控制安全规则\n\n## 定义与定位\n用于验证 Markdown 原文写入。\n";
+  const rawText = "# 控制安全规则\n\n## 定义与定位\n用于验证原文写入。\n";
 
   const result = await service.writeVersion({
     projectId: "demo",
-    filename: "graph-source/common/kimi-demo/控制安全规则.md",
-    data: markdown,
-    message: "写入 Markdown 源文件",
+    filename: "graph-source/common/kimi-demo/控制安全规则.json",
+    data: rawText,
+    message: "写入 JSON 源文件",
     agentName: "ontology-editor",
     committerName: "ontology-editor",
     timestamp: "2026-04-17T22:10:00+08:00",
@@ -24,9 +24,9 @@ test("OntoGitLocalCommitService keeps markdown source files as raw text", async 
 
   assert.equal(result.version_id, 1);
 
-  const targetFile = path.join(storageRoot, "demo", "graph-source", "common", "kimi-demo", "控制安全规则.md");
+  const targetFile = path.join(storageRoot, "demo", "graph-source", "common", "kimi-demo", "控制安全规则.json");
   const content = await readFile(targetFile, "utf8");
-  assert.equal(content, markdown);
+  assert.equal(content, rawText);
 });
 
 test("OntoGitLocalCommitService lists every local JSON file in a project", async () => {
@@ -35,11 +35,11 @@ test("OntoGitLocalCommitService lists every local JSON file in a project", async
 
   await service.writeVersion({
     projectId: "demo",
-    filename: "wikimg_export.json",
+    filename: "workflow_export.json",
     data: { exported: true },
     message: "写入导出文件",
-    agentName: "wikimg-export",
-    committerName: "wikimg-export",
+    agentName: "ontology-export",
+    committerName: "ontology-export",
   });
 
   const nestedDir = path.join(storageRoot, "demo", "graph-source", "common", "321");
@@ -49,7 +49,7 @@ test("OntoGitLocalCommitService lists every local JSON file in a project", async
   const files = await service.listJsonFiles("demo");
   assert.deepEqual(files, [
     "graph-source/common/321/312.json",
-    "wikimg_export.json",
+    "workflow_export.json",
   ]);
 
   const timelines = await service.getJsonFileTimelines("demo");
@@ -57,7 +57,7 @@ test("OntoGitLocalCommitService lists every local JSON file in a project", async
     timelines.map((timeline) => [timeline.filename, timeline.history.length]),
     [
       ["graph-source/common/321/312.json", 0],
-      ["wikimg_export.json", 1],
+      ["workflow_export.json", 1],
     ],
   );
 

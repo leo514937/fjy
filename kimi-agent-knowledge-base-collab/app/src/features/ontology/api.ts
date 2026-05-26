@@ -1,5 +1,115 @@
 import type { Entity, KnowledgeGraphData, OntologyModule } from '@/types/ontology';
-import { buildApiUrl, parseJson } from '@/shared/api/http';
+import { apiFetch, parseJson } from '@/shared/api/http';
+import { notifyRepositorySync } from '@/shared/events/repositorySync';
+import { validateWorkflowEntityFileData } from '@/features/workspace/workflowEntityFormat';
+
+interface SessionCacheEntry<T> {
+  promise: Promise<T> | null;
+  value: T | null;
+}
+
+const knowledgeGraphRequestCache = new Map<string, SessionCacheEntry<KnowledgeGraphData>>();
+const knowledgeGraphSliceRequestCache = new Map<string, SessionCacheEntry<KnowledgeGraphSliceResponse>>();
+const ontologiesRequestCache = new Map<string, SessionCacheEntry<{
+  philosophicalOntology: OntologyModule;
+  formalOntology: OntologyModule;
+  scientificOntology: OntologyModule;
+}>>();
+const SESSION_CACHE_LIMIT = 6;
+
+function touchSessionCacheEntry<T>(
+  cache: Map<string, SessionCacheEntry<T>>,
+  key: string,
+  entry: SessionCacheEntry<T>,
+) {
+  if (cache.get(key) === entry) {
+    cache.delete(key);
+  }
+  cache.set(key, entry);
+}
+
+function pruneSessionCache<T>(cache: Map<string, SessionCacheEntry<T>>) {
+  while (cache.size > SESSION_CACHE_LIMIT) {
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey === undefined) {
+      return;
+    }
+
+    const oldestEntry = cache.get(oldestKey);
+    if (oldestEntry?.promise) {
+      const settledKey = [...cache.entries()].find(([, entry]) => !entry.promise)?.[0];
+      if (settledKey === undefined) {
+        return;
+      }
+      cache.delete(settledKey);
+      continue;
+    }
+
+    cache.delete(oldestKey);
+  }
+}
+
+function getSharedSessionPromise<T>(
+  cache: Map<string, SessionCacheEntry<T>>,
+  key: string,
+  factory: () => Promise<T>,
+  options: { refresh?: boolean } = {},
+): Promise<T> {
+  const refresh = Boolean(options.refresh);
+  const existing = cache.get(key);
+  if (existing && !refresh) {
+    touchSessionCacheEntry(cache, key, existing);
+    if (existing.promise) {
+      return existing.promise;
+    }
+    if (existing.value !== null) {
+      return Promise.resolve(existing.value);
+    }
+  }
+
+  const entry = existing ?? { promise: null, value: null };
+  const promise = factory();
+  entry.promise = promise;
+  touchSessionCacheEntry(cache, key, entry);
+  pruneSessionCache(cache);
+
+  void promise.then((value) => {
+    const current = cache.get(key);
+    if (current?.promise === promise) {
+      current.promise = null;
+      current.value = value;
+      touchSessionCacheEntry(cache, key, current);
+      pruneSessionCache(cache);
+    }
+  }).catch(() => {
+    const current = cache.get(key);
+    if (current?.promise === promise) {
+      current.promise = null;
+      if (current.value === null) {
+        cache.delete(key);
+      }
+    }
+  });
+
+  return promise;
+}
+
+function normalizeProjectId(projectId?: string): string {
+  return projectId?.trim() || '';
+}
+
+function buildKnowledgeGraphRequestKey(options: { refresh?: boolean; projectId?: string } = {}): string {
+  return JSON.stringify({
+    projectId: normalizeProjectId(options.projectId),
+  });
+}
+
+function buildKnowledgeGraphSliceRequestKey(refs: string[], projectId?: string): string {
+  return JSON.stringify({
+    refs,
+    projectId: normalizeProjectId(projectId),
+  });
+}
 
 export interface AnalysisResult {
   entity_name: string;
@@ -99,32 +209,6 @@ export interface EducationContent {
   } | null;
 }
 
-export interface AboutContent {
-  platform: {
-    name: string;
-    vision: string;
-    description: string;
-  };
-  modules: Array<{
-    name: string;
-    purpose: string;
-    status: string;
-  }>;
-  workflow: string[];
-  roadmap: Array<{
-    title: string;
-    detail: string;
-  }>;
-  metrics: {
-    provider: string;
-    entities: number;
-    relations: number;
-    domains: number;
-    levels: number;
-    layers: number;
-  };
-}
-
 export interface EditorWorkspace {
   project_id: string;
   entity_id?: string;
@@ -137,10 +221,8 @@ export interface EditorWorkspace {
   layer: 'common' | 'domain' | 'private';
   slug: string;
   json_draft: Record<string, unknown>;
-  markdown_draft: string;
   source_filenames: {
     json: string;
-    markdown: string;
   };
   suggestions: {
     recommended_type: string;
@@ -155,19 +237,12 @@ export interface EditorPreview {
   rdf: string;
   owl: string;
   warnings: string[];
-  normalized_markdown: string;
+  normalized_json: string;
   target_ref: string;
 }
 
 export interface EditorCommitResult {
   status: 'success' | 'partial';
-  batch?: boolean;
-  total?: number;
-  layerCounts?: {
-    common: number;
-    domain: number;
-    private: number;
-  };
   layer?: 'common' | 'domain' | 'private';
   slug?: string;
   ref?: string;
@@ -177,29 +252,6 @@ export interface EditorCommitResult {
     version_id?: number;
     commit_id?: string;
   };
-  wikiWrite?: {
-    path: string;
-    ref?: string;
-  } | null;
-  wikiWrites?: Array<{
-    ref: string;
-    layer: 'common' | 'domain' | 'private';
-    slug: string;
-    title?: string;
-    warnings?: string[];
-    wikiWrite?: {
-      path: string;
-      ref?: string;
-    };
-  }>;
-  failedWrites?: Array<{
-    ref: string;
-    layer: 'common' | 'domain' | 'private';
-    slug: string;
-    title?: string;
-    warnings?: string[];
-    error: string;
-  }>;
   exportSummary?: {
     totalEntities: number;
     totalRelations: number;
@@ -210,9 +262,24 @@ export interface EditorCommitResult {
   error?: string;
 }
 
-export async function fetchKnowledgeGraph(options: { refresh?: boolean } = {}): Promise<KnowledgeGraphData> {
-  const response = await fetch(buildApiUrl(`/api/knowledge-graph${options.refresh ? '?refresh=1' : ''}`));
-  return parseJson<KnowledgeGraphData>(response);
+export async function fetchKnowledgeGraph(options: { refresh?: boolean; projectId?: string } = {}): Promise<KnowledgeGraphData> {
+  return getSharedSessionPromise(knowledgeGraphRequestCache, buildKnowledgeGraphRequestKey(options), async () => {
+    const params = new URLSearchParams();
+    if (options.refresh) {
+      params.set('refresh', '1');
+    }
+    const projectId = normalizeProjectId(options.projectId);
+    if (projectId) {
+      params.set('project_id', projectId);
+    }
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await apiFetch(`/api/knowledge-graph${suffix}`);
+    return parseJson<KnowledgeGraphData>(response);
+  }, options);
+}
+
+export function prefetchKnowledgeGraph(options: { refresh?: boolean; projectId?: string } = {}): Promise<KnowledgeGraphData> {
+  return fetchKnowledgeGraph(options);
 }
 
 export interface KnowledgeGraphSliceResponse {
@@ -227,16 +294,22 @@ export interface KnowledgeGraphSliceResponse {
   }>;
 }
 
-export async function fetchKnowledgeGraphSlice(refs: string[]): Promise<KnowledgeGraphSliceResponse> {
-  const response = await fetch(buildApiUrl('/api/knowledge-graph/slice'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ refs }),
-  });
+export async function fetchKnowledgeGraphSlice(refs: string[], projectId?: string): Promise<KnowledgeGraphSliceResponse> {
+  return getSharedSessionPromise(knowledgeGraphSliceRequestCache, buildKnowledgeGraphSliceRequestKey(refs, projectId), async () => {
+    const response = await apiFetch('/api/knowledge-graph/slice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refs, project_id: projectId }),
+    });
 
-  return parseJson<KnowledgeGraphSliceResponse>(response);
+    return parseJson<KnowledgeGraphSliceResponse>(response);
+  });
+}
+
+export function prefetchKnowledgeGraphSlice(refs: string[], projectId?: string): Promise<KnowledgeGraphSliceResponse> {
+  return fetchKnowledgeGraphSlice(refs, projectId);
 }
 
 export async function fetchOntologies(): Promise<{
@@ -244,12 +317,26 @@ export async function fetchOntologies(): Promise<{
   formalOntology: OntologyModule;
   scientificOntology: OntologyModule;
 }> {
-  const response = await fetch(buildApiUrl('/api/ontologies'));
-  return parseJson(response);
+  return getSharedSessionPromise(ontologiesRequestCache, 'ontologies', async () => {
+    const response = await apiFetch('/api/ontologies');
+    return parseJson(response);
+  });
 }
 
-export async function searchEntities(query: string): Promise<Entity[]> {
-  const response = await fetch(buildApiUrl(`/api/search?q=${encodeURIComponent(query)}`));
+export function prefetchOntologies(): Promise<{
+  philosophicalOntology: OntologyModule;
+  formalOntology: OntologyModule;
+  scientificOntology: OntologyModule;
+}> {
+  return fetchOntologies();
+}
+
+export async function searchEntities(query: string, projectId?: string): Promise<Entity[]> {
+  const params = new URLSearchParams({ q: query });
+  if (projectId?.trim()) {
+    params.set('project_id', projectId.trim());
+  }
+  const response = await apiFetch(`/api/search?${params.toString()}`);
   return parseJson<Entity[]>(response);
 }
 
@@ -259,7 +346,7 @@ export async function fetchAnalysis(query: string, entityId?: string): Promise<A
     params.set('entityId', entityId);
   }
 
-  const response = await fetch(buildApiUrl(`/api/analysis?${params.toString()}`));
+  const response = await apiFetch(`/api/analysis?${params.toString()}`);
   return parseJson<AnalysisResult>(response);
 }
 
@@ -269,7 +356,7 @@ export async function fetchSystemAnalysis(query: string, entityId?: string): Pro
     params.set('entityId', entityId);
   }
 
-  const response = await fetch(buildApiUrl(`/api/system-analysis?${params.toString()}`));
+  const response = await apiFetch(`/api/system-analysis?${params.toString()}`);
   return parseJson<SystemAnalysisData>(response);
 }
 
@@ -280,13 +367,8 @@ export async function fetchEducationContent(entityId?: string): Promise<Educatio
   }
 
   const suffix = params.toString() ? `?${params.toString()}` : '';
-  const response = await fetch(buildApiUrl(`/api/education${suffix}`));
+  const response = await apiFetch(`/api/education${suffix}`);
   return parseJson<EducationContent>(response);
-}
-
-export async function fetchAboutContent(): Promise<AboutContent> {
-  const response = await fetch(buildApiUrl('/api/about'));
-  return parseJson<AboutContent>(response);
 }
 
 export async function fetchEditorWorkspace(entityId?: string): Promise<EditorWorkspace> {
@@ -296,18 +378,18 @@ export async function fetchEditorWorkspace(entityId?: string): Promise<EditorWor
   }
 
   const suffix = params.toString() ? `?${params.toString()}` : '';
-  const response = await fetch(buildApiUrl(`/api/editor/workspace${suffix}`));
+  const response = await apiFetch(`/api/editor/workspace${suffix}`);
   return parseJson<EditorWorkspace>(response);
 }
 
 export async function previewEditorDraft(input: {
   entityId?: string;
-  mode: 'json' | 'markdown';
+  mode: 'json';
   layer?: 'common' | 'domain' | 'private';
   slug: string;
   source: unknown;
 }): Promise<EditorPreview> {
-  const response = await fetch(buildApiUrl('/api/editor/preview'), {
+  const response = await apiFetch('/api/editor/preview', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -320,20 +402,26 @@ export async function previewEditorDraft(input: {
 
 export async function commitEditorDraft(input: {
   entityId?: string;
-  mode: 'json' | 'markdown';
+  mode: 'json';
   projectId: string;
   layer?: 'common' | 'domain' | 'private';
   slug: string;
   message: string;
   source: unknown;
 }): Promise<EditorCommitResult> {
-  const response = await fetch(buildApiUrl('/api/editor/commit'), {
+  const validation = validateWorkflowEntityFileData(input.source);
+  if (!validation.ok) {
+    throw new Error(`写入拦截：仅支持标准工作流实体 JSON。${validation.error}`);
+  }
+
+  const response = await apiFetch('/api/editor/commit', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(input),
   });
-
-  return parseJson<EditorCommitResult>(response);
+  const result = await parseJson<EditorCommitResult>(response);
+  notifyRepositorySync({ projectId: input.projectId, filename: result.sourceWrite?.filename, source: 'commitEditorDraft' });
+  return result;
 }

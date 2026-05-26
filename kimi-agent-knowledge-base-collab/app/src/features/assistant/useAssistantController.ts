@@ -31,6 +31,10 @@ import {
 } from '@/hooks/assistantSessionState';
 
 const STORAGE_KEY = 'ontology-assistant-state-v1';
+const STORAGE_FALLBACK_KEY = 'ontology-assistant-state-v1-lite';
+const STORAGE_MAX_SESSION_COUNT = 3;
+const STORAGE_MAX_MESSAGE_COUNT = 40;
+const STORAGE_MAX_TEXT_LENGTH = 4000;
 
 export const DEFAULT_MODEL = 'gpt-4.1-mini';
 export const CUSTOM_MODEL_KEY = '__custom__';
@@ -217,6 +221,88 @@ function readBrowserState() {
   }
 }
 
+function truncateText(value: string, maxLength = STORAGE_MAX_TEXT_LENGTH) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength)}…`;
+}
+
+function createCompactSnapshot(state: OntologyAssistantSessionState): OntologyAssistantSessionState {
+  return {
+    ...state,
+    sessions: state.sessions
+      .slice(0, STORAGE_MAX_SESSION_COUNT)
+      .map((session) => ({
+        ...session,
+        draftQuestion: truncateText(session.draftQuestion, 500),
+        messages: session.messages
+          .slice(-STORAGE_MAX_MESSAGE_COUNT)
+          .map((message) => ({
+            ...message,
+            question: truncateText(message.question),
+            answer: truncateText(message.answer),
+            toolRuns: message.toolRuns.map((toolRun) => ({
+              ...toolRun,
+              stdout: truncateText(toolRun.stdout),
+              stderr: truncateText(toolRun.stderr),
+            })),
+            contentBlocks: message.contentBlocks.map((block) => {
+              if (block.type === 'assistant') {
+                return {
+                  ...block,
+                  content: truncateText(block.content),
+                };
+              }
+
+              if (block.type === 'tool_result') {
+                return {
+                  ...block,
+                  stdout: truncateText(block.stdout),
+                  stderr: truncateText(block.stderr),
+                };
+              }
+
+              return block;
+            }),
+          })),
+      })),
+  };
+}
+
+function safePersistBrowserState(snapshot: OntologyAssistantSessionState) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const serialized = JSON.stringify(snapshot);
+  try {
+    window.localStorage.setItem(STORAGE_KEY, serialized);
+    window.localStorage.removeItem(STORAGE_FALLBACK_KEY);
+    return;
+  } catch (error) {
+    if (!(error instanceof DOMException) || error.name !== 'QuotaExceededError') {
+      console.warn('Failed to persist assistant state to localStorage:', error);
+      return;
+    }
+  }
+
+  try {
+    const compactSnapshot = createCompactSnapshot(snapshot);
+    window.localStorage.setItem(STORAGE_FALLBACK_KEY, JSON.stringify(compactSnapshot));
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.warn('Assistant state exceeded localStorage quota and could not be compacted:', error);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(STORAGE_FALLBACK_KEY);
+    } catch {
+      // Ignore storage cleanup failures.
+    }
+  }
+}
+
 export function useAssistantController(selectedEntity: Entity | null) {
   const initialState = React.useMemo(() => readBrowserState(), []);
 
@@ -297,9 +383,7 @@ export function useAssistantController(selectedEntity: Entity | null) {
       modelName,
     };
 
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-    }
+    safePersistBrowserState(snapshot);
 
     const persistTask = window.setTimeout(() => {
       saveOntologyAssistantState(snapshot).catch(() => {});

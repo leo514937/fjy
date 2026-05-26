@@ -2,8 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
-
-const appRoot = "D:/code/FJY/kimi-agent-knowledge-base-collab/app";
+import { appRoot, resolveAppPath } from "./testPaths.mjs";
 
 async function collectFiles(dir) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -29,7 +28,7 @@ test("前端 API 已按 shared/ontology/assistant/workspace 分域拆分", async
   ];
 
   for (const relativePath of requiredFiles) {
-    const filePath = path.join(appRoot, relativePath);
+    const filePath = resolveAppPath(relativePath);
     await assert.doesNotReject(() => fs.access(filePath), `${relativePath} 应存在`);
   }
 });

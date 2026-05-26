@@ -6,10 +6,13 @@ import { ProjectListPanel } from '@/features/workspace/components/ProjectListPan
 import { RecommendationPanel } from '@/features/workspace/components/RecommendationPanel';
 import { TimelinePanel } from '@/features/workspace/components/TimelinePanel';
 import { DiffDialog } from '@/features/workspace/components/DiffDialog';
-import { useWorkspaceState } from '@/features/workspace/useWorkspaceState';
+import type { WorkspaceState } from '@/features/workspace/useWorkspaceState';
 
-export function WorkspaceDashboard() {
-  const workspace = useWorkspaceState();
+interface WorkspaceDashboardProps {
+  workspace: WorkspaceState;
+}
+
+export function WorkspaceDashboard({ workspace }: WorkspaceDashboardProps) {
 
   const handleSelectFile = async (filename: string) => {
     workspace.setSelectedFile(filename);
@@ -17,14 +20,23 @@ export function WorkspaceDashboard() {
   };
 
   const handleSourceCommitted = async (projectId: string, filename: string) => {
-    workspace.setSelectedProjectId(projectId);
-    await workspace.loadTimelines(projectId);
+    if (projectId !== workspace.selectedProjectId) {
+      workspace.handleSelectProject(projectId);
+      workspace.setSelectedFile(filename);
+      return;
+    }
+
     workspace.setSelectedFile(filename);
-    await workspace.loadContent(projectId, filename);
+    await workspace.loadTimelines(projectId);
   };
 
   return (
     <div className="space-y-6">
+      {workspace.errorMessage && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {workspace.errorMessage}
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="lg:col-span-3 flex flex-col space-y-6">
           <ProjectListPanel
@@ -32,15 +44,12 @@ export function WorkspaceDashboard() {
             projects={workspace.projects}
             selectedProjectId={workspace.selectedProjectId}
             loading={workspace.loading}
+            switchingProjectId={workspace.switchingProject ? workspace.selectedProjectId : undefined}
             newProjectId={workspace.newProjectId}
-            setNewProjectId={workspace.setNewProjectId}
             newProjectName={workspace.newProjectName}
-            setNewProjectName={workspace.setNewProjectName}
             isNewProjectOpen={workspace.isNewProjectOpen}
-            setIsNewProjectOpen={workspace.setIsNewProjectOpen}
-            onSelectProject={workspace.setSelectedProjectId}
+            onSelectProject={workspace.handleSelectProject}
             onRefresh={workspace.loadProjects}
-            onInitProject={workspace.handleInitProject}
             onDeleteProject={workspace.handleDeleteProject}
             onRenameProject={workspace.handleRenameProject}
           />
@@ -48,6 +57,7 @@ export function WorkspaceDashboard() {
             className="h-[545px]" 
             timelines={workspace.timelines} 
             selectedFile={workspace.selectedFile} 
+            loading={workspace.switchingProject}
             onSelectFile={handleSelectFile} 
             fileSearch={workspace.fileSearch}
             onSearchChange={workspace.setFileSearch}
@@ -58,13 +68,14 @@ export function WorkspaceDashboard() {
             <FileContentPanel 
               selectedFile={workspace.selectedFile} 
               fileContent={workspace.fileContent} 
+              loading={workspace.switchingProject || workspace.loadingContent}
               onRefresh={() => workspace.loadContent(workspace.selectedProjectId, workspace.selectedFile)} 
               onNavigate={workspace.setFileSearch}
             />
             <GraphIngestPanel selectedProjectId={workspace.selectedProjectId} onSourceCommitted={handleSourceCommitted} />
           </div>
           <div className="grid gap-6 md:grid-cols-2">
-            <TimelinePanel selectedFile={workspace.selectedFile} timelines={workspace.timelines} onViewDiff={workspace.handleViewDiff} onSetOfficial={workspace.handleSetOfficial} onRollback={workspace.handleRollback} />
+            <TimelinePanel selectedFile={workspace.selectedFile} timelines={workspace.timelines} loading={workspace.switchingProject} onViewDiff={workspace.handleViewDiff} onSetOfficial={workspace.handleSetOfficial} onRollback={workspace.handleRollback} />
             <ProbabilityPanel probInput={workspace.probInput} setProbInput={workspace.setProbInput} probResult={workspace.probResult} analyzing={workspace.analyzing} onAnalyze={workspace.handleProbAnalysis} />
           </div>
           <RecommendationPanel />

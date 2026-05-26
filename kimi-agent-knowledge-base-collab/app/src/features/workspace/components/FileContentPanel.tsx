@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, Maximize2, Hash, ChevronRight, Folder } from 'lucide-react';
+import { RefreshCw, Maximize2, Hash, ChevronRight, Folder, Loader2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 interface FileContentPanelProps {
   selectedFile: string;
   fileContent: unknown;
+  loading?: boolean;
   onRefresh: () => void | Promise<void>;
   onNavigate?: (path: string) => void;
 }
@@ -26,7 +27,7 @@ function formatContent(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
-export function FileContentPanel({ selectedFile, fileContent, onRefresh, onNavigate }: FileContentPanelProps) {
+export function FileContentPanel({ selectedFile, fileContent, loading = false, onRefresh, onNavigate }: FileContentPanelProps) {
   const [viewContent, setViewContent] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -86,8 +87,8 @@ export function FileContentPanel({ selectedFile, fileContent, onRefresh, onNavig
           <CardDescription className="text-[12px] font-medium text-muted-foreground/60 truncate">读取 XiaoGuGit 存储的最新版本</CardDescription>
         </div>
         <div className="flex gap-2 shrink-0">
-          <Button variant="ghost" size="icon" onClick={onRefresh} className="rounded-full hover:bg-muted/50 h-8 w-8">
-            <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
+          <Button variant="ghost" size="icon" onClick={onRefresh} disabled={loading || !selectedFile} className="rounded-full hover:bg-muted/50 h-8 w-8">
+            <RefreshCw className={cn('h-3.5 w-3.5 text-muted-foreground', loading && 'animate-spin')} />
           </Button>
 
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -136,9 +137,16 @@ export function FileContentPanel({ selectedFile, fileContent, onRefresh, onNavig
       <CardContent className="flex-1 px-6 pt-1 pb-6 bg-muted/5 dark:bg-zinc-950/10 overflow-hidden border-t border-border/10">
         <div className="h-full w-full rounded-2xl border border-border/40 bg-muted/10 dark:bg-zinc-950/40 overflow-hidden">
           <ScrollArea className="h-full w-full">
-            <pre className="p-6 text-[13px] text-foreground/80 dark:text-primary/70 font-mono leading-relaxed selection:bg-primary/20">
-              {fileContent ? formatContent(fileContent) : '// 选择文件以查看内容'}
-            </pre>
+            {loading ? (
+              <div className="flex h-full min-h-[220px] items-center justify-center gap-3 p-6 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                正在加载当前项目内容
+              </div>
+            ) : (
+              <pre className="p-6 text-[13px] text-foreground/80 dark:text-primary/70 font-mono leading-relaxed selection:bg-primary/20">
+                {fileContent ? formatContent(fileContent) : '// 选择文件以查看内容'}
+              </pre>
+            )}
           </ScrollArea>
         </div>
       </CardContent>

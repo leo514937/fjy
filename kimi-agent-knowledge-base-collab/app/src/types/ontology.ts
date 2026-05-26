@@ -39,6 +39,25 @@ export interface FormattedSection {
   blocks: MarkdownBlock[];
 }
 
+export interface AblationData {
+  entity_id?: string;
+  entity_name?: string;
+  impact_level?: string;
+  impact_reason?: string;
+  system_risk?: string;
+  remove_target?: string;
+  retain_target?: string;
+  keep_role?: string;
+  remove_impact?: string;
+  observation?: string;
+  evidence?: string;
+  keep_probability?: string;
+  remove_probability?: string;
+  probability_gap?: string;
+  judge_reason?: string;
+  small_reason?: true;
+}
+
 export interface Entity {
   id: string;
   name: string;
@@ -49,6 +68,7 @@ export interface Entity {
   source: string;
   definition: string;
   properties: Record<string, any>;
+  ablation?: AblationData | null;
   formatted_sections?: FormattedSection[];
   display_level?: number;
   visible?: boolean;

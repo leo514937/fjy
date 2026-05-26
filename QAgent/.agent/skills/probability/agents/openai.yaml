@@ -1,7 +1,0 @@
-interface:
-  display_name: "Probability CLI"
-  short_description: "Guide qagent to use probability.sh reliably"
-  default_prompt: "Use $probability-cli when the user asks for a probability judgment about an object or description; resolve `..\\OntoGit\\probability.sh` from the QAgent repo root and call it with `name`, `--details`, or `--json` as appropriate."
-
-policy:
-  allow_implicit_invocation: true

@@ -1,18 +1,27 @@
+import { validateWorkflowEntityFileData } from "../workflowEntityFormat.mjs";
+
+function asText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function safeObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
 export class KnowledgeBaseService {
   constructor(repository, options = {}) {
     this.repository = repository;
     this.projectId = options.projectId || "demo";
     this.sourceCommitter = options.sourceCommitter || null;
-    this.wikiWriter = options.wikiWriter || null;
   }
 
-  async getKnowledgeGraph() {
-    return this.repository.getKnowledgeGraph();
+  async getKnowledgeGraph(projectId = this.projectId) {
+    return this.repository.getKnowledgeGraph(projectId);
   }
 
-  async getKnowledgeGraphSlice(refs) {
+  async getKnowledgeGraphSlice(refs, projectId = this.projectId) {
     if (typeof this.repository.getKnowledgeGraphSlice === "function") {
-      return this.repository.getKnowledgeGraphSlice(refs);
+      return this.repository.getKnowledgeGraphSlice(refs, projectId);
     }
 
     return {
@@ -27,8 +36,8 @@ export class KnowledgeBaseService {
     return this.repository.getOntologies();
   }
 
-  async listEntities() {
-    return this.repository.listEntities();
+  async listEntities(projectId = this.projectId) {
+    return this.repository.listEntities(projectId);
   }
 
   async getEntityDetail(entityId) {
@@ -41,8 +50,8 @@ export class KnowledgeBaseService {
     return { entity, relatedEntities };
   }
 
-  async searchEntities(query) {
-    return this.repository.searchEntities(query);
+  async searchEntities(query, projectId = this.projectId) {
+    return this.repository.searchEntities(query, projectId);
   }
 
   async collectChatContext(question, entityId) {
@@ -53,10 +62,10 @@ export class KnowledgeBaseService {
       }
     }
 
-    const knowledgeGraph = await this.repository.getKnowledgeGraph();
+    const knowledgeGraph = await this.repository.getKnowledgeGraph(this.projectId);
     const entity = entityId ? knowledgeGraph.entity_index[entityId] : null;
     const related = entity ? (await this.repository.getRelatedEntities(entityId)).slice(0, 6) : [];
-    const searchHits = (await this.repository.searchEntities(question)).slice(0, 8);
+    const searchHits = (await this.repository.searchEntities(question, this.projectId)).slice(0, 8);
 
     return { entity, related, searchHits };
   }
@@ -99,7 +108,7 @@ export class KnowledgeBaseService {
     return {
       ...baseContent,
       metrics: {
-        provider: process.env.KNOWLEDGE_BASE_PROVIDER || "json",
+        provider: "ontogit",
         entities: knowledgeGraph.statistics.total_entities,
         relations: knowledgeGraph.statistics.total_relations,
         domains: knowledgeGraph.statistics.domains.length,
@@ -121,15 +130,8 @@ export class KnowledgeBaseService {
       entity: fallbackEntity,
       template,
       related,
+      projectId: this.projectId,
     });
-    const markdownDraft = typeof this.repository.ingestSource === "function"
-      ? (await this.repository.ingestSource({
-          mode: "json",
-          layer: reference.layer,
-          slug: reference.slug,
-          source: jsonDraft,
-        })).markdown
-      : buildFallbackMarkdownDraft(jsonDraft);
 
     return {
       project_id: this.projectId,
@@ -143,10 +145,8 @@ export class KnowledgeBaseService {
       layer: reference.layer,
       slug: reference.slug,
       json_draft: jsonDraft,
-      markdown_draft: markdownDraft,
       source_filenames: {
         json: `graph-source/${reference.layer}/${reference.slug}.json`,
-        markdown: `graph-source/${reference.layer}/${reference.slug}.md`,
       },
       suggestions: {
         recommended_type: fallbackEntity?.type || template.suggestions.recommended_type,
@@ -160,184 +160,139 @@ export class KnowledgeBaseService {
   }
 
   async previewEditorDraft(input) {
-    if (typeof this.repository.ingestSource !== "function") {
-      throw new Error("当前知识库 provider 不支持图谱入库预览");
+    if (input.mode !== "json") {
+      throw new Error("写入拦截：仅支持标准工作流实体 JSON（mode 必须为 json）。");
+    }
+    const validation = validateWorkflowEntityFileData(input.source);
+    if (!validation.ok) {
+      throw new Error(`写入拦截：仅支持标准工作流实体 JSON。${validation.error}`);
     }
 
-    const normalized = await this.repository.ingestSource({
-      mode: input.mode,
-      layer: input.layer,
-      slug: input.slug,
-      source: input.source,
+    const sourceEntity = safeObject(input.source?.entity);
+    const sourceOntology = safeObject(input.source?.ontology);
+    const related = Array.isArray(input.source?.relations)
+      ? input.source.relations
+        .map((relation) => ({
+          id: asText(relation?.target_entity_id),
+          name: asText(relation?.target_name),
+          definition: asText(relation?.description) || asText(relation?.evidence),
+        }))
+        .filter((item) => item.id || item.name)
+      : [];
+    const reference = deriveEditorReference(
+      input.entityId || sourceEntity.id || sourceOntology.entity_id,
+      sourceEntity.name || sourceOntology.entity_name || input.slug,
+      input.slug,
+    );
+    const template = {
+      defaults: {
+        name: sourceEntity.name || sourceOntology.entity_name || "未命名概念",
+        type: asText(sourceEntity.type) || "workflow-entity",
+        domain: asText(sourceEntity.properties?.domain) || asText(input.layer) || "domain",
+        source: asText(input.source?.source) || "linear-workflow",
+        definition: asText(sourceEntity.summary) || asText(sourceEntity.definition) || "请填写定义。",
+        properties: safeObject(sourceEntity.properties),
+      },
+      suggestions: {
+        recommended_type: asText(sourceEntity.type) || "workflow-entity",
+        suggested_relations: related.map((item) => item.name),
+        rdf_preview: `<${sourceEntity.name || sourceOntology.entity_name || "未命名概念"}> rdf:type <${asText(sourceEntity.type) || "workflow-entity"}> .`,
+        owl_preview: `Class: ${sourceEntity.name || sourceOntology.entity_name || "未命名概念"}`,
+      },
+    };
+    const jsonDraft = buildJsonDraft({
+      entity: {
+        ...sourceEntity,
+        name: sourceEntity.name || sourceOntology.entity_name || "未命名概念",
+        summary: asText(sourceEntity.summary) || asText(sourceEntity.definition),
+        type: asText(sourceEntity.type) || "workflow-entity",
+        domain: asText(sourceEntity.properties?.domain) || asText(input.layer) || "domain",
+        level: sourceEntity.level || 2,
+        source: asText(input.source?.source) || "linear-workflow",
+        properties: safeObject(sourceEntity.properties),
+      },
+      template,
+      related,
+      projectId: input.projectId || this.projectId,
     });
-    if (normalized.batch) {
-      const layerCounts = normalized.layer_counts || buildLayerCounts(normalized.items || []);
-      return {
-        summary: `本次将入库 ${normalized.total || 0} 条：common ${layerCounts.common || 0}、domain ${layerCounts.domain || 0}、private ${layerCounts.private || 0}。`,
-        rdf: "",
-        owl: "",
-        warnings: normalized.warnings || [],
-        normalized_markdown: (normalized.items || []).map((item) => item.markdown).join("\n---\n"),
-        target_ref: `batch:${normalized.slug || input.slug || "batch-ingest"}`,
-      };
-    }
-    const safeTitle = normalized.title?.trim() || "未命名概念";
+    const safeTitle = asText(jsonDraft.entity?.name) || "未命名概念";
 
     return {
-      summary: `${safeTitle} 将写入 ${normalized.ref}，提交成功后会进入当前 WiKiMG 图谱与问答上下文。`,
+      summary: `${safeTitle} 将写入 ${reference.layer}:${reference.slug}，提交后会进入当前 OntoGit 图谱与问答上下文。`,
       rdf: `<${safeTitle}> rdf:type <待定义类型> .`,
       owl: `Class: ${safeTitle}`,
-      warnings: normalized.warnings || [],
-      normalized_markdown: normalized.markdown,
-      target_ref: normalized.ref,
+      warnings: [],
+      normalized_json: `${JSON.stringify(jsonDraft, null, 2)}\n`,
+      target_ref: `${reference.layer}:${reference.slug}`,
     };
   }
 
   async commitEditorDraft(input) {
-    if (typeof this.repository.ingestSource !== "function") {
-      throw new Error("当前知识库 provider 不支持图谱入库");
-    }
-    if (!this.sourceCommitter || !this.wikiWriter) {
+    if (!this.sourceCommitter) {
       throw new Error("图谱入库依赖未配置完整");
     }
-
-    const normalized = await this.repository.ingestSource({
-      mode: input.mode,
-      layer: input.layer,
-      slug: input.slug,
-      source: input.source,
-    });
-    if (normalized.batch) {
-      return this.commitBatchEditorDraft(input, normalized);
+    if (input.mode !== "json") {
+      throw new Error("写入拦截：仅支持标准工作流实体 JSON（mode 必须为 json）。");
+    }
+    const validation = validateWorkflowEntityFileData(input.source);
+    if (!validation.ok) {
+      throw new Error(`写入拦截：仅支持标准工作流实体 JSON。${validation.error}`);
     }
 
-    const resolvedLayer = normalized.layer || input.layer;
-    const resolvedSlug = normalized.slug || input.slug;
-    const resolvedRef = normalized.ref || `${resolvedLayer}:${resolvedSlug}`;
-    const sourceFilename = `graph-source/${resolvedLayer}/${resolvedSlug}.${input.mode === "json" ? "json" : "md"}`;
+    const sourceEntity = safeObject(input.source?.entity);
+    const sourceOntology = safeObject(input.source?.ontology);
+    const reference = deriveEditorReference(
+      input.entityId || sourceEntity.id || sourceOntology.entity_id,
+      sourceEntity.name || sourceOntology.entity_name || input.slug,
+      input.slug,
+    );
+    const sourceFilename = `graph-source/${reference.layer}/${reference.slug}.json`;
+    const basevision = typeof this.repository.getLatestVersionId === "function"
+      ? await this.repository.getLatestVersionId(input.projectId || this.projectId, sourceFilename)
+      : 0;
     const sourceWrite = await this.sourceCommitter({
       projectId: input.projectId || this.projectId,
       filename: sourceFilename,
       data: input.source,
-      message: input.message || `Graph editor update: ${normalized.title}`,
+      message: input.message || `Graph editor update: ${sourceEntity.name || sourceOntology.entity_name || reference.slug}`,
       agentName: "ontology-editor",
       committerName: "ontology-editor",
+      basevision,
     });
 
-    let wikiWrite = null;
     try {
-      wikiWrite = await this.wikiWriter({
-        layer: resolvedLayer,
-        slug: resolvedSlug,
-        markdown: normalized.markdown,
-      });
-
       if (typeof this.repository.invalidateCache === "function") {
-        this.repository.invalidateCache();
+        this.repository.invalidateCache(input.projectId || this.projectId);
       }
-      const dataset = await this.repository.loadDataset();
+      const dataset = await this.repository.loadDataset(input.projectId || this.projectId);
+      const safeTitle = asText(sourceEntity.name || sourceOntology.entity_name || reference.slug);
 
       return {
         status: "success",
         sourceWrite,
-        wikiWrite,
         exportSummary: {
           totalEntities: dataset?.knowledgeGraph?.statistics?.total_entities || 0,
           totalRelations: dataset?.knowledgeGraph?.statistics?.total_relations || 0,
           documentCount: Array.isArray(dataset?.documents) ? dataset.documents.length : 0,
         },
-        updatedEntityId: resolvedRef,
-        layer: resolvedLayer,
-        slug: resolvedSlug,
-        ref: resolvedRef,
-        warnings: normalized.warnings || [],
+        updatedEntityId: `${reference.layer}:${reference.slug}`,
+        layer: reference.layer,
+        slug: reference.slug,
+        ref: `${reference.layer}:${reference.slug}`,
+        warnings: [],
       };
     } catch (error) {
       return {
         status: "partial",
         sourceWrite,
-        wikiWrite,
-        updatedEntityId: resolvedRef,
-        layer: resolvedLayer,
-        slug: resolvedSlug,
-        ref: resolvedRef,
-        warnings: normalized.warnings || [],
+        updatedEntityId: `${reference.layer}:${reference.slug}`,
+        layer: reference.layer,
+        slug: reference.slug,
+        ref: `${reference.layer}:${reference.slug}`,
+        warnings: [],
         error: error instanceof Error ? error.message : "未知错误",
       };
     }
-  }
-
-  async commitBatchEditorDraft(input, normalized) {
-    const batchSlug = normalized.slug || input.slug || "batch-ingest";
-    const sourceFilename = `graph-source/batch/${batchSlug}.${input.mode === "json" ? "json" : "md"}`;
-    const sourceWrite = await this.sourceCommitter({
-      projectId: input.projectId || this.projectId,
-      filename: sourceFilename,
-      data: input.source,
-      message: input.message || `Graph editor batch update: ${normalized.total || normalized.items?.length || 0} items`,
-      agentName: "ontology-editor",
-      committerName: "ontology-editor",
-    });
-
-    const wikiWrites = [];
-    const failedWrites = [];
-    const items = Array.isArray(normalized.items) ? normalized.items : [];
-
-    for (const item of items) {
-      try {
-        const wikiWrite = await this.wikiWriter({
-          layer: item.layer,
-          slug: item.slug,
-          markdown: item.markdown,
-        });
-        wikiWrites.push({
-          ref: item.ref,
-          layer: item.layer,
-          slug: item.slug,
-          title: item.title,
-          wikiWrite,
-          warnings: item.warnings || [],
-        });
-      } catch (error) {
-        failedWrites.push({
-          ref: item.ref,
-          layer: item.layer,
-          slug: item.slug,
-          title: item.title,
-          warnings: item.warnings || [],
-          error: error instanceof Error ? error.message : "未知错误",
-        });
-      }
-    }
-
-    if (typeof this.repository.invalidateCache === "function") {
-      this.repository.invalidateCache();
-    }
-    const dataset = await this.repository.loadDataset();
-    const firstRef = wikiWrites[0]?.ref || failedWrites[0]?.ref || items[0]?.ref;
-    const layerCounts = normalized.layer_counts || buildLayerCounts(items);
-    const status = failedWrites.length > 0 ? "partial" : "success";
-
-    return {
-      status,
-      batch: true,
-      total: items.length,
-      layerCounts,
-      sourceWrite,
-      wikiWrites,
-      failedWrites,
-      updatedEntityId: firstRef,
-      ref: firstRef,
-      warnings: normalized.warnings || [],
-      exportSummary: {
-        totalEntities: dataset?.knowledgeGraph?.statistics?.total_entities || 0,
-        totalRelations: dataset?.knowledgeGraph?.statistics?.total_relations || 0,
-        documentCount: Array.isArray(dataset?.documents) ? dataset.documents.length : 0,
-      },
-      error: failedWrites.length > 0
-        ? `${failedWrites.length} 个条目写入失败`
-        : undefined,
-    };
   }
 
   async resolveEntityName(query, entityId) {
@@ -456,17 +411,7 @@ export class KnowledgeBaseService {
   }
 }
 
-function buildLayerCounts(items) {
-  const counts = { common: 0, domain: 0, private: 0 };
-  for (const item of items) {
-    if (item?.layer && Object.prototype.hasOwnProperty.call(counts, item.layer)) {
-      counts[item.layer] += 1;
-    }
-  }
-  return counts;
-}
-
-function deriveEditorReference(entityId, fallbackName) {
+function deriveEditorReference(entityId, fallbackName, explicitSlug) {
   const rawId = String(entityId || "").trim();
   if (rawId.includes(":")) {
     const [layer, ...rest] = rawId.split(":");
@@ -474,6 +419,14 @@ function deriveEditorReference(entityId, fallbackName) {
     if (layer && slug) {
       return { layer, slug };
     }
+  }
+
+  const providedSlug = String(explicitSlug || "").trim().replace(/^\/+|\/+$/g, "");
+  if (providedSlug) {
+    return {
+      layer: "domain",
+      slug: providedSlug,
+    };
   }
 
   const seed = String(fallbackName || "untitled")
@@ -489,70 +442,57 @@ function deriveEditorReference(entityId, fallbackName) {
   };
 }
 
-function buildJsonDraft({ entity, template, related }) {
-  const properties = entity?.properties || template.defaults.properties || {};
-  return {
-    title: entity?.name || template.defaults.name,
-    page_kind: entity?.page_kind || "entity",
-    type: entity?.type || template.defaults.type,
-    domain: entity?.domain || template.defaults.domain,
-    level: entity?.level || 2,
-    source: entity?.source || template.defaults.source,
-    summary: entity?.summary || entity?.definition || template.defaults.definition,
-    properties,
-    relations: related.map((item) => ({
-      target: item.id || item.name,
-      type: "相关",
-      description: item.definition || `${item.name} 与当前概念存在图谱关联。`,
-    })),
-    sections: {
-      定义与定位: entity?.definition || template.defaults.definition,
-      属性: Object.entries(properties).map(([key, value]) => {
-        if (Array.isArray(value)) {
-          return `${key}: ${value.join(", ")}`;
-        }
-        if (value && typeof value === "object") {
-          return `${key}: ${JSON.stringify(value)}`;
-        }
-        return `${key}: ${String(value)}`;
-      }),
-      证据来源: [entity?.source || template.defaults.source],
-      关联主题: related.map((item) => item.name),
-    },
+function buildJsonDraft({ entity, template, related, projectId }) {
+  const properties = safeObject(entity?.properties || template.defaults.properties || {});
+  const title = entity?.name || template.defaults.name;
+  const summary = entity?.summary || entity?.definition || template.defaults.definition;
+  const type = entity?.type || template.defaults.type;
+  const source = entity?.source || template.defaults.source;
+  const level = Number.isFinite(Number(entity?.level)) ? Number(entity.level) : 1;
+  const entityId = asText(entity?.id) || `entity_${title}`;
+  const resolvedProjectId = asText(projectId) || asText(entity?.project_id) || asText(properties.project_id) || "demo";
+  const systemSummary = {
+    entity_count: 1,
+    relation_count: related.length,
+    ablation_count: 0,
   };
-}
-
-function buildFallbackMarkdownDraft(jsonDraft) {
-  const sections = jsonDraft.sections || {};
-  return [
-    "---",
-    JSON.stringify({
-      profile: "kimi",
-      page_kind: jsonDraft.page_kind,
-      title: jsonDraft.title,
-      type: jsonDraft.type,
-      domain: jsonDraft.domain,
-      level: jsonDraft.level,
-      source: jsonDraft.source,
-      properties: jsonDraft.properties || {},
-      relations: jsonDraft.relations || [],
-    }, null, 2),
-    "---",
-    `# ${jsonDraft.title}`,
-    "",
-    `> ${jsonDraft.summary || ""}`,
-    "",
-    "## 定义与定位",
-    sections["定义与定位"] || "",
-    "",
-    "## 属性",
-    ...(Array.isArray(sections["属性"]) ? sections["属性"].map((item) => `- ${item}`) : []),
-    "",
-    "## 证据来源",
-    ...(Array.isArray(sections["证据来源"]) ? sections["证据来源"].map((item) => `- ${item}`) : []),
-    "",
-    "## 关联主题",
-    ...(Array.isArray(sections["关联主题"]) ? sections["关联主题"].map((item) => `- ${item}`) : []),
-    "",
-  ].join("\n");
+  const ontologyEntity = {
+    id: entityId,
+    name: title,
+    summary,
+    type,
+    level,
+    source,
+    properties,
+    abilities: Array.isArray(entity?.abilities) ? entity.abilities.map(asText).filter(Boolean) : [],
+    citations: Array.isArray(entity?.citations) ? entity.citations.map(asText).filter(Boolean) : [],
+  };
+  const relations = related.map((item) => ({
+    source_entity_id: entityId,
+    target_entity_id: asText(item.id) || asText(item.name),
+    source_name: title,
+    target_name: item.name,
+    relation_type: "相关",
+    evidence: item.definition || `${item.name} 与当前概念存在图谱关联。`,
+  })).filter((item) => item.target_entity_id && item.target_name);
+  return {
+    source,
+    ontology: {
+      workflow_version: "v1-linear-file-workflow",
+      generated_at: new Date().toISOString(),
+      project_id: resolvedProjectId,
+      scope: "entity",
+      entity_id: entityId,
+      entity_name: title,
+      system_summary: systemSummary,
+      entity: ontologyEntity,
+      relations,
+      ablation: null,
+    },
+    entity: ontologyEntity,
+    relations,
+    ablation: null,
+    precheck: null,
+    ontology_summary: systemSummary,
+  };
 }

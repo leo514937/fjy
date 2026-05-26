@@ -1,12 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { importAppModule } from "./testPaths.mjs";
 
 test("助手历史搜索会匹配标题与消息内容", async () => {
-  const appRoot = "D:/code/FJY/kimi-agent-knowledge-base-collab/app";
-  const historyModulePath = path.join(appRoot, "src/components/assistant/history.ts");
-  const { filterAssistantSessions } = await import(pathToFileURL(historyModulePath).href);
+  const { filterAssistantSessions } = await importAppModule("src", "components", "assistant", "history.ts");
 
   const sessions = [
     {

@@ -1,100 +1,54 @@
-# React + TypeScript + Vite
+# Kimi Agent Knowledge Base Collab App
 
-## 快速启动 WiKiMG 后端
+## 启动方式
 
 在 `app` 目录下执行：
 
 ```bash
-./start-wikimg-backend.sh
+npm install
+npm run server
+npm run dev -- --host 127.0.0.1
 ```
 
-或者：
+默认端口：
+
+- 前端：`5173`
+- 后端：`8787`
+
+如果后端端口冲突：
 
 ```bash
-npm run server:wikimg
+PORT=8788 npm run server
 ```
 
-可选环境变量：
+## 当前默认运行模式
+
+当前应用默认对接远端 OntoGit 在线服务，不再要求本地同时存在：
+
+- `OntoGit`
+- `QAgent`
+- `Ontology_Factory`
+
+后端会在本地自动补齐：
+
+- `KNOWLEDGE_IO_ROOT=./knowledge-data`
+- `ONTOGIT_STORAGE_ROOT=./knowledge-data/store`
+
+如果你要覆盖远端地址，可设置：
 
 ```bash
-PORT=8788 WIKIMG_ROOT=/Users/qiuboyu/CodeLearning/FJY/Ontology_Factory ./start-wikimg-backend.sh
+ONTOGIT_GATEWAY_URL=http://81.70.12.214:8080 npm run server
 ```
 
-默认值：
+## 常用命令
 
-- `KNOWLEDGE_BASE_PROVIDER=wikimg`
-- `WIKIMG_PROFILE=kimi`
-- `WIKIMG_ROOT=../../Ontology_Factory`（相对 `app` 自动解析）
-- `PORT=8787`
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm test
+npm run test:server
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 统一数据格式说明
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- 当前仅支持 `docs/WORKFLOW_ENTITY_JSON_FORMAT.md` 定义的标准工作流实体 JSON
+- 其他历史格式与兼容路径已被拦截或废弃

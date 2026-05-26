@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { BookOpen, Layers, Atom, Tag, Link2, FileText } from 'lucide-react';
+import { BookOpen, Layers, Atom, Tag, Link2, FileText, History } from 'lucide-react';
 import type { Entity, KnowledgeLayer } from '@/types/ontology';
 import { MarkdownBlocks } from '@/components/MarkdownBlocks';
+import { EntityTimelinePanel } from '@/components/EntityTimelinePanel';
 
 interface EntityDetailProps {
   entity: Entity | null;
@@ -39,6 +40,74 @@ const layerLabels: Record<KnowledgeLayer, string> = {
   private: 'Private',
 };
 
+function formatPrimitiveValue(value: unknown): string {
+  if (value === null) return 'null';
+  if (value === undefined) return 'undefined';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value);
+}
+
+function renderStructuredValue(value: unknown, path: string): React.ReactNode {
+  if (value === null || value === undefined || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return <span className="text-sm leading-relaxed text-foreground/85 break-all">{formatPrimitiveValue(value)}</span>;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return <span className="text-sm text-muted-foreground">空数组</span>;
+    }
+
+    const allPrimitive = value.every((item) => item === null || ['string', 'number', 'boolean'].includes(typeof item));
+    if (allPrimitive) {
+      return (
+        <div className="flex flex-wrap gap-2">
+          {value.map((item, index) => (
+            <Badge key={`${path}-${index}`} variant="secondary" className="rounded-md max-w-full whitespace-normal break-all">
+              {formatPrimitiveValue(item)}
+            </Badge>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {value.map((item, index) => (
+          <div key={`${path}-${index}`} className="rounded-xl border border-border/40 bg-background/60 p-4">
+            <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              #{index + 1}
+            </div>
+            {renderStructuredValue(item, `${path}.${index}`)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value);
+    if (entries.length === 0) {
+      return <span className="text-sm text-muted-foreground">空对象</span>;
+    }
+
+    return (
+      <div className="space-y-3">
+        {entries.map(([childKey, childValue]) => (
+          <div key={`${path}.${childKey}`} className="rounded-xl border border-border/40 bg-background/60 p-4">
+            <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground break-all">
+              {childKey}
+            </div>
+            {renderStructuredValue(childValue, `${path}.${childKey}`)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <span className="text-sm leading-relaxed text-foreground/85 break-all">{String(value)}</span>;
+}
+
 export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: EntityDetailProps) {
   // 核心去重逻辑：同时根据 ID 和 Name 进行去重，确保视觉上无重复项
   const uniqueRelatedEntities = useMemo(() => {
@@ -67,23 +136,41 @@ export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: 
     );
   }
 
-  const formatProperties = (properties: Record<string, any>): string => {
-    if (typeof properties === 'string') return properties;
-    if (Array.isArray(properties)) return properties.join(', ');
-    if (typeof properties === 'object') {
-      return Object.entries(properties)
-        .map(([key, value]) => `${key}: ${formatProperties(value)}`)
-        .join('; ');
-    }
-    return String(properties);
-  };
-
   const formattedSections = entity.formatted_sections || [];
   const definitionSection = formattedSections.find((section) => section.title === '定义与定位');
   const propertySection = formattedSections.find((section) => section.title === '属性');
   const evidenceSection = formattedSections.find((section) => section.title === '证据来源');
   const relatedTopicSection = formattedSections.find((section) => section.title === '关联主题');
   const extraSections = formattedSections.filter((section) => !['定义与定位', '属性', '证据来源', '关联主题', ''].includes(section.title));
+  const propertyEntries = Object.entries(entity.properties || {});
+  const entityJsonData = useMemo(() => {
+    const payload = {
+      id: entity.id,
+      name: entity.name,
+      type: entity.type,
+      domain: entity.domain,
+      layer: entity.layer,
+      level: entity.level,
+      source: entity.source,
+      definition: entity.definition,
+      properties: entity.properties,
+      formatted_sections: entity.formatted_sections,
+      display_level: entity.display_level,
+      visible: entity.visible,
+      highlight: entity.highlight,
+      pinned: entity.pinned,
+      focus: entity.focus,
+    };
+
+    return Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => {
+        if (value === undefined || value === null) return false;
+        if (Array.isArray(value)) return value.length > 0;
+        if (typeof value === 'object') return Object.keys(value).length > 0;
+        return true;
+      }),
+    );
+  }, [entity]);
 
   const handleSelectEntityRef = (ref: string) => {
     const target = uniqueRelatedEntities.find((related) => related.id === ref);
@@ -157,7 +244,7 @@ export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: 
                 </div>
                 <span className="text-[13px] font-black text-foreground/80 tracking-tight">核心属性</span>
               </div>
-              <span className="text-xs font-bold text-foreground/90">{Object.keys(entity.properties || {}).length} 组</span>
+              <span className="text-xs font-bold text-foreground/90">{propertyEntries.length} 组</span>
             </div>
 
             <Separator className="bg-border/20" />
@@ -213,16 +300,15 @@ export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: 
                     />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(entity.properties).slice(0, 8).map(([key, value]) => (
+                  <div className="space-y-4">
+                    {propertyEntries.map(([key, value]) => (
                       <div key={key} className="bg-card p-5 rounded-2xl border border-border shadow-sm">
                         <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">
                           {key}
                         </span>
-                        <p className="text-sm mt-2 text-foreground/80 font-medium leading-relaxed">
-                          {formatProperties(value).substring(0, 100)}
-                          {formatProperties(value).length > 100 ? '...' : ''}
-                        </p>
+                        <div className="mt-3">
+                          {renderStructuredValue(value, `properties.${key}`)}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -231,6 +317,20 @@ export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: 
               <Separator className="opacity-50" />
             </>
           )}
+
+          <section>
+            <h4 className="font-black text-xs text-muted-foreground/60 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <History className="w-4 h-4" />
+              节点数据 JSON
+            </h4>
+            <div className="rounded-2xl border border-border/40 bg-muted/10 p-6 space-y-4">
+              <p className="text-xs leading-6 text-muted-foreground">
+                此处按当前节点实际 JSON 结构递归展示，新增字段、数组或嵌套对象会自动适配，不再依赖写死属性。
+              </p>
+              {renderStructuredValue(entityJsonData, 'entity')}
+            </div>
+          </section>
+          <Separator className="opacity-50" />
 
           {evidenceSection && evidenceSection.blocks.length > 0 && (
             <>
@@ -311,6 +411,16 @@ export function EntityDetail({ entity, relatedEntities = [], onSelectRelated }: 
               <Separator className="opacity-50" />
             </>
           ) : null}
+
+          <section>
+            <h4 className="font-black text-xs text-muted-foreground/60 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <History className="w-4 h-4" />
+              实体时间线
+            </h4>
+            <EntityTimelinePanel entity={entity} />
+          </section>
+
+          <Separator className="opacity-50" />
 
           {/* 元信息 */}
           <footer className="rounded-2xl border border-dashed border-border bg-muted/10 p-6 pb-10 text-[10px] font-bold text-muted-foreground uppercase tracking-widest space-y-1">

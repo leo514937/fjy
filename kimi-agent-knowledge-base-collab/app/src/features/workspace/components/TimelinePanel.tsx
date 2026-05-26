@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeftRight, History, ShieldCheck, Maximize2 } from 'lucide-react';
+import { ArrowLeftRight, History, ShieldCheck, Maximize2, Loader2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import type { XgTimelineCommit } from '@/lib/xgApi';
 interface TimelinePanelProps {
   selectedFile: string;
   timelines: XgTimeline[];
+  loading?: boolean;
   onViewDiff: (commitId: string) => void | Promise<void>;
   onSetOfficial: (commitId: string) => void | Promise<void>;
   onRollback: (commitId: string) => void | Promise<void>;
@@ -109,7 +110,7 @@ const TimelineList = ({
   );
 };
 
-export function TimelinePanel({ selectedFile, timelines, onViewDiff, onSetOfficial, onRollback }: TimelinePanelProps) {
+export function TimelinePanel({ selectedFile, timelines, loading = false, onViewDiff, onSetOfficial, onRollback }: TimelinePanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const commits = timelines.find((timeline) => timeline.filename === selectedFile)?.commits ?? [];
 
@@ -167,9 +168,16 @@ export function TimelinePanel({ selectedFile, timelines, onViewDiff, onSetOffici
         </Dialog>
       </CardHeader>
       <CardContent className="p-0 flex-1 overflow-hidden bg-muted/10 dark:bg-muted/5 border-t border-border/10">
-        <ScrollArea className="h-full">
-          <TimelineList {...commonProps} />
-        </ScrollArea>
+        {loading ? (
+          <div className="flex h-full items-center justify-center gap-3 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            正在同步时间线
+          </div>
+        ) : (
+          <ScrollArea className="h-full">
+            <TimelineList {...commonProps} />
+          </ScrollArea>
+        )}
       </CardContent>
     </Card>
   );

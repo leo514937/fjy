@@ -1,0 +1,224 @@
+{
+  "ok": false,
+  "workflow": {
+    "mode": "linear",
+    "status": "failed",
+    "steps": [
+      "auth_precheck",
+      "observe",
+      "relations",
+      "ablation",
+      "ontology",
+      "probability_precheck",
+      "ingest"
+    ]
+  },
+  "input_file": {
+    "originalName": "这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。.md",
+    "storedName": "mogfvk3v-这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。.md",
+    "mimeType": "text/markdown",
+    "size": 99,
+    "path": "/Users/qiuboyu/CodeLearning/new_fjy/fjy/kimi-agent-knowledge-base-collab/.workflow-runtime/.workflow-runs/conversation-file-workflow-mogfsd7a-yee1dy/uploads/mogfvk3v-这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。.md"
+  },
+  "stage_results": [
+    {
+      "stage": "auth_precheck",
+      "order": 1,
+      "status": "success",
+      "started_at": "2026-04-27T00:08:31.627Z",
+      "finished_at": "2026-04-27T00:08:31.659Z",
+      "output": {
+        "authenticated": true
+      },
+      "error": null
+    },
+    {
+      "stage": "observe",
+      "order": 2,
+      "status": "failed",
+      "started_at": "2026-04-27T00:08:44.812Z",
+      "finished_at": "2026-04-27T00:08:54.315Z",
+      "output": {
+        "llm_raw": [
+          {
+            "name": "测试",
+            "summary": "这是一个测试活动",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "这是一个测试"
+            ]
+          },
+          {
+            "name": "测试人员",
+            "summary": "参与测试的人员",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "name": "运营人员",
+            "summary": "负责运营的人员",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "name": "协作关系",
+            "summary": "测试人员和运营人员之间的协作关系",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "name": "公司",
+            "summary": "公司实体",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          {
+            "name": "发展",
+            "summary": "公司的发展过程",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          }
+        ],
+        "llm_raw_text": "[\n  {\n    \"name\": \"测试\",\n    \"summary\": \"这是一个测试活动\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"这是一个测试\"]\n  },\n  {\n    \"name\": \"测试人员\",\n    \"summary\": \"参与测试的人员\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"运营人员\",\n    \"summary\": \"负责运营的人员\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"协作关系\",\n    \"summary\": \"测试人员和运营人员之间的协作关系\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"公司\",\n    \"summary\": \"公司实体\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"公司发展就会越来越好\"]\n  },\n  {\n    \"name\": \"发展\",\n    \"summary\": \"公司的发展过程\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"公司发展就会越来越好\"]\n  }\n]",
+        "llm_response": {
+          "id": "gen-1777248524-owmJzu0nzngi0TaWS575",
+          "object": "chat.completion",
+          "created": 1777248524,
+          "model": "deepseek/deepseek-v4-flash-20260423",
+          "provider": "SiliconFlow",
+          "system_fingerprint": "fp_058df29938_prod0820_fp8_kvcache_20260402",
+          "choices": [
+            {
+              "index": 0,
+              "logprobs": null,
+              "finish_reason": "stop",
+              "native_finish_reason": "stop",
+              "message": {
+                "role": "assistant",
+                "content": "[\n  {\n    \"name\": \"测试\",\n    \"summary\": \"这是一个测试活动\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"这是一个测试\"]\n  },\n  {\n    \"name\": \"测试人员\",\n    \"summary\": \"参与测试的人员\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"运营人员\",\n    \"summary\": \"负责运营的人员\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"协作关系\",\n    \"summary\": \"测试人员和运营人员之间的协作关系\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"公司\",\n    \"summary\": \"公司实体\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"公司发展就会越来越好\"]\n  },\n  {\n    \"name\": \"发展\",\n    \"summary\": \"公司的发展过程\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"公司发展就会越来越好\"]\n  }\n]",
+                "refusal": null,
+                "reasoning": "我们分析输入文档：\"这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。\"\n\n我们需要抽取实体。实体包括：测试（作为名词？）、测试人员、运营人员、协作关系、公司、发展。但注意：\"测试\"可能是一个活动或实体，\"测试人员\"是角色，\"运营人员\"是角色，\"协作关系\"是抽象关系？但实体可以是关系名？通常实体是具体或抽象对象，关系是另外的。但这里要求实体，我们可以提取\"测试\"、\"测试人员\"、\"运营人员\"、\"公司\"、\"发展\"。另外\"协作关系\"可能作为实体？谨慎：关系是连接实体的，但也可以作为实体。为了完整，提取\"协作关系\"作为实体。同时\"越来越好\"不是实体。\n\n完整拆分：实体数组：\n\n1. 测试：name: \"测试\"，summary: \"这是一个测试活动\"，properties: {别名: []}, abilities: [], citations: [\"这是一个测试\"]\n2. 测试人员：name: \"测试人员\"，summary: \"参与测试的人员\"，properties: {}, abilities: [], citations: [\"测试人员和运营人员有协作关系\"]\n3. 运营人员：name: \"运营人员\"，summary: \"负责运营的人员\"，properties: {}, abilities: [], citations: [\"测试人员和运营人员有协作关系\"]\n4. 协作关系：name: \"协作关系\"，summary: \"测试人员和运营人员之间的协作关系\"，properties: {}, abilities: [], citations: [\"测试人员和运营人员有协作关系\"]\n5. 公司：name: \"公司\"，summary: \"公司实体\"，properties: {}, abilities: [], citations: [\"公司发展就会越来越好\"]\n6. 发展：name: \"发展\"，summary: \"公司的发展过程\"，properties: {}, abilities: [], citations: [\"公司发展就会越来越好\"]\n\n注意：文档很短，但按照要求尽量拆分。不要遗漏明显会参与后续关系抽取的实体。这里\"测试\"和\"发展\"可能参与关系。另外\"越来越好\"不是实体。\n\n输出JSON格式。",
+                "reasoning_details": [
+                  {
+                    "type": "reasoning.text",
+                    "text": "我们分析输入文档：\"这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。\"\n\n我们需要抽取实体。实体包括：测试（作为名词？）、测试人员、运营人员、协作关系、公司、发展。但注意：\"测试\"可能是一个活动或实体，\"测试人员\"是角色，\"运营人员\"是角色，\"协作关系\"是抽象关系？但实体可以是关系名？通常实体是具体或抽象对象，关系是另外的。但这里要求实体，我们可以提取\"测试\"、\"测试人员\"、\"运营人员\"、\"公司\"、\"发展\"。另外\"协作关系\"可能作为实体？谨慎：关系是连接实体的，但也可以作为实体。为了完整，提取\"协作关系\"作为实体。同时\"越来越好\"不是实体。\n\n完整拆分：实体数组：\n\n1. 测试：name: \"测试\"，summary: \"这是一个测试活动\"，properties: {别名: []}, abilities: [], citations: [\"这是一个测试\"]\n2. 测试人员：name: \"测试人员\"，summary: \"参与测试的人员\"，properties: {}, abilities: [], citations: [\"测试人员和运营人员有协作关系\"]\n3. 运营人员：name: \"运营人员\"，summary: \"负责运营的人员\"，properties: {}, abilities: [], citations: [\"测试人员和运营人员有协作关系\"]\n4. 协作关系：name: \"协作关系\"，summary: \"测试人员和运营人员之间的协作关系\"，properties: {}, abilities: [], citations: [\"测试人员和运营人员有协作关系\"]\n5. 公司：name: \"公司\"，summary: \"公司实体\"，properties: {}, abilities: [], citations: [\"公司发展就会越来越好\"]\n6. 发展：name: \"发展\"，summary: \"公司的发展过程\"，properties: {}, abilities: [], citations: [\"公司发展就会越来越好\"]\n\n注意：文档很短，但按照要求尽量拆分。不要遗漏明显会参与后续关系抽取的实体。这里\"测试\"和\"发展\"可能参与关系。另外\"越来越好\"不是实体。\n\n输出JSON格式。",
+                    "format": "unknown",
+                    "index": 0
+                  }
+                ]
+              }
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 229,
+            "completion_tokens": 679,
+            "total_tokens": 908,
+            "cost": 0.00022218,
+            "is_byok": false,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "cache_write_tokens": 0,
+              "audio_tokens": 0,
+              "video_tokens": 0
+            },
+            "cost_details": {
+              "upstream_inference_cost": 0.00022218,
+              "upstream_inference_prompt_cost": 0.00003206,
+              "upstream_inference_completions_cost": 0.00019012
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 417,
+              "image_tokens": 0,
+              "audio_tokens": 0
+            }
+          }
+        },
+        "debug_error": "节点1失败：未提取到实体"
+      },
+      "error": "节点1失败：未提取到实体"
+    },
+    {
+      "stage": "relations",
+      "order": 3,
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "output": null,
+      "error": null
+    },
+    {
+      "stage": "ablation",
+      "order": 4,
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "output": null,
+      "error": null
+    },
+    {
+      "stage": "ontology",
+      "order": 5,
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "output": null,
+      "error": null
+    },
+    {
+      "stage": "probability_precheck",
+      "order": 6,
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "output": null,
+      "error": null
+    },
+    {
+      "stage": "ingest",
+      "order": 7,
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "output": null,
+      "error": null
+    }
+  ],
+  "entity_files": [],
+  "ingest_results": [],
+  "errors": [
+    {
+      "stage": "observe",
+      "message": "节点1失败：未提取到实体"
+    }
+  ],
+  "runtime_root": "/Users/qiuboyu/CodeLearning/new_fjy/fjy/kimi-agent-knowledge-base-collab/.workflow-runtime/.workflow-runs/conversation-file-workflow-mogfsd7a-yee1dy",
+  "started_at": "2026-04-27T00:08:44.810Z",
+  "finished_at": "2026-04-27T00:08:54.318Z",
+  "state": {
+    "entities": [],
+    "relations": [],
+    "ablation": [],
+    "ontology": null,
+    "ontologies": [],
+    "probabilityPrecheck": null,
+    "projectId": "demo",
+    "documentText": "这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。"
+  },
+  "updated_at": "2026-04-27T00:08:54.318Z"
+}

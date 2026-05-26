@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { validateWorkflowEntityFileData } from '@/features/workspace/workflowEntityFormat';
 
 interface WriteBackPanelProps {
   selectedProjectId: string;
@@ -34,15 +35,18 @@ export function WriteBackPanel({
 }: WriteBackPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   
-  const isInvalid = useMemo(() => {
-    if (!writeData) return false;
+  const validationMessage = useMemo(() => {
+    if (!writeData.trim()) return '';
+    let parsed: unknown;
     try {
-      JSON.parse(writeData);
-      return false;
+      parsed = JSON.parse(writeData);
     } catch {
-      return true;
+      return 'JSON 语法错误';
     }
+    const validation = validateWorkflowEntityFileData(parsed);
+    return validation.ok ? '' : validation.error || 'JSON 结构不符合工作流格式';
   }, [writeData]);
+  const isInvalid = Boolean(validationMessage);
 
   return (
     <Card className="border-border/40 bg-card/60 backdrop-blur-md shadow-2xl overflow-hidden flex flex-col h-[600px] rounded-3xl">
@@ -98,7 +102,7 @@ export function WriteBackPanel({
                       "text-[10px] font-black uppercase tracking-widest",
                       isInvalid ? "text-red-600" : "text-emerald-600 dark:text-emerald-400"
                     )}>
-                      {isInvalid ? "⚠️ JSON 语法错误" : `正在编辑: ${writeFilename || '未命名文件'}`}
+                      {isInvalid ? `⚠️ ${validationMessage}` : `正在编辑: ${writeFilename || '未命名文件'}`}
                     </p>
                   </div>
                 </div>
@@ -154,7 +158,7 @@ export function WriteBackPanel({
         <Button 
           className="w-full bg-zinc-200 hover:bg-zinc-300 dark:bg-primary dark:hover:bg-primary/90 text-zinc-900 dark:text-primary-foreground gap-2 h-12 rounded-2xl shadow-lg ring-1 ring-zinc-300/50 dark:ring-primary-foreground/10 font-black uppercase tracking-widest text-xs transition-all active:scale-[0.98]" 
           onClick={onWrite} 
-          disabled={writing || !selectedProjectId}
+          disabled={writing || !selectedProjectId || isInvalid}
         >
           {writing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           执行写入并推理 (Write & Infer)

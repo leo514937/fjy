@@ -1,50 +1,59 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Maximize2, Network } from 'lucide-react';
 import type { Entity, CrossReference, KnowledgeLayer } from '@/types/ontology';
+import {
+  buildKnowledgeGraphDomainColors,
+  createKnowledgeGraphNodeIndex,
+  createKnowledgeGraphNodes,
+  mergeKnowledgeGraphLinks,
+  type KnowledgeGraphLayoutCache,
+  type KnowledgeGraphLink,
+  type KnowledgeGraphNode,
+} from './knowledgeGraphLayout';
+import {
+  buildKnowledgeGraphSpatialIndex,
+  forEachKnowledgeGraphNeighborPair,
+  getKnowledgeGraphRepulsionStrategy,
+} from './knowledgeGraphSpatialIndex';
 
 interface KnowledgeGraphProps {
   entities: Entity[];
   crossReferences: CrossReference[];
   onSelectEntity: (entity: Entity) => void;
   selectedEntityId?: string;
-}
-
-interface Node {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-  color: string;
-  entity: Entity;
-}
-
-interface Link {
-  source: string;
-  target: string;
-  relation: string;
+  isActive?: boolean;
 }
 
 export function KnowledgeGraph({
   entities,
   crossReferences,
   onSelectEntity,
-  selectedEntityId
+  selectedEntityId,
+  isActive = true,
 }: KnowledgeGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [links, setLinks] = useState<Link[]>([]);
+  const layoutCacheRef = useRef<KnowledgeGraphLayoutCache>({});
+  const animationFrameRef = useRef<number | null>(null);
+  const nodesRef = useRef<KnowledgeGraphNode[]>([]);
+  const nodeIndexRef = useRef<Map<string, KnowledgeGraphNode>>(new Map());
+  const [nodes, setNodes] = useState<KnowledgeGraphNode[]>([]);
+  const [links, setLinks] = useState<KnowledgeGraphLink[]>([]);
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const panStartRef = useRef<{
+    clientX: number;
+    clientY: number;
+    translateX: number;
+    translateY: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -53,7 +62,7 @@ export function KnowledgeGraph({
       if (containerRef.current) {
         setDimensions({
           width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight || 600
+          height: containerRef.current.clientHeight || 600,
         });
       }
     };
@@ -66,194 +75,268 @@ export function KnowledgeGraph({
   }, []);
 
   const { width, height } = dimensions;
-  const initialOrbitRadius = 80;
-  const repulsionStrength = 9000;
-  const targetLinkDistance = 280; // Spread more
-  const springStrength = 0.005;
-  const centerPullStrength = 0.006;
-  const velocityDamping = 0.5;
-  const palette = ['#2563eb', '#7c3aed', '#059669', '#ea580c', '#db2777', '#0f766e', '#4f46e5', '#ca8a04'];
-  const uniqueDomains = [...new Set(entities.map((entity) => entity.domain).filter(Boolean))];
-  const domainColors = uniqueDomains.reduce<Record<string, string>>((accumulator, domain, index) => {
-    accumulator[domain] = palette[index % palette.length];
-    return accumulator;
-  }, {});
+  const domainColors = useMemo(() => buildKnowledgeGraphDomainColors(entities), [entities]);
   const layerStrokeColors: Record<KnowledgeLayer, string> = {
-    common: '#99AF91', // 草木灰绿
-    domain: '#4F83C3', // 工业深蓝 (明显蓝色)
-    private: '#C19292', // 干枯玫瑰红
-  };
-  const layerLabels: Record<KnowledgeLayer, string> = {
-    common: 'Common',
-    domain: 'Domain',
-    private: 'Private',
+    common: '#99AF91',
+    domain: '#4F83C3',
+    private: '#C19292',
   };
   const isVisibleEntity = (entity: Entity) => entity.visible !== false;
-
-  // 初始化节点和链接
-  useEffect(() => {
-    if (entities.length === 0) {
-      setNodes([]);
-      setLinks([]);
-      return;
-    }
-
-    // 创建节点
-    const visibleEntities = entities.filter(isVisibleEntity);
-    if (visibleEntities.length === 0) {
-      setNodes([]);
-      setLinks([]);
-      return;
-    }
-    const initialNodes: Node[] = visibleEntities.map((entity, index) => {
-      const angle = (index / visibleEntities.length) * 2 * Math.PI;
-      const displayLevel = entity.display_level ?? 2;
-      return {
-        id: entity.id,
-        name: entity.name,
-        x: width / 2 + Math.cos(angle) * initialOrbitRadius,
-        y: height / 2 + Math.sin(angle) * initialOrbitRadius,
-        vx: 0,
-        vy: 0,
-        radius: displayLevel <= 1 ? 23 : displayLevel >= 3 ? 17 : 20,
-        color: domainColors[entity.domain] || '#6b7280',
-        entity: entity
+  const snapshotGraphLayout = (nextNodes: KnowledgeGraphNode[]) => {
+    const nextLayoutCache: KnowledgeGraphLayoutCache = {};
+    for (const node of nextNodes) {
+      nextLayoutCache[node.id] = {
+        x: node.x,
+        y: node.y,
+        vx: node.vx,
+        vy: node.vy,
+        radius: node.radius,
+        color: node.color,
       };
+    }
+
+    layoutCacheRef.current = nextLayoutCache;
+  };
+  const syncGraphSnapshot = (nextNodes: KnowledgeGraphNode[]) => {
+    nodesRef.current = nextNodes;
+    nodeIndexRef.current = createKnowledgeGraphNodeIndex(nextNodes);
+    snapshotGraphLayout(nextNodes);
+  };
+
+  useEffect(() => {
+    const nextNodes = createKnowledgeGraphNodes(entities, dimensions, {
+      layoutCache: layoutCacheRef.current,
+      domainColors,
     });
+    syncGraphSnapshot(nextNodes);
+    setNodes(nextNodes);
+    setLinks(mergeKnowledgeGraphLinks(crossReferences));
+  }, [crossReferences, dimensions, domainColors, entities]);
 
-    // 创建链接 (增加合并去重逻辑，防止相同两点间的关系文字叠加)
-    // 使用排序后的 ID 作为 key，确保 A->B 和 B->A 被归为同一条物理边，从根本上解决中点文字重叠
-    const mergedLinksMap = new Map<string, Link>();
+  useEffect(() => {
+    if (!isActive || nodes.length === 0) {
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      return;
+    }
 
-    crossReferences.forEach(ref => {
-      const ids = [ref.source, ref.target].sort();
-      const key = ids.join('--');
-      const existing = mergedLinksMap.get(key);
+    let cancelled = false;
 
-      if (existing) {
-        if (!existing.relation.split(' | ').includes(ref.relation)) {
-          existing.relation += ` | ${ref.relation}`;
+    const step = () => {
+      if (cancelled) {
+        return;
+      }
+
+      const currentNodes = nodesRef.current;
+      if (currentNodes.length === 0 || !isActive) {
+        animationFrameRef.current = null;
+        return;
+      }
+
+      const nextNodes = [...currentNodes];
+      const nextNodeIndex = nodeIndexRef.current;
+      let totalSpeed = 0;
+      const repulsionStrength = 9000;
+      const targetLinkDistance = 280;
+      const springStrength = 0.005;
+      const centerPullStrength = 0.006;
+      const velocityDamping = 0.5;
+      const repulsionStrategy = getKnowledgeGraphRepulsionStrategy(nextNodes.length);
+      const applyRepulsion = (sourceNode: KnowledgeGraphNode, targetNode: KnowledgeGraphNode) => {
+        const dx = targetNode.x - sourceNode.x;
+        const dy = targetNode.y - sourceNode.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const force = repulsionStrength / (dist * dist);
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+
+        sourceNode.vx -= fx;
+        sourceNode.vy -= fy;
+        targetNode.vx += fx;
+        targetNode.vy += fy;
+      };
+
+      if (repulsionStrategy.mode === 'exact') {
+        for (let i = 0; i < nextNodes.length; i += 1) {
+          for (let j = i + 1; j < nextNodes.length; j += 1) {
+            applyRepulsion(nextNodes[i], nextNodes[j]);
+          }
         }
       } else {
-        mergedLinksMap.set(key, {
-          source: ref.source,
-          target: ref.target,
-          relation: ref.relation
-        });
+        const spatialIndex = buildKnowledgeGraphSpatialIndex(nextNodes, repulsionStrategy.cellSize);
+        forEachKnowledgeGraphNeighborPair(
+          nextNodes,
+          spatialIndex,
+          repulsionStrategy.neighborSpan,
+          (sourceNode, targetNode) => {
+            applyRepulsion(sourceNode, targetNode);
+          },
+        );
       }
-    });
 
-    setNodes(initialNodes);
-    setLinks(Array.from(mergedLinksMap.values()));
-  }, [entities, crossReferences, selectedEntityId]);
-
-  // 力导向模拟
-  useEffect(() => {
-    if (nodes.length === 0) return;
-
-    const simulation = setInterval(() => {
-      setNodes(prevNodes => {
-        const newNodes = [...prevNodes];
-
-        // 节点间斥力
-        for (let i = 0; i < newNodes.length; i++) {
-          for (let j = i + 1; j < newNodes.length; j++) {
-            const dx = newNodes[j].x - newNodes[i].x;
-            const dy = newNodes[j].y - newNodes[i].y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const force = repulsionStrength / (dist * dist);
-            const fx = (dx / dist) * force;
-            const fy = (dy / dist) * force;
-
-            newNodes[i].vx -= fx;
-            newNodes[i].vy -= fy;
-            newNodes[j].vx += fx;
-            newNodes[j].vy += fy;
-          }
+      links.forEach((link) => {
+        const sourceNode = nextNodeIndex.get(link.source);
+        const targetNode = nextNodeIndex.get(link.target);
+        if (!sourceNode || !targetNode) {
+          return;
         }
 
-        // 链接引力
-        links.forEach(link => {
-          const sourceNode = newNodes.find(n => n.id === link.source);
-          const targetNode = newNodes.find(n => n.id === link.target);
-          if (sourceNode && targetNode) {
-            const dx = targetNode.x - sourceNode.x;
-            const dy = targetNode.y - sourceNode.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const force = (dist - targetLinkDistance) * springStrength;
-            const fx = (dx / dist) * force;
-            const fy = (dy / dist) * force;
+        const dx = targetNode.x - sourceNode.x;
+        const dy = targetNode.y - sourceNode.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const force = (dist - targetLinkDistance) * springStrength;
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
 
-            sourceNode.vx += fx;
-            sourceNode.vy += fy;
-            targetNode.vx -= fx;
-            targetNode.vy -= fy;
-          }
-        });
-
-        // 中心引力 (平衡布局，偏向 45% 的高度处)
-        newNodes.forEach(node => {
-          const dx = width / 2 - node.x;
-          const dy = (height * 0.45) - node.y;
-          node.vx += dx * centerPullStrength;
-          node.vy += dy * centerPullStrength;
-        });
-
-        // 更新位置
-        let totalSpeed = 0;
-        newNodes.forEach(node => {
-          if (node.id !== draggedNode) {
-            node.vx *= velocityDamping; // 阻尼
-            node.vy *= velocityDamping;
-            node.x += node.vx;
-            node.y += node.vy;
-            totalSpeed += Math.abs(node.vx) + Math.abs(node.vy);
-
-            // 极简边界限制 (只有 5px 内边距)
-            node.x = Math.max(node.radius + 5, Math.min(width - node.radius - 5, node.x));
-            node.y = Math.max(node.radius + 5, Math.min(height - node.radius - 5, node.y));
-          }
-        });
-
-        if (draggedNode === null && totalSpeed < 0.6) {
-          clearInterval(simulation);
-        }
-
-        return newNodes;
+        sourceNode.vx += fx;
+        sourceNode.vy += fy;
+        targetNode.vx -= fx;
+        targetNode.vy -= fy;
       });
-    }, 16);
 
-    return () => clearInterval(simulation);
-  }, [links, draggedNode]);
+      nextNodes.forEach((node) => {
+        const dx = width / 2 - node.x;
+        const dy = (height * 0.45) - node.y;
+        node.vx += dx * centerPullStrength;
+        node.vy += dy * centerPullStrength;
+      });
 
-  const handleMouseDown = (nodeId: string) => {
+      nextNodes.forEach((node) => {
+        if (node.id !== draggedNode) {
+          node.vx *= velocityDamping;
+          node.vy *= velocityDamping;
+          node.x += node.vx;
+          node.y += node.vy;
+          totalSpeed += Math.abs(node.vx) + Math.abs(node.vy);
+        }
+      });
+
+      nodesRef.current = nextNodes;
+      if (draggedNode === null && totalSpeed < 0.6) {
+        snapshotGraphLayout(nextNodes);
+      }
+      setNodes(nextNodes);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (draggedNode === null && totalSpeed < 0.6) {
+        animationFrameRef.current = null;
+        return;
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(step);
+    };
+
+    animationFrameRef.current = window.requestAnimationFrame(step);
+
+    return () => {
+      cancelled = true;
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [draggedNode, height, isActive, links, width]);
+
+  const handleNodeMouseDown = (nodeId: string) => {
     setIsDragging(true);
+    setIsPanning(false);
     setDraggedNode(nodeId);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!isDragging || !draggedNode || !svgRef.current) return;
+  const handlePanMouseDown = (e: MouseEvent<SVGRectElement>) => {
+    if (e.button !== 0) {
+      return;
+    }
+
+    if (e.target !== e.currentTarget) {
+      return;
+    }
+
+    setIsPanning(true);
+    setIsDragging(false);
+    setDraggedNode(null);
+    panStartRef.current = {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      translateX: translate.x,
+      translateY: translate.y,
+    };
+  };
+
+  const handleMouseMove = (e: MouseEvent<SVGSVGElement>) => {
+    if (!svgRef.current) return;
+
+    if (isPanning && panStartRef.current) {
+      const deltaX = e.clientX - panStartRef.current.clientX;
+      const deltaY = e.clientY - panStartRef.current.clientY;
+      setTranslate({
+        x: panStartRef.current.translateX + deltaX,
+        y: panStartRef.current.translateY + deltaY,
+      });
+      return;
+    }
+
+    if (!isDragging || !draggedNode) return;
 
     const rect = svgRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left - translate.x) / scale;
     const y = (e.clientY - rect.top - translate.y) / scale;
 
-    setNodes(prevNodes =>
-      prevNodes.map(node =>
-        node.id === draggedNode
-          ? { ...node, x, y, vx: 0, vy: 0 }
-          : node
-      )
-    );
+    setNodes((prevNodes) => {
+      const nextNodes = [...prevNodes];
+      let targetNode: KnowledgeGraphNode | undefined;
+      for (const node of nextNodes) {
+        if (node.id === draggedNode) {
+          targetNode = node;
+          break;
+        }
+      }
+      if (targetNode) {
+        targetNode.x = x;
+        targetNode.y = y;
+        targetNode.vx = 0;
+        targetNode.vy = 0;
+        layoutCacheRef.current[targetNode.id] = {
+          x: targetNode.x,
+          y: targetNode.y,
+          vx: targetNode.vx,
+          vy: targetNode.vy,
+          radius: targetNode.radius,
+          color: targetNode.color,
+        };
+      }
+      nodesRef.current = nextNodes;
+      return nextNodes;
+    });
   };
 
   const handleMouseUp = () => {
+    snapshotGraphLayout(nodesRef.current);
     setIsDragging(false);
+    setIsPanning(false);
     setDraggedNode(null);
+    panStartRef.current = null;
   };
 
-  const handleZoomIn = () => setScale(s => Math.min(s * 1.2, 3));
-  const handleZoomOut = () => setScale(s => Math.max(s / 1.2, 0.3));
+  const handleZoom = (factor: number) => {
+    setScale((currentScale) => {
+      const nextScale = Math.min(Math.max(currentScale * factor, 0.3), 3);
+      const centerX = width / 2;
+      const centerY = height / 2;
+      setTranslate((currentTranslate) => ({
+        x: centerX - (nextScale / currentScale) * (centerX - currentTranslate.x),
+        y: centerY - (nextScale / currentScale) * (centerY - currentTranslate.y),
+      }));
+      return nextScale;
+    });
+  };
+  const handleZoomIn = () => handleZoom(1.2);
+  const handleZoomOut = () => handleZoom(1 / 1.2);
   const handleReset = () => {
     setScale(1);
     setTranslate({ x: 0, y: 0 });
@@ -261,7 +344,6 @@ export function KnowledgeGraph({
 
   return (
     <Card className="w-full h-full border-0 shadow-none bg-transparent flex flex-col relative overflow-hidden">
-      {/* 绝对定位头部，省去占位空间 */}
       <div className="absolute top-2 left-6 right-6 z-20 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-2 bg-background/40 backdrop-blur-md px-3 py-1 rounded-full border border-border/40 shadow-sm pointer-events-auto">
           <Network className="w-3.5 h-3.5 text-primary" />
@@ -287,146 +369,116 @@ export function KnowledgeGraph({
             width={width}
             height={height}
             viewBox={`0 0 ${width} ${height}`}
-            className="cursor-grab active:cursor-grabbing w-full h-full"
-            style={{
-              transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
-              transformOrigin: 'center'
-            }}
+            className={`w-full h-full ${isDragging || isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
-            {/* 背景网格 */}
             <defs>
               <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
                 <circle cx="1" cy="1" r="1" className="fill-border/40" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
+            <g transform={`translate(${translate.x}, ${translate.y}) scale(${scale})`}>
+              <rect
+                x={-width * 2}
+                y={-height * 2}
+                width={width * 5}
+                height={height * 5}
+                fill="url(#grid)"
+                onMouseDown={handlePanMouseDown}
+              />
 
-            {/* 链接 */}
-            {links.map((link, index) => {
-              const sourceNode = nodes.find(n => n.id === link.source);
-              const targetNode = nodes.find(n => n.id === link.target);
-              if (!sourceNode || !targetNode) return null;
-              if (!isVisibleEntity(sourceNode.entity) || !isVisibleEntity(targetNode.entity)) return null;
-              const displayLevel = Math.max(sourceNode.entity.display_level ?? 2, targetNode.entity.display_level ?? 2);
-              const muted = displayLevel >= 3;
+              {links.map((link) => {
+                const sourceNode = nodeIndexRef.current.get(link.source);
+                const targetNode = nodeIndexRef.current.get(link.target);
+                if (!sourceNode || !targetNode) return null;
+                if (!isVisibleEntity(sourceNode.entity) || !isVisibleEntity(targetNode.entity)) return null;
+                const displayLevel = Math.max(sourceNode.entity.display_level ?? 2, targetNode.entity.display_level ?? 2);
+                const muted = displayLevel >= 3;
 
-              return (
-                <g key={index}>
-                  <line
-                    x1={sourceNode.x}
-                    y1={sourceNode.y}
-                    x2={targetNode.x}
-                    y2={targetNode.y}
-                    className="stroke-muted-foreground/30"
-                    strokeWidth={muted ? 0.8 : 1.5}
-                    opacity={muted ? 0.35 : 1}
+                return (
+                  <g key={`${link.source}--${link.target}`} pointerEvents="none">
+                    <line
+                      x1={sourceNode.x}
+                      y1={sourceNode.y}
+                      x2={targetNode.x}
+                      y2={targetNode.y}
+                      className="stroke-muted-foreground/30"
+                      strokeWidth={muted ? 0.8 : 1.5}
+                      opacity={muted ? 0.35 : 1}
+                    />
+                    <text
+                      x={(sourceNode.x + targetNode.x) / 2}
+                      y={(sourceNode.y + targetNode.y) / 2}
+                      textAnchor="middle"
+                      className="text-[10px] fill-muted-foreground font-medium"
+                      style={{ textShadow: '0 0 4px hsl(var(--background))', opacity: muted ? 0.45 : 1 }}
+                    >
+                      {link.relation}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {nodes.map((node) => (
+                <g
+                  key={node.id}
+                  transform={`translate(${node.x}, ${node.y})`}
+                  onMouseDown={(event) => {
+                    event.stopPropagation();
+                    handleNodeMouseDown(node.id);
+                  }}
+                  onClick={() => onSelectEntity(node.entity)}
+                  className="cursor-pointer"
+                  opacity={node.entity.visible === false ? 0.2 : node.entity.display_level === 3 ? 0.55 : 1}
+                >
+                  {node.id === selectedEntityId && (
+                    <circle
+                      r={node.radius + 6}
+                      fill="none"
+                      stroke="currentColor"
+                      className={node.entity.highlight ? 'text-cyan-500' : 'text-primary'}
+                      strokeWidth={node.entity.highlight ? 3 : 2.5}
+                      strokeDasharray="4,4"
+                    >
+                      <animateTransform
+                        attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        from="0 0 0"
+                        to="360 0 0"
+                        dur="10s"
+                        repeatCount="indefinite"
+                      />
+                    </circle>
+                  )}
+                  <circle
+                    r={node.radius}
+                    fill={node.color}
+                    stroke={layerStrokeColors[node.entity.layer]}
+                    strokeWidth={node.entity.layer === 'private' ? 4 : 2.5}
+                    opacity={node.entity.display_level === 3 ? 0.7 : 1}
+                    className="hover:opacity-80 transition-opacity"
                   />
-                  {/* 关系标签 */}
                   <text
-                    x={(sourceNode.x + targetNode.x) / 2}
-                    y={(sourceNode.y + targetNode.y) / 2}
                     textAnchor="middle"
-                    className="text-[10px] fill-muted-foreground font-medium"
-                    style={{ textShadow: '0 0 4px hsl(var(--background))', opacity: muted ? 0.45 : 1 }}
+                    dy={node.radius + 18}
+                    className="text-xs fill-foreground font-bold"
+                    style={{
+                      fontSize: node.entity.display_level === 1 ? '14px' : '13px',
+                      pointerEvents: 'none',
+                      textShadow: '0 1px 2px hsl(var(--background))',
+                    }}
                   >
-                    {link.relation}
+                    {node.name}
                   </text>
                 </g>
-              );
-            })}
-
-            {/* 节点 */}
-            {nodes.map(node => (
-              <g
-                key={node.id}
-                transform={`translate(${node.x}, ${node.y})`}
-                onMouseDown={() => handleMouseDown(node.id)}
-                onClick={() => onSelectEntity(node.entity)}
-                className="cursor-pointer"
-                opacity={node.entity.visible === false ? 0.2 : node.entity.display_level === 3 ? 0.55 : 1}
-              >
-                {/* 选中光环 */}
-                {node.id === selectedEntityId && (
-                  <circle
-                    r={node.radius + 6}
-                    fill="none"
-                    stroke="currentColor"
-                    className={node.entity.highlight ? 'text-cyan-500' : 'text-primary'}
-                    strokeWidth={node.entity.highlight ? 3 : 2.5}
-                    strokeDasharray="4,4"
-                  >
-                    <animateTransform
-                      attributeName="transform"
-                      attributeType="XML"
-                      type="rotate"
-                      from={`0 0 0`}
-                      to={`360 0 0`}
-                      dur="10s"
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                )}
-                {/* 节点圆圈 */}
-                <circle
-                  r={node.radius}
-                  fill={node.color}
-                  stroke={layerStrokeColors[node.entity.layer]}
-                  strokeWidth={node.entity.layer === 'private' ? 4 : 2.5}
-                  opacity={node.entity.display_level === 3 ? 0.7 : 1}
-                  className="hover:opacity-80 transition-opacity"
-                />
-                {/* Removed default title tooltip */}
-                {/* 节点标签 */}
-                <text
-                  textAnchor="middle"
-                  dy={node.radius + 18}
-                  className="text-xs fill-foreground font-bold"
-                  style={{
-                    fontSize: node.entity.display_level === 1 ? '14px' : '13px',
-                    pointerEvents: 'none',
-                    textShadow: '0 1px 2px hsl(var(--background))',
-                    opacity: node.entity.display_level === 3 ? 0.7 : 1,
-                  }}
-                >
-                  {node.name}
-                </text>
-              </g>
-            ))}
+              ))}
+            </g>
           </svg>
-        </div>
-
-        {/* 工业级专业图例 - 对称居中布局 */}
-        <div className="px-6 pt-4 pb-3 border-t bg-muted/10 backdrop-blur-xl shrink-0 border-border/20">
-          <div className="relative flex items-center justify-center h-8">
-            {/* 左侧装饰线 */}
-            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex items-center justify-between px-10 pointer-events-none">
-              <div className="h-px w-1/4 bg-gradient-to-r from-transparent via-border/40 to-transparent" />
-              <div className="h-px w-1/4 bg-gradient-to-r from-transparent via-border/40 to-transparent" />
-            </div>
-
-            {/* 中心内容 */}
-            <div className="z-10 bg-background/5 px-4 flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] leading-none">Knowledge Layers</span>
-                <div className="w-1 h-3 bg-primary/30 rounded-full" />
-                <span className="text-[10px] font-bold text-muted-foreground/80 leading-none">图层分级</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {Object.entries(layerLabels).map(([layer, label]) => (
-                  <div key={layer} className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-background/20 border border-border/30 shadow-inner">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full border border-white/40 ring-1 ring-black/20 shadow-[0_0_8px_rgba(0,0,0,0.3)]"
-                      style={{ backgroundColor: layerStrokeColors[layer as KnowledgeLayer] }}
-                    />
-                    <span className="text-[10px] font-bold text-foreground/60">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="pointer-events-none absolute bottom-3 left-3 rounded-full border border-border/40 bg-background/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground shadow-sm backdrop-blur-md">
+            拖动画布可平移视野
           </div>
         </div>
       </CardContent>

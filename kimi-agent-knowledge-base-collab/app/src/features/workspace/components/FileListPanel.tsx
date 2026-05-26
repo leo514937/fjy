@@ -11,6 +11,7 @@ import type { XgTimeline } from '@/features/workspace/api';
 interface FileListPanelProps {
   timelines: XgTimeline[];
   selectedFile: string;
+  loading?: boolean;
   onSelectFile: (filename: string) => void;
   className?: string;
   fileSearch: string;
@@ -20,6 +21,7 @@ interface FileListPanelProps {
 export function FileListPanel({ 
   timelines, 
   selectedFile, 
+  loading = false,
   onSelectFile, 
   className,
   fileSearch,
@@ -132,7 +134,11 @@ export function FileListPanel({
           onMouseLeave={handleMouseLeave}
         >
           <div className="space-y-1.5 pr-2 pb-4 min-w-full w-max select-none">
-            {filteredTimelines.length === 0 ? (
+            {loading ? (
+              <div className="py-10 px-4 text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">正在切换项目...</p>
+              </div>
+            ) : filteredTimelines.length === 0 ? (
               <div className="py-10 px-4 text-center">
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">无匹配文件</p>
               </div>

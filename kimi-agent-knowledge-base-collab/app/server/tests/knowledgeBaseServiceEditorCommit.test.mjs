@@ -3,24 +3,75 @@ import test from "node:test";
 
 import { KnowledgeBaseService } from "../services/knowledgeBaseService.mjs";
 
+function createValidWorkflowSource(overrides = {}) {
+  const entityId = "entity_salinity_monitoring";
+  const entityName = "盐度监测";
+  const entity = {
+    id: entityId,
+    name: entityName,
+    summary: "用于持续跟踪盐度变化。",
+    type: "capability",
+    level: 2,
+    source: "linear-workflow",
+    properties: {
+      domain: "ocean",
+    },
+    abilities: ["monitor"],
+    citations: ["spec-1"],
+  };
+  const relation = {
+    source_entity_id: entityId,
+    target_entity_id: "entity_ocean_sensor",
+    source_name: entityName,
+    target_name: "海洋传感器",
+    relation_type: "相关",
+    evidence: "共享同一观测域。",
+  };
+  return {
+    source: "linear-workflow",
+    ontology: {
+      scope: "entity",
+      workflow_version: "v1-linear-file-workflow",
+      project_id: "demo",
+      entity_id: entityId,
+      entity_name: entityName,
+      generated_at: "2026-04-25T00:00:00Z",
+      system_summary: {
+        entity_count: 1,
+        relation_count: 1,
+        ablation_count: 0,
+      },
+      entity,
+      relations: [relation],
+      ablation: null,
+    },
+    entity,
+    relations: [relation],
+    ablation: null,
+    precheck: null,
+    ontology_summary: {
+      entity_count: 1,
+      relation_count: 1,
+      ablation_count: 0,
+    },
+    ...overrides,
+  };
+}
+
 function createRepository() {
   let invalidated = 0;
+  let invalidatedProjectId = null;
+  let loadedProjectId = null;
   return {
     invalidated: () => invalidated,
-    async ingestSource() {
-      return {
-        ref: "domain:kimi-demo/salinity-monitoring",
-        layer: "domain",
-        slug: "kimi-demo/salinity-monitoring",
-        title: "盐度监测",
-        markdown: "# 盐度监测\n\n## 定义与定位\n用于持续跟踪盐度变化。\n",
-        warnings: [],
-      };
-    },
-    invalidateCache() {
+    invalidatedProjectId: () => invalidatedProjectId,
+    loadedProjectId: () => loadedProjectId,
+    invalidateCache(projectId) {
       invalidated += 1;
+      invalidatedProjectId = projectId ?? null;
     },
-    async loadDataset() {
+    async loadDataset(projectId) {
+      loadedProjectId = projectId ?? null;
       return {
         knowledgeGraph: {
           statistics: {
@@ -30,177 +81,94 @@ function createRepository() {
         },
       };
     },
+    async getEditorTemplate() {
+      return {
+        defaults: {
+          name: "新概念",
+          type: "workflow-entity",
+          domain: "demo",
+          source: "linear-workflow",
+          definition: "请填写定义。",
+          properties: {},
+        },
+        suggestions: {
+          recommended_type: "workflow-entity",
+          suggested_relations: [],
+          rdf_preview: "",
+          owl_preview: "",
+        },
+      };
+    },
+    async listEntities() {
+      return [];
+    },
+    async getRelatedEntities() {
+      return [];
+    },
   };
 }
 
-test("KnowledgeBaseService commitEditorDraft writes source and wiki then refreshes dataset", async () => {
+test("KnowledgeBaseService commitEditorDraft writes only the JSON source", async () => {
   const repository = createRepository();
   const calls = [];
   const service = new KnowledgeBaseService(repository, {
     sourceCommitter: async (input) => {
-      calls.push({ kind: "source", input });
+      calls.push(input);
       return {
         filename: input.filename,
         version_id: 3,
         commit_id: "abc123",
       };
     },
-    wikiWriter: async (input) => {
-      calls.push({ kind: "wiki", input });
-      return {
-        path: input.path,
-      };
-    },
   });
 
   const result = await service.commitEditorDraft({
     mode: "json",
     projectId: "demo",
-    slug: "kimi-demo/salinity-monitoring",
+    entityId: "entity_salinity_monitoring",
+    slug: "entity_salinity_monitoring",
     message: "新增盐度监测",
-    source: {
-      title: "盐度监测",
-    },
+    source: createValidWorkflowSource(),
   });
 
   assert.equal(result.status, "success");
-  assert.equal(calls[0].kind, "source");
-  assert.equal(calls[0].input.filename, "graph-source/domain/kimi-demo/salinity-monitoring.json");
-  assert.equal(calls[1].kind, "wiki");
-  assert.equal(calls[1].input.layer, "domain");
-  assert.equal(calls[1].input.slug, "kimi-demo/salinity-monitoring");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].filename, "graph-source/domain/entity_salinity_monitoring.json");
+  assert.equal(calls[0].data.entity.name, "盐度监测");
+  assert.equal(calls[0].message, "新增盐度监测");
+  assert.equal(calls[0].basevision, 0);
   assert.equal(repository.invalidated(), 1);
-  assert.equal(result.updatedEntityId, "domain:kimi-demo/salinity-monitoring");
+  assert.equal(repository.invalidatedProjectId(), "demo");
+  assert.equal(repository.loadedProjectId(), "demo");
+  assert.equal(result.updatedEntityId, "domain:entity_salinity_monitoring");
   assert.equal(result.layer, "domain");
-  assert.equal(result.slug, "kimi-demo/salinity-monitoring");
-  assert.equal(result.ref, "domain:kimi-demo/salinity-monitoring");
+  assert.equal(result.slug, "entity_salinity_monitoring");
+  assert.equal(result.ref, "domain:entity_salinity_monitoring");
   assert.equal(result.exportSummary.totalEntities, 12);
   assert.equal(result.exportSummary.totalRelations, 28);
+  assert.equal("wikiWrite" in result, false);
 });
 
-test("KnowledgeBaseService commitEditorDraft reports partial when source succeeded but wiki write failed", async () => {
+test("KnowledgeBaseService commitEditorDraft reports partial when JSON write refresh fails", async () => {
   const repository = createRepository();
-  let sourceWrites = 0;
   const service = new KnowledgeBaseService(repository, {
-    sourceCommitter: async () => {
-      sourceWrites += 1;
-      return {
-        filename: "graph-source/domain/kimi-demo/salinity-monitoring.json",
-        version_id: 4,
-        commit_id: "def456",
-      };
-    },
-    wikiWriter: async () => {
-      throw new Error("disk full");
-    },
+    sourceCommitter: async () => ({
+      filename: "graph-source/domain/entity_salinity_monitoring.json",
+      version_id: 4,
+      commit_id: "def456",
+    }),
   });
-
-  const result = await service.commitEditorDraft({
-    mode: "markdown",
-    projectId: "demo",
-    layer: "domain",
-    slug: "kimi-demo/salinity-monitoring",
-    message: "更新盐度监测",
-    source: "# 盐度监测",
-  });
-
-  assert.equal(sourceWrites, 1);
-  assert.equal(result.status, "partial");
-  assert.equal(result.sourceWrite.version_id, 4);
-  assert.match(result.error, /disk full/);
-});
-
-test("KnowledgeBaseService commitEditorDraft writes every batch item to its inferred layer", async () => {
-  const repository = {
-    async ingestSource() {
-      return {
-        status: "ok",
-        batch: true,
-        slug: "kimi-demo",
-        total: 3,
-        layer_counts: { common: 1, domain: 1, private: 1 },
-        warnings: [],
-        items: [
-          {
-            ref: "common:kimi-demo/telemetry",
-            layer: "common",
-            slug: "kimi-demo/telemetry",
-            title: "遥测字段规范",
-            markdown: "# 遥测字段规范\n",
-            warnings: [],
-          },
-          {
-            ref: "domain:kimi-demo/control-rules",
-            layer: "domain",
-            slug: "kimi-demo/control-rules",
-            title: "远程控制规则",
-            markdown: "# 远程控制规则\n",
-            warnings: [],
-          },
-          {
-            ref: "private:kimi-demo/drill-notes",
-            layer: "private",
-            slug: "kimi-demo/drill-notes",
-            title: "内部演练记录",
-            markdown: "# 内部演练记录\n",
-            warnings: [],
-          },
-        ],
-      };
-    },
-    invalidateCache() {},
-    async loadDataset() {
-      return {
-        knowledgeGraph: {
-          statistics: {
-            total_entities: 15,
-            total_relations: 30,
-          },
-        },
-        documents: [{}, {}, {}],
-      };
-    },
+  repository.loadDataset = async () => {
+    throw new Error("gateway offline");
   };
-  const calls = [];
-  const service = new KnowledgeBaseService(repository, {
-    sourceCommitter: async (input) => {
-      calls.push({ kind: "source", input });
-      return {
-        filename: input.filename,
-        version_id: 5,
-      };
-    },
-    wikiWriter: async (input) => {
-      calls.push({ kind: "wiki", input });
-      return {
-        path: `wiki/${input.layer}/${input.slug}.json`,
-        ref: `${input.layer}:${input.slug}`,
-      };
-    },
-  });
 
   const result = await service.commitEditorDraft({
     mode: "json",
     projectId: "demo",
-    slug: "kimi-demo",
-    message: "批量入库",
-    source: { items: [] },
+    source: createValidWorkflowSource(),
   });
 
-  assert.equal(result.status, "success");
-  assert.equal(result.batch, true);
-  assert.equal(result.total, 3);
-  assert.deepEqual(result.layerCounts, { common: 1, domain: 1, private: 1 });
-  assert.equal(calls[0].kind, "source");
-  assert.equal(calls[0].input.filename, "graph-source/batch/kimi-demo.json");
-  assert.deepEqual(
-    calls.filter((call) => call.kind === "wiki").map((call) => [call.input.layer, call.input.slug]),
-    [
-      ["common", "kimi-demo/telemetry"],
-      ["domain", "kimi-demo/control-rules"],
-      ["private", "kimi-demo/drill-notes"],
-    ],
-  );
-  assert.equal(result.wikiWrites.length, 3);
-  assert.equal(result.updatedEntityId, "common:kimi-demo/telemetry");
+  assert.equal(result.status, "partial");
+  assert.equal(result.sourceWrite.version_id, 4);
+  assert.match(result.error, /gateway offline/);
 });

@@ -1,0 +1,3756 @@
+{
+  "ok": true,
+  "workflow": {
+    "mode": "linear",
+    "status": "success",
+    "steps": [
+      "auth_precheck",
+      "observe",
+      "relations",
+      "ablation",
+      "ontology",
+      "probability_precheck",
+      "ingest"
+    ]
+  },
+  "input_file": {
+    "originalName": "这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。.md",
+    "storedName": "mogfzyg7-这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。.md",
+    "mimeType": "text/markdown",
+    "size": 99,
+    "path": "/Users/qiuboyu/CodeLearning/new_fjy/fjy/kimi-agent-knowledge-base-collab/.workflow-runtime/.workflow-runs/conversation-file-workflow-mogfzos5-i0gkcz/uploads/mogfzyg7-这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。.md"
+  },
+  "stage_results": [
+    {
+      "stage": "auth_precheck",
+      "order": 1,
+      "status": "success",
+      "started_at": "2026-04-27T00:11:56.840Z",
+      "finished_at": "2026-04-27T00:11:56.865Z",
+      "output": {
+        "authenticated": true
+      },
+      "error": null
+    },
+    {
+      "stage": "observe",
+      "order": 2,
+      "status": "success",
+      "started_at": "2026-04-27T00:11:56.867Z",
+      "finished_at": "2026-04-27T00:12:06.195Z",
+      "output": {
+        "entity_count": 6,
+        "entities": [
+          {
+            "id": "ent_entity_1",
+            "name": "测试",
+            "summary": "文档中提到的测试活动或测试过程",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "这是一个测试"
+            ]
+          },
+          {
+            "id": "ent_entity_2",
+            "name": "测试人员",
+            "summary": "负责测试的人员",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "id": "ent_entity_3",
+            "name": "运营人员",
+            "summary": "负责运营的人员",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "id": "ent_entity_4",
+            "name": "协作关系",
+            "summary": "测试人员和运营人员之间的协作关系",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "id": "ent_entity_5",
+            "name": "公司",
+            "summary": "文档中提到的公司",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          {
+            "id": "ent_entity_6",
+            "name": "发展",
+            "summary": "公司的发展或进步",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          }
+        ],
+        "llm_raw": [
+          {
+            "name": "测试",
+            "summary": "文档中提到的测试活动或测试过程",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "这是一个测试"
+            ]
+          },
+          {
+            "name": "测试人员",
+            "summary": "负责测试的人员",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "name": "运营人员",
+            "summary": "负责运营的人员",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "name": "协作关系",
+            "summary": "测试人员和运营人员之间的协作关系",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          {
+            "name": "公司",
+            "summary": "文档中提到的公司",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          {
+            "name": "发展",
+            "summary": "公司的发展或进步",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          }
+        ],
+        "llm_raw_text": "[\n  {\n    \"name\": \"测试\",\n    \"summary\": \"文档中提到的测试活动或测试过程\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"这是一个测试\"]\n  },\n  {\n    \"name\": \"测试人员\",\n    \"summary\": \"负责测试的人员\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"运营人员\",\n    \"summary\": \"负责运营的人员\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"协作关系\",\n    \"summary\": \"测试人员和运营人员之间的协作关系\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"公司\",\n    \"summary\": \"文档中提到的公司\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"公司发展就会越来越好\"]\n  },\n  {\n    \"name\": \"发展\",\n    \"summary\": \"公司的发展或进步\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"公司发展就会越来越好\"]\n  }\n]",
+        "llm_response": {
+          "id": "gen-1777248717-5cUMWjS9tGaAgMWcBa80",
+          "object": "chat.completion",
+          "created": 1777248717,
+          "model": "deepseek/deepseek-v4-flash-20260423",
+          "provider": "Novita",
+          "system_fingerprint": "fp_058df29938_prod0820_fp8_kvcache_20260402",
+          "choices": [
+            {
+              "index": 0,
+              "logprobs": null,
+              "finish_reason": "stop",
+              "native_finish_reason": "stop",
+              "message": {
+                "role": "assistant",
+                "content": "[\n  {\n    \"name\": \"测试\",\n    \"summary\": \"文档中提到的测试活动或测试过程\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"这是一个测试\"]\n  },\n  {\n    \"name\": \"测试人员\",\n    \"summary\": \"负责测试的人员\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"运营人员\",\n    \"summary\": \"负责运营的人员\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"协作关系\",\n    \"summary\": \"测试人员和运营人员之间的协作关系\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"测试人员和运营人员有协作关系\"]\n  },\n  {\n    \"name\": \"公司\",\n    \"summary\": \"文档中提到的公司\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"公司发展就会越来越好\"]\n  },\n  {\n    \"name\": \"发展\",\n    \"summary\": \"公司的发展或进步\",\n    \"properties\": {},\n    \"abilities\": [],\n    \"citations\": [\"公司发展就会越来越好\"]\n  }\n]",
+                "refusal": null,
+                "reasoning": "我们分析文档文本：\"这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。\"\n\n需要拆分为实体数组。实体包括：测试、测试人员、运营人员、协作关系、公司发展（或公司、发展）。注意：文档很简短，但按指令要尽量完整拆解。每个实体有name, summary, properties, abilities, citations。citations必须是原文片段。这里没有很具体的片段，但可以摘取包含该实体的词句。\n\n实体建议：\n1. \"测试\" - 可能作为事件或名词。\n2. \"测试人员\" - 角色。\n3. \"运营人员\" - 角色。\n4. \"协作关系\" - 关系实体。\n5. \"公司\" - 实体。\n6. \"发展\" - 可能作为事件或状态。\n\n注意：指令说“不要只保留少数概括性实体”，所以宁可多提取。\n\n我将提取：\n- test: name=\"测试\", summary=\"文档中提到的测试活动或测试过程\", properties={}, abilities=[], citations=[\"这是一个测试\"]\n- test_personnel: name=\"测试人员\", summary=\"负责测试的人员\", properties={}, abilities=[], citations=[\"测试人员和运营人员有协作关系\"]\n- operations_personnel: name=\"运营人员\", summary=\"负责运营的人员\", properties={}, abilities=[], citations=[\"测试人员和运营人员有协作关系\"]\n- collaboration_relationship: name=\"协作关系\", summary=\"测试人员和运营人员之间的协作关系\", properties={}, abilities=[], citations=[\"测试人员和运营人员有协作关系\"]\n- company: name=\"公司\", summary=\"文档中提到的公司\", properties={}, abilities=[], citations=[\"公司发展就会越来越好\"]\n- development: name=\"发展\", summary=\"公司的发展或进步\", properties={}, abilities=[], citations=[\"公司发展就会越来越好\"]\n\n注意：每个实体都要有properties和abilities，可以留空。citations要原文片段。\n\n另外，可能还有“越来越好”但这是个状态，不是实体。保持简单。\n\n确保JSON格式正确。",
+                "reasoning_details": [
+                  {
+                    "type": "reasoning.text",
+                    "text": "我们分析文档文本：\"这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。\"\n\n需要拆分为实体数组。实体包括：测试、测试人员、运营人员、协作关系、公司发展（或公司、发展）。注意：文档很简短，但按指令要尽量完整拆解。每个实体有name, summary, properties, abilities, citations。citations必须是原文片段。这里没有很具体的片段，但可以摘取包含该实体的词句。\n\n实体建议：\n1. \"测试\" - 可能作为事件或名词。\n2. \"测试人员\" - 角色。\n3. \"运营人员\" - 角色。\n4. \"协作关系\" - 关系实体。\n5. \"公司\" - 实体。\n6. \"发展\" - 可能作为事件或状态。\n\n注意：指令说“不要只保留少数概括性实体”，所以宁可多提取。\n\n我将提取：\n- test: name=\"测试\", summary=\"文档中提到的测试活动或测试过程\", properties={}, abilities=[], citations=[\"这是一个测试\"]\n- test_personnel: name=\"测试人员\", summary=\"负责测试的人员\", properties={}, abilities=[], citations=[\"测试人员和运营人员有协作关系\"]\n- operations_personnel: name=\"运营人员\", summary=\"负责运营的人员\", properties={}, abilities=[], citations=[\"测试人员和运营人员有协作关系\"]\n- collaboration_relationship: name=\"协作关系\", summary=\"测试人员和运营人员之间的协作关系\", properties={}, abilities=[], citations=[\"测试人员和运营人员有协作关系\"]\n- company: name=\"公司\", summary=\"文档中提到的公司\", properties={}, abilities=[], citations=[\"公司发展就会越来越好\"]\n- development: name=\"发展\", summary=\"公司的发展或进步\", properties={}, abilities=[], citations=[\"公司发展就会越来越好\"]\n\n注意：每个实体都要有properties和abilities，可以留空。citations要原文片段。\n\n另外，可能还有“越来越好”但这是个状态，不是实体。保持简单。\n\n确保JSON格式正确。",
+                    "format": "unknown",
+                    "index": 0
+                  }
+                ]
+              }
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 229,
+            "completion_tokens": 687,
+            "total_tokens": 916,
+            "cost": 0.00022442,
+            "is_byok": false,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "cache_write_tokens": 0,
+              "audio_tokens": 0,
+              "video_tokens": 0
+            },
+            "cost_details": {
+              "upstream_inference_cost": 0.00022442,
+              "upstream_inference_prompt_cost": 0.00003206,
+              "upstream_inference_completions_cost": 0.00019236
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 417,
+              "image_tokens": 0,
+              "audio_tokens": 0
+            }
+          }
+        }
+      },
+      "error": null
+    },
+    {
+      "stage": "relations",
+      "order": 3,
+      "status": "success",
+      "started_at": "2026-04-27T00:12:06.198Z",
+      "finished_at": "2026-04-27T00:12:15.324Z",
+      "output": {
+        "relation_count": 2,
+        "relations": [
+          {
+            "source_entity_id": "ent_entity_2",
+            "source_name": "测试人员",
+            "target_entity_id": "ent_entity_3",
+            "target_name": "运营人员",
+            "relation_type": "协作",
+            "evidence": "测试人员和运营人员有协作关系"
+          },
+          {
+            "source_entity_id": "ent_entity_5",
+            "source_name": "公司",
+            "target_entity_id": "ent_entity_6",
+            "target_name": "发展",
+            "relation_type": "发展",
+            "evidence": "公司发展就会越来越好"
+          }
+        ],
+        "llm_raw": [
+          {
+            "source": "测试人员",
+            "target": "运营人员",
+            "relation_type": "协作",
+            "evidence": "测试人员和运营人员有协作关系"
+          },
+          {
+            "source": "公司",
+            "target": "发展",
+            "relation_type": "发展",
+            "evidence": "公司发展就会越来越好"
+          }
+        ],
+        "llm_raw_text": "[\n  {\n    \"source\": \"测试人员\",\n    \"target\": \"运营人员\",\n    \"relation_type\": \"协作\",\n    \"evidence\": \"测试人员和运营人员有协作关系\"\n  },\n  {\n    \"source\": \"公司\",\n    \"target\": \"发展\",\n    \"relation_type\": \"发展\",\n    \"evidence\": \"公司发展就会越来越好\"\n  }\n]",
+        "llm_response": {
+          "id": "gen-1777248726-FkNzxSB78v8StJqe8qHE",
+          "object": "chat.completion",
+          "created": 1777248726,
+          "model": "deepseek/deepseek-v4-flash-20260423",
+          "provider": "Novita",
+          "system_fingerprint": "fp_058df29938_prod0820_fp8_kvcache_20260402",
+          "choices": [
+            {
+              "index": 0,
+              "logprobs": null,
+              "finish_reason": "stop",
+              "native_finish_reason": "stop",
+              "message": {
+                "role": "assistant",
+                "content": "[\n  {\n    \"source\": \"测试人员\",\n    \"target\": \"运营人员\",\n    \"relation_type\": \"协作\",\n    \"evidence\": \"测试人员和运营人员有协作关系\"\n  },\n  {\n    \"source\": \"公司\",\n    \"target\": \"发展\",\n    \"relation_type\": \"发展\",\n    \"evidence\": \"公司发展就会越来越好\"\n  }\n]",
+                "refusal": null,
+                "reasoning": "我们根据实体列表和文档提取关系。实体有：测试、测试人员、运营人员、协作关系、公司、发展。文档原文：\"这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。\"\n\n可能的合理关系：\n- 测试人员 和 运营人员 之间：协作关系。source: 测试人员, target: 运营人员, relation_type: 协作, evidence: \"测试人员和运营人员有协作关系\"\n- 公司 和 发展：公司发展，可以理解为公司的发展，但关系类型？可能是“发展”作为属性？或者公司“推动”发展？但文档说“公司发展就会越来越好”，可以看作公司和发展之间的关联，比如公司 进行 发展？但更合理的是：公司 是 发展 的主体。可以考虑 relation_type: \"发展\", source: 公司, target: 发展, evidence: \"公司发展就会越来越好\"\n\n注意：不能新增实体，只能使用已有的。测试 这个实体似乎没有与其他实体有明显关系，但文档开头“这是一个测试”，测试作为一个活动？没有与其他实体直接关联，可不提取。\n\n协作关系本身也是一个实体，但一般我们提取的是实体间的关系，而不是将实体本身作为关系。所以协作关系作为实体，但可以表示测试人员与运营人员之间的协作关系。但关系类型可以是\"协作\"，然后source和target分别是测试人员和运营人员。协作关系实体本身可以不用作source或target，除非有其他关系。但题目要求source和target必须与实体name精确一致，所以我们可以用协作关系作为source或target吗？如果这样，需要找到与协作关系相关的其他实体。似乎没有其他直接关联。所以最好不用协作关系作为source或target，而是将测试人员和运营人员之间的关系用relation_type表示。\n\n另外，可能的关系：测试人员 与 测试？测试人员执行测试？文档没有明确说，只有“这是一个测试”，后面说测试人员和运营人员有协作关系，但没有说测试人员与测试的关系。所以不提取。\n\n因此输出应该是：\n[\n  {\n    \"source\": \"测试人员\",\n    \"target\": \"运营人员\",\n    \"relation_type\": \"协作\",\n    \"evidence\": \"测试人员和运营人员有协作关系\"\n  },\n  {\n    \"source\": \"公司\",\n    \"target\": \"发展\",\n    \"relation_type\": \"发展\",\n    \"evidence\": \"公司发展就会越来越好\"\n  }\n]\n\n注意：relation_type 最好用动词或名词？根据要求“优先输出能直接表达结构、依赖、组成、归属、作用、完成任务、关联、触发、支撑等关系。” 这里“协作”和“发展”可能不够精确，但文档中没有更明确的动词。可以考虑“协作”作为关系类型，另一个是“促进”或“推动”？但文档说“公司发展”，不是公司推动发展，而是公司本身在发展。所以关系可以是“发展”或“进行发展”。我们使用“发展”作为relation_type。\n\n确保JSON格式正确。",
+                "reasoning_details": [
+                  {
+                    "type": "reasoning.text",
+                    "text": "我们根据实体列表和文档提取关系。实体有：测试、测试人员、运营人员、协作关系、公司、发展。文档原文：\"这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。\"\n\n可能的合理关系：\n- 测试人员 和 运营人员 之间：协作关系。source: 测试人员, target: 运营人员, relation_type: 协作, evidence: \"测试人员和运营人员有协作关系\"\n- 公司 和 发展：公司发展，可以理解为公司的发展，但关系类型？可能是“发展”作为属性？或者公司“推动”发展？但文档说“公司发展就会越来越好”，可以看作公司和发展之间的关联，比如公司 进行 发展？但更合理的是：公司 是 发展 的主体。可以考虑 relation_type: \"发展\", source: 公司, target: 发展, evidence: \"公司发展就会越来越好\"\n\n注意：不能新增实体，只能使用已有的。测试 这个实体似乎没有与其他实体有明显关系，但文档开头“这是一个测试”，测试作为一个活动？没有与其他实体直接关联，可不提取。\n\n协作关系本身也是一个实体，但一般我们提取的是实体间的关系，而不是将实体本身作为关系。所以协作关系作为实体，但可以表示测试人员与运营人员之间的协作关系。但关系类型可以是\"协作\"，然后source和target分别是测试人员和运营人员。协作关系实体本身可以不用作source或target，除非有其他关系。但题目要求source和target必须与实体name精确一致，所以我们可以用协作关系作为source或target吗？如果这样，需要找到与协作关系相关的其他实体。似乎没有其他直接关联。所以最好不用协作关系作为source或target，而是将测试人员和运营人员之间的关系用relation_type表示。\n\n另外，可能的关系：测试人员 与 测试？测试人员执行测试？文档没有明确说，只有“这是一个测试”，后面说测试人员和运营人员有协作关系，但没有说测试人员与测试的关系。所以不提取。\n\n因此输出应该是：\n[\n  {\n    \"source\": \"测试人员\",\n    \"target\": \"运营人员\",\n    \"relation_type\": \"协作\",\n    \"evidence\": \"测试人员和运营人员有协作关系\"\n  },\n  {\n    \"source\": \"公司\",\n    \"target\": \"发展\",\n    \"relation_type\": \"发展\",\n    \"evidence\": \"公司发展就会越来越好\"\n  }\n]\n\n注意：relation_type 最好用动词或名词？根据要求“优先输出能直接表达结构、依赖、组成、归属、作用、完成任务、关联、触发、支撑等关系。” 这里“协作”和“发展”可能不够精确，但文档中没有更明确的动词。可以考虑“协作”作为关系类型，另一个是“促进”或“推动”？但文档说“公司发展”，不是公司推动发展，而是公司本身在发展。所以关系可以是“发展”或“进行发展”。我们使用“发展”作为relation_type。\n\n确保JSON格式正确。",
+                    "format": "unknown",
+                    "index": 0
+                  }
+                ]
+              }
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 609,
+            "completion_tokens": 696,
+            "total_tokens": 1305,
+            "cost": 0.00028014,
+            "is_byok": false,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "cache_write_tokens": 0,
+              "audio_tokens": 0,
+              "video_tokens": 0
+            },
+            "cost_details": {
+              "upstream_inference_cost": 0.00028014,
+              "upstream_inference_prompt_cost": 0.00008526,
+              "upstream_inference_completions_cost": 0.00019488
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 616,
+              "image_tokens": 0,
+              "audio_tokens": 0
+            }
+          }
+        }
+      },
+      "error": null
+    },
+    {
+      "stage": "ablation",
+      "order": 4,
+      "status": "success",
+      "started_at": "2026-04-27T00:12:15.325Z",
+      "finished_at": "2026-04-27T00:12:26.359Z",
+      "output": {
+        "ablation_count": 6,
+        "ablation": [
+          {
+            "entity_id": "ent_entity_1",
+            "entity_name": "测试",
+            "impact_level": "high",
+            "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+            "system_risk": "unknown"
+          },
+          {
+            "entity_id": "ent_entity_2",
+            "entity_name": "测试人员",
+            "impact_level": "high",
+            "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+            "system_risk": "unknown"
+          },
+          {
+            "entity_id": "ent_entity_3",
+            "entity_name": "运营人员",
+            "impact_level": "medium",
+            "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+            "system_risk": "unknown"
+          },
+          {
+            "entity_id": "ent_entity_4",
+            "entity_name": "协作关系",
+            "impact_level": "medium",
+            "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+            "system_risk": "unknown"
+          },
+          {
+            "entity_id": "ent_entity_5",
+            "entity_name": "公司",
+            "impact_level": "high",
+            "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+            "system_risk": "unknown"
+          },
+          {
+            "entity_id": "ent_entity_6",
+            "entity_name": "发展",
+            "impact_level": "low",
+            "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+            "system_risk": "unknown"
+          }
+        ],
+        "llm_raw": [
+          {
+            "entity_id": "ent_entity_1",
+            "impact_level": "high",
+            "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+            "system_risk": 0.7
+          },
+          {
+            "entity_id": "ent_entity_2",
+            "impact_level": "high",
+            "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+            "system_risk": 0.8
+          },
+          {
+            "entity_id": "ent_entity_3",
+            "impact_level": "medium",
+            "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+            "system_risk": 0.5
+          },
+          {
+            "entity_id": "ent_entity_4",
+            "impact_level": "medium",
+            "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+            "system_risk": 0.4
+          },
+          {
+            "entity_id": "ent_entity_5",
+            "impact_level": "high",
+            "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+            "system_risk": 0.9
+          },
+          {
+            "entity_id": "ent_entity_6",
+            "impact_level": "low",
+            "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+            "system_risk": 0.3
+          }
+        ],
+        "llm_raw_text": "[\n  {\n    \"entity_id\": \"ent_entity_1\",\n    \"impact_level\": \"high\",\n    \"impact_reason\": \"测试活动是该工作流的核心环节，消融后直接影响质量验证流程。\",\n    \"system_risk\": 0.7\n  },\n  {\n    \"entity_id\": \"ent_entity_2\",\n    \"impact_level\": \"high\",\n    \"impact_reason\": \"测试人员是执行测试的关键角色，缺失将导致测试无法实施。\",\n    \"system_risk\": 0.8\n  },\n  {\n    \"entity_id\": \"ent_entity_3\",\n    \"impact_level\": \"medium\",\n    \"impact_reason\": \"运营人员与测试人员协作，部分影响流程但非核心。\",\n    \"system_risk\": 0.5\n  },\n  {\n    \"entity_id\": \"ent_entity_4\",\n    \"impact_level\": \"medium\",\n    \"impact_reason\": \"协作关系是连接测试与运营的纽带，移除后降低协同效率。\",\n    \"system_risk\": 0.4\n  },\n  {\n    \"entity_id\": \"ent_entity_5\",\n    \"impact_level\": \"high\",\n    \"impact_reason\": \"公司作为整体目标实体，消融后失去发展方向和上下文。\",\n    \"system_risk\": 0.9\n  },\n  {\n    \"entity_id\": \"ent_entity_6\",\n    \"impact_level\": \"low\",\n    \"impact_reason\": \"发展是一个抽象概念，对具体工作流执行影响较小。\",\n    \"system_risk\": 0.3\n  }\n]",
+        "llm_response": {
+          "id": "gen-1777248735-VTbnQRrg7njVYbsdXve7",
+          "object": "chat.completion",
+          "created": 1777248735,
+          "model": "deepseek/deepseek-v4-flash-20260423",
+          "provider": "Novita",
+          "system_fingerprint": "fp_058df29938_prod0820_fp8_kvcache_20260402",
+          "choices": [
+            {
+              "index": 0,
+              "logprobs": null,
+              "finish_reason": "stop",
+              "native_finish_reason": "stop",
+              "message": {
+                "role": "assistant",
+                "content": "[\n  {\n    \"entity_id\": \"ent_entity_1\",\n    \"impact_level\": \"high\",\n    \"impact_reason\": \"测试活动是该工作流的核心环节，消融后直接影响质量验证流程。\",\n    \"system_risk\": 0.7\n  },\n  {\n    \"entity_id\": \"ent_entity_2\",\n    \"impact_level\": \"high\",\n    \"impact_reason\": \"测试人员是执行测试的关键角色，缺失将导致测试无法实施。\",\n    \"system_risk\": 0.8\n  },\n  {\n    \"entity_id\": \"ent_entity_3\",\n    \"impact_level\": \"medium\",\n    \"impact_reason\": \"运营人员与测试人员协作，部分影响流程但非核心。\",\n    \"system_risk\": 0.5\n  },\n  {\n    \"entity_id\": \"ent_entity_4\",\n    \"impact_level\": \"medium\",\n    \"impact_reason\": \"协作关系是连接测试与运营的纽带，移除后降低协同效率。\",\n    \"system_risk\": 0.4\n  },\n  {\n    \"entity_id\": \"ent_entity_5\",\n    \"impact_level\": \"high\",\n    \"impact_reason\": \"公司作为整体目标实体，消融后失去发展方向和上下文。\",\n    \"system_risk\": 0.9\n  },\n  {\n    \"entity_id\": \"ent_entity_6\",\n    \"impact_level\": \"low\",\n    \"impact_reason\": \"发展是一个抽象概念，对具体工作流执行影响较小。\",\n    \"system_risk\": 0.3\n  }\n]",
+                "refusal": null,
+                "reasoning": "我们需对每个实体进行消融评估，返回ablation数组。每个实体需要评估其影响等级（high, medium, low），影响原因，以及系统风险（数值）。输入数据中实体有id、name、summary等。我们要基于实体在文档中的重要性、关联关系等判断。实体列表包括：测试、测试人员、运营人员、协作关系、公司、发展。每个实体信息有限，仅从名称和摘要及关系推断。\n\n简单处理：测试和测试人员、运营人员、协作关系相关，公司和发展相关。可能\"测试\"实体较通用，影响中等？测试人员、运营人员可能中等，协作关系可能低？公司和发展可能高？但需谨慎。\n\n定义impact_level: \"high\", \"medium\", \"low\"。impact_reason: 简短解释。system_risk: 数值，比如0-1？或百分比？我认为0-1的小数。但题目未明确。可能用0到1的分数，1表示高风险。根据实体可能的风险：如果实体缺失会严重影响系统。比如测试活动消失可能影响质量，但具体看。\n\n因无更多上下文，仅从名称猜测。也可均匀分配。我来构思：\n\n- ent_entity_1 (测试): 核心活动，影响高。risk 0.7\n- ent_entity_2 (测试人员): 关键角色，影响高。risk 0.8\n- ent_entity_3 (运营人员): 重要角色，影响中。risk 0.5\n- ent_entity_4 (协作关系): 关系抽象，移除后影响中？risk 0.4\n- ent_entity_5 (公司): 上级实体，影响高。risk 0.9\n- ent_entity_6 (发展): 抽象目标，影响中。risk 0.5\n\n但需合理。为防猜测，可更保守：全中。但要求每个都有评估。\n\n按逻辑，测试人员和运营人员协作关系中的协作关系可低。测试活动可能是核心，高。公司发展：公司高，发展低。\n\n构建JSON数组。格式：{\"entity_id\": \"...\", \"impact_level\": \"...\", \"impact_reason\": \"...\", \"system_risk\": number}\n\n确保JSON合法。返回纯JSON。\n\n输出必须只有JSON，无额外文本。",
+                "reasoning_details": [
+                  {
+                    "type": "reasoning.text",
+                    "text": "我们需对每个实体进行消融评估，返回ablation数组。每个实体需要评估其影响等级（high, medium, low），影响原因，以及系统风险（数值）。输入数据中实体有id、name、summary等。我们要基于实体在文档中的重要性、关联关系等判断。实体列表包括：测试、测试人员、运营人员、协作关系、公司、发展。每个实体信息有限，仅从名称和摘要及关系推断。\n\n简单处理：测试和测试人员、运营人员、协作关系相关，公司和发展相关。可能\"测试\"实体较通用，影响中等？测试人员、运营人员可能中等，协作关系可能低？公司和发展可能高？但需谨慎。\n\n定义impact_level: \"high\", \"medium\", \"low\"。impact_reason: 简短解释。system_risk: 数值，比如0-1？或百分比？我认为0-1的小数。但题目未明确。可能用0到1的分数，1表示高风险。根据实体可能的风险：如果实体缺失会严重影响系统。比如测试活动消失可能影响质量，但具体看。\n\n因无更多上下文，仅从名称猜测。也可均匀分配。我来构思：\n\n- ent_entity_1 (测试): 核心活动，影响高。risk 0.7\n- ent_entity_2 (测试人员): 关键角色，影响高。risk 0.8\n- ent_entity_3 (运营人员): 重要角色，影响中。risk 0.5\n- ent_entity_4 (协作关系): 关系抽象，移除后影响中？risk 0.4\n- ent_entity_5 (公司): 上级实体，影响高。risk 0.9\n- ent_entity_6 (发展): 抽象目标，影响中。risk 0.5\n\n但需合理。为防猜测，可更保守：全中。但要求每个都有评估。\n\n按逻辑，测试人员和运营人员协作关系中的协作关系可低。测试活动可能是核心，高。公司发展：公司高，发展低。\n\n构建JSON数组。格式：{\"entity_id\": \"...\", \"impact_level\": \"...\", \"impact_reason\": \"...\", \"system_risk\": number}\n\n确保JSON合法。返回纯JSON。\n\n输出必须只有JSON，无额外文本。",
+                    "format": "unknown",
+                    "index": 0
+                  }
+                ]
+              }
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 741,
+            "completion_tokens": 836,
+            "total_tokens": 1577,
+            "cost": 0.00033782,
+            "is_byok": false,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "cache_write_tokens": 0,
+              "audio_tokens": 0,
+              "video_tokens": 0
+            },
+            "cost_details": {
+              "upstream_inference_cost": 0.00033782,
+              "upstream_inference_prompt_cost": 0.00010374,
+              "upstream_inference_completions_cost": 0.00023408
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 487,
+              "image_tokens": 0,
+              "audio_tokens": 0
+            }
+          }
+        }
+      },
+      "error": null
+    },
+    {
+      "stage": "ontology",
+      "order": 5,
+      "status": "success",
+      "started_at": "2026-04-27T00:12:26.363Z",
+      "finished_at": "2026-04-27T00:12:26.366Z",
+      "output": {
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entities": [
+            {
+              "id": "ent_entity_1",
+              "name": "测试",
+              "summary": "文档中提到的测试活动或测试过程",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "这是一个测试"
+              ]
+            },
+            {
+              "id": "ent_entity_2",
+              "name": "测试人员",
+              "summary": "负责测试的人员",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "测试人员和运营人员有协作关系"
+              ]
+            },
+            {
+              "id": "ent_entity_3",
+              "name": "运营人员",
+              "summary": "负责运营的人员",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "测试人员和运营人员有协作关系"
+              ]
+            },
+            {
+              "id": "ent_entity_4",
+              "name": "协作关系",
+              "summary": "测试人员和运营人员之间的协作关系",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "测试人员和运营人员有协作关系"
+              ]
+            },
+            {
+              "id": "ent_entity_5",
+              "name": "公司",
+              "summary": "文档中提到的公司",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "公司发展就会越来越好"
+              ]
+            },
+            {
+              "id": "ent_entity_6",
+              "name": "发展",
+              "summary": "公司的发展或进步",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "公司发展就会越来越好"
+              ]
+            }
+          ],
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_2",
+              "source_name": "测试人员",
+              "target_entity_id": "ent_entity_3",
+              "target_name": "运营人员",
+              "relation_type": "协作",
+              "evidence": "测试人员和运营人员有协作关系"
+            },
+            {
+              "source_entity_id": "ent_entity_5",
+              "source_name": "公司",
+              "target_entity_id": "ent_entity_6",
+              "target_name": "发展",
+              "relation_type": "发展",
+              "evidence": "公司发展就会越来越好"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_1",
+              "entity_name": "测试",
+              "impact_level": "high",
+              "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+              "system_risk": "unknown"
+            },
+            {
+              "entity_id": "ent_entity_2",
+              "entity_name": "测试人员",
+              "impact_level": "high",
+              "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+              "system_risk": "unknown"
+            },
+            {
+              "entity_id": "ent_entity_3",
+              "entity_name": "运营人员",
+              "impact_level": "medium",
+              "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+              "system_risk": "unknown"
+            },
+            {
+              "entity_id": "ent_entity_4",
+              "entity_name": "协作关系",
+              "impact_level": "medium",
+              "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+              "system_risk": "unknown"
+            },
+            {
+              "entity_id": "ent_entity_5",
+              "entity_name": "公司",
+              "impact_level": "high",
+              "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+              "system_risk": "unknown"
+            },
+            {
+              "entity_id": "ent_entity_6",
+              "entity_name": "发展",
+              "impact_level": "low",
+              "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "ontology_count": 6,
+        "ontologies": [
+          {
+            "entity_id": "ent_entity_1",
+            "entity_name": "测试",
+            "filename": "测试.json",
+            "ontology": {
+              "workflow_version": "v1-linear-file-workflow",
+              "generated_at": "2026-04-27T00:12:26.365Z",
+              "project_id": "demo",
+              "scope": "entity",
+              "entity_id": "ent_entity_1",
+              "entity_name": "测试",
+              "system_summary": {
+                "entity_count": 6,
+                "relation_count": 2,
+                "ablation_count": 6
+              },
+              "entity": {
+                "id": "ent_entity_1",
+                "name": "测试",
+                "summary": "文档中提到的测试活动或测试过程",
+                "type": "workflow-entity",
+                "level": 1,
+                "source": "linear-workflow",
+                "properties": {},
+                "abilities": [],
+                "citations": [
+                  "这是一个测试"
+                ]
+              },
+              "relations": [],
+              "ablation": [
+                {
+                  "entity_id": "ent_entity_1",
+                  "entity_name": "测试",
+                  "impact_level": "high",
+                  "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+                  "system_risk": "unknown"
+                }
+              ]
+            }
+          },
+          {
+            "entity_id": "ent_entity_2",
+            "entity_name": "测试人员",
+            "filename": "测试人员.json",
+            "ontology": {
+              "workflow_version": "v1-linear-file-workflow",
+              "generated_at": "2026-04-27T00:12:26.365Z",
+              "project_id": "demo",
+              "scope": "entity",
+              "entity_id": "ent_entity_2",
+              "entity_name": "测试人员",
+              "system_summary": {
+                "entity_count": 6,
+                "relation_count": 2,
+                "ablation_count": 6
+              },
+              "entity": {
+                "id": "ent_entity_2",
+                "name": "测试人员",
+                "summary": "负责测试的人员",
+                "type": "workflow-entity",
+                "level": 1,
+                "source": "linear-workflow",
+                "properties": {},
+                "abilities": [],
+                "citations": [
+                  "测试人员和运营人员有协作关系"
+                ]
+              },
+              "relations": [
+                {
+                  "source_entity_id": "ent_entity_2",
+                  "source_name": "测试人员",
+                  "target_entity_id": "ent_entity_3",
+                  "target_name": "运营人员",
+                  "relation_type": "协作",
+                  "evidence": "测试人员和运营人员有协作关系"
+                }
+              ],
+              "ablation": [
+                {
+                  "entity_id": "ent_entity_2",
+                  "entity_name": "测试人员",
+                  "impact_level": "high",
+                  "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+                  "system_risk": "unknown"
+                }
+              ]
+            }
+          },
+          {
+            "entity_id": "ent_entity_3",
+            "entity_name": "运营人员",
+            "filename": "运营人员.json",
+            "ontology": {
+              "workflow_version": "v1-linear-file-workflow",
+              "generated_at": "2026-04-27T00:12:26.365Z",
+              "project_id": "demo",
+              "scope": "entity",
+              "entity_id": "ent_entity_3",
+              "entity_name": "运营人员",
+              "system_summary": {
+                "entity_count": 6,
+                "relation_count": 2,
+                "ablation_count": 6
+              },
+              "entity": {
+                "id": "ent_entity_3",
+                "name": "运营人员",
+                "summary": "负责运营的人员",
+                "type": "workflow-entity",
+                "level": 1,
+                "source": "linear-workflow",
+                "properties": {},
+                "abilities": [],
+                "citations": [
+                  "测试人员和运营人员有协作关系"
+                ]
+              },
+              "relations": [
+                {
+                  "source_entity_id": "ent_entity_2",
+                  "source_name": "测试人员",
+                  "target_entity_id": "ent_entity_3",
+                  "target_name": "运营人员",
+                  "relation_type": "协作",
+                  "evidence": "测试人员和运营人员有协作关系"
+                }
+              ],
+              "ablation": [
+                {
+                  "entity_id": "ent_entity_3",
+                  "entity_name": "运营人员",
+                  "impact_level": "medium",
+                  "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+                  "system_risk": "unknown"
+                }
+              ]
+            }
+          },
+          {
+            "entity_id": "ent_entity_4",
+            "entity_name": "协作关系",
+            "filename": "协作关系.json",
+            "ontology": {
+              "workflow_version": "v1-linear-file-workflow",
+              "generated_at": "2026-04-27T00:12:26.365Z",
+              "project_id": "demo",
+              "scope": "entity",
+              "entity_id": "ent_entity_4",
+              "entity_name": "协作关系",
+              "system_summary": {
+                "entity_count": 6,
+                "relation_count": 2,
+                "ablation_count": 6
+              },
+              "entity": {
+                "id": "ent_entity_4",
+                "name": "协作关系",
+                "summary": "测试人员和运营人员之间的协作关系",
+                "type": "workflow-entity",
+                "level": 1,
+                "source": "linear-workflow",
+                "properties": {},
+                "abilities": [],
+                "citations": [
+                  "测试人员和运营人员有协作关系"
+                ]
+              },
+              "relations": [],
+              "ablation": [
+                {
+                  "entity_id": "ent_entity_4",
+                  "entity_name": "协作关系",
+                  "impact_level": "medium",
+                  "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+                  "system_risk": "unknown"
+                }
+              ]
+            }
+          },
+          {
+            "entity_id": "ent_entity_5",
+            "entity_name": "公司",
+            "filename": "公司.json",
+            "ontology": {
+              "workflow_version": "v1-linear-file-workflow",
+              "generated_at": "2026-04-27T00:12:26.366Z",
+              "project_id": "demo",
+              "scope": "entity",
+              "entity_id": "ent_entity_5",
+              "entity_name": "公司",
+              "system_summary": {
+                "entity_count": 6,
+                "relation_count": 2,
+                "ablation_count": 6
+              },
+              "entity": {
+                "id": "ent_entity_5",
+                "name": "公司",
+                "summary": "文档中提到的公司",
+                "type": "workflow-entity",
+                "level": 1,
+                "source": "linear-workflow",
+                "properties": {},
+                "abilities": [],
+                "citations": [
+                  "公司发展就会越来越好"
+                ]
+              },
+              "relations": [
+                {
+                  "source_entity_id": "ent_entity_5",
+                  "source_name": "公司",
+                  "target_entity_id": "ent_entity_6",
+                  "target_name": "发展",
+                  "relation_type": "发展",
+                  "evidence": "公司发展就会越来越好"
+                }
+              ],
+              "ablation": [
+                {
+                  "entity_id": "ent_entity_5",
+                  "entity_name": "公司",
+                  "impact_level": "high",
+                  "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+                  "system_risk": "unknown"
+                }
+              ]
+            }
+          },
+          {
+            "entity_id": "ent_entity_6",
+            "entity_name": "发展",
+            "filename": "发展.json",
+            "ontology": {
+              "workflow_version": "v1-linear-file-workflow",
+              "generated_at": "2026-04-27T00:12:26.366Z",
+              "project_id": "demo",
+              "scope": "entity",
+              "entity_id": "ent_entity_6",
+              "entity_name": "发展",
+              "system_summary": {
+                "entity_count": 6,
+                "relation_count": 2,
+                "ablation_count": 6
+              },
+              "entity": {
+                "id": "ent_entity_6",
+                "name": "发展",
+                "summary": "公司的发展或进步",
+                "type": "workflow-entity",
+                "level": 1,
+                "source": "linear-workflow",
+                "properties": {},
+                "abilities": [],
+                "citations": [
+                  "公司发展就会越来越好"
+                ]
+              },
+              "relations": [
+                {
+                  "source_entity_id": "ent_entity_5",
+                  "source_name": "公司",
+                  "target_entity_id": "ent_entity_6",
+                  "target_name": "发展",
+                  "relation_type": "发展",
+                  "evidence": "公司发展就会越来越好"
+                }
+              ],
+              "ablation": [
+                {
+                  "entity_id": "ent_entity_6",
+                  "entity_name": "发展",
+                  "impact_level": "low",
+                  "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+                  "system_risk": "unknown"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "stage": "probability_precheck",
+      "order": 6,
+      "status": "success",
+      "started_at": "2026-04-27T00:12:26.368Z",
+      "finished_at": "2026-04-27T00:13:19.323Z",
+      "output": {
+        "precheck_count": 6,
+        "prechecks": [
+          {
+            "entity_id": "ent_entity_1",
+            "entity_name": "测试",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"64%\",\"reason\":\"从name看，对象名称为“测试”，这是一个高度泛化的过程性词汇，既可以指真实存在的测试活动，也可能只是占位或示例名称，因此名称本身会降低其作为明确真实本体的确定性。结合abilities看，abilities为空，说明没有提供可执行能力、功能边界或可验证特征，因此无法通过能力特征来强化其独立存在性，这会进一步削弱真实性判断。再结合interactions看，relations为空，说明该对象缺少与其他实体的交互链条，真实本体通常会在系统中表现出输入、输出、依赖或约束关系，而这里缺乏这种关系证据，所以其真实本体性不能被强力支撑。不过，summary明确说明其为“文档中提到的测试活动或测试过程”，citation又给出“这是一个测试”，ablation中还指出其为核心环节、消融后会直接影响质量验证流程，这形成了“被文档提及→在流程中承担作用→删除后产生系统影响”的因果链，因此说明它并非完全虚构，而是至少在该工作流语境中被当作有效对象处理。综合来看，存在流程角色与消融影响这一正向证据，但名称过于泛化、能力缺失、交互缺失又显著降低了其作为稳定真实本体的可信度，所以判断为中等偏上的概率。\"}",
+              "raw": null
+            }
+          },
+          {
+            "entity_id": "ent_entity_2",
+            "entity_name": "测试人员",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"95%\",\"reason\":\"名称为“测试人员”，属于现实组织中常见且语义明确的角色称谓；因为其summary直接说明“负责测试的人员”，所以名称与职能描述高度一致，具备稳定的现实指向。abilities虽为空，但这并不直接削弱真实性，因为在工作流抽取中角色常被简化记录为职责节点；反而ablation指出其缺失会导致“测试无法实施”，说明该对象在流程中具有不可替代的功能位置，因此更像真实本体而非随意生成的标签。interactions方面，存在与“运营人员”的明确“协作”关系，且有对应证据文本支撑；因为真实工作角色通常通过协作关系嵌入业务流程，所以这种可验证的外部联系进一步增强其真实性。综合来看，名称清晰、职责闭环、关系可落地、缺失影响显著，因此该对象作为真实本体的概率很高。\"}",
+              "raw": null
+            }
+          },
+          {
+            "entity_id": "ent_entity_3",
+            "entity_name": "运营人员",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"94%\",\"reason\":\"从name看，“运营人员”是标准、常见且语义稳定的岗位称谓，能够明确指向现实组织中的一类真实角色，因此名称层面具备较强本体指向性；从abilities看，虽然未列出具体能力，信息存在缺失，但summary中给出“负责运营的人员”，这说明其职能定义与名称一致，形成了“岗位名称—职责描述”之间的因果闭环，因此不像随机拼接或虚构概念；从interactions看，该对象与“测试人员”存在明确的“协作”关系，并且有证据句支撑，这表明它不仅被单独命名，还被嵌入到实际流程关系网络中，因为真实工作流实体通常会与其他岗位产生稳定交互，所以关系存在会提升其作为真实本体的概率；同时，ablation中显示移除该实体会产生“medium”级影响，说明它对系统有实际作用但并非唯一核心，这种“有作用但非绝对核心”的特征更符合真实组织岗位的分工状态。综合来看，名称真实、职责可解释、关系可验证、影响程度合理，因此判断其作为真实本体的概率较高；但由于abilities字段为空、证据较少，仍保留少量不确定性。\"}",
+              "raw": null
+            }
+          },
+          {
+            "entity_id": "ent_entity_4",
+            "entity_name": "协作关系",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"24%\",\"reason\":\"该对象的name是“协作关系”，首先表明它更像一种抽象关系而不是可独立存在的真实本体；因为真实本体通常具有相对稳定的边界、属性或可识别载体，而这里的summary仅说明“测试人员和运营人员之间的协作关系”，所以其定义依赖于两个主体而不能独立成立。其次，abilities为空，说明该对象没有表现出自身可执行能力；因为若是高概率真实本体，通常会有可观察功能、状态或行为特征，而这里缺少这类证据，所以本体性被进一步削弱。再次，interactions对应的relations为空，仅有一条citation“测试人员和运营人员有协作关系”，这意味着系统只确认存在一种连接描述，而没有展示该对象与其他对象的独立交互网络；因为缺少可验证的交互结构，所以更像语义标签或关系占位符。最后，ablation中指出移除后会“降低协同效率”，这说明它在流程建模中具有功能价值；但这种价值来自其作为连接概念的作用，而不是证明其是独立客观实体。因此，综合name的抽象性、abilities的缺失、interactions的不足以及ablation仅证明建模必要性，可以判断它作为真实本体的概率较低。\"}",
+              "raw": null
+            }
+          },
+          {
+            "entity_id": "ent_entity_5",
+            "entity_name": "公司",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"96%\",\"reason\":\"从name看，“公司”是现实世界中高度常见且边界清晰的组织实体称谓，因此其作为真实本体的先验概率较高；从abilities看，虽然未显式给出能力列表，但这不会直接削弱真实性，因为公司作为组织通常以经营、管理、发展等活动存在，而文中至少隐含其具备可发展这一组织属性；从interactions看，存在与“发展”的明确关系，且证据“公司发展就会越来越好”表明该实体不仅被单独提及，还参与了因果语义链，即先有公司这一主体，随后发生发展过程，进而导向“越来越好”的结果，因此它不是随机词汇而是承担主体作用的对象；再结合ablation信息，消融后会“失去发展方向和上下文”，说明在系统中“公司”是核心承载实体，因为删除它会破坏关系结构，所以反向证明其本体性较强。虽然名称较泛化、缺少具体公司名，导致无法判定是某一家特定公司，但泛称组织实体依然可以是真实本体，因此综合判断其作为真实本体的概率很高。\"}",
+              "raw": null
+            }
+          },
+          {
+            "entity_id": "ent_entity_6",
+            "entity_name": "发展",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"22%\",\"reason\":\"从 name 看，“发展”是表示过程或状态变化的抽象概念，而不是边界清晰、可独立存在的具体本体，因此先天作为真实本体的确定性较弱；从 abilities 看，该对象没有任何 abilities，说明系统中没有为其定义可执行能力或可观察功能，因而难以支持其作为独立实体存在；从 interactions 看，唯一关系是“公司→发展”，且证据仅为“公司发展就会越来越好”，这更像是在描述公司的一种结果属性或趋势，而不是一个能与其他对象稳定交互的独立对象；再结合 ablation 中“移除影响低”，可推出该对象对工作流结构和执行不是核心节点，因此更接近语义标签或状态描述。综合这些因果链条：因为名称抽象、能力缺失、交互单薄且依附于“公司”、删除影响又低，所以“发展”作为真实本体的概率较低。\"}",
+              "raw": null
+            }
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "stage": "ingest",
+      "order": 7,
+      "status": "success",
+      "started_at": "2026-04-27T00:13:19.326Z",
+      "finished_at": "2026-04-27T00:14:09.817Z",
+      "output": {
+        "ingest_count": 6,
+        "success_count": 6,
+        "ingest_results": [
+          {
+            "entity_id": "ent_entity_1",
+            "entity_name": "测试",
+            "filename": "测试.json",
+            "status": "success",
+            "commit_id": "115812adccd5ee754d8b996f80263629f18c4a21",
+            "version_id": 1,
+            "raw": {
+              "status": "success",
+              "write_result": {
+                "status": "success",
+                "commit_id": "115812adccd5ee754d8b996f80263629f18c4a21",
+                "version_id": 1,
+                "basevision": 0,
+                "currvision": 1
+              },
+              "inference_result": {
+                "probability": "66%",
+                "reason": "从name看，该对象名称为“测试”，属于高度通用的过程性概念，因为它不是具有强辨识度的专有名称，所以先天上更像流程环节而非边界清晰的独立本体，这会压低真实性判断。结合abilities看，abilities为空，因为没有给出功能、输入输出能力或稳定属性，所以无法通过可执行特征证明其具备独立存在性，导致本体证据不足。再结合interactions看，relations为空，因为缺少与其他实体的依赖、调用或约束关系，所以无法形成完整交互链条，而真实本体通常会在系统中留下关系痕迹，这进一步削弱了确定性。但同时，summary明确说明其是“文档中提到的测试活动或测试过程”，citation写有“这是一个测试”，ablation又指出其为工作流核心环节且消融后会直接影响质量验证流程，因此形成了“被文档明确指称→在流程中承担关键作用→移除后引发系统性影响”的因果逻辑链，这说明它在该语境下并非随意虚构对象，而是被当作有效流程实体处理。综合而言，正向证据来自文档指称和消融影响，负向证据来自名称泛化、能力缺失、交互缺失，因此其作为真实本体的概率应判断为中等偏上。",
+                "status": "success"
+              },
+              "probability_update_result": {
+                "status": "success",
+                "filename": "测试.json",
+                "version_id": 1,
+                "commit_id": "115812adccd5ee754d8b996f80263629f18c4a21",
+                "updated_fields": [
+                  "probability"
+                ]
+              },
+              "data": {
+                "source": "linear-workflow",
+                "ontology": {
+                  "workflow_version": "v1-linear-file-workflow",
+                  "generated_at": "2026-04-27T00:12:26.365Z",
+                  "project_id": "demo",
+                  "scope": "entity",
+                  "entity_id": "ent_entity_1",
+                  "entity_name": "测试",
+                  "system_summary": {
+                    "entity_count": 6,
+                    "relation_count": 2,
+                    "ablation_count": 6
+                  },
+                  "entity": {
+                    "id": "ent_entity_1",
+                    "name": "测试",
+                    "summary": "文档中提到的测试活动或测试过程",
+                    "type": "workflow-entity",
+                    "level": 1,
+                    "source": "linear-workflow",
+                    "properties": {},
+                    "abilities": [],
+                    "citations": [
+                      "这是一个测试"
+                    ]
+                  },
+                  "relations": [],
+                  "ablation": [
+                    {
+                      "entity_id": "ent_entity_1",
+                      "entity_name": "测试",
+                      "impact_level": "high",
+                      "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+                      "system_risk": "unknown"
+                    }
+                  ]
+                },
+                "entity": {
+                  "id": "ent_entity_1",
+                  "name": "测试",
+                  "summary": "文档中提到的测试活动或测试过程",
+                  "type": "workflow-entity",
+                  "level": 1,
+                  "source": "linear-workflow",
+                  "properties": {},
+                  "abilities": [],
+                  "citations": [
+                    "这是一个测试"
+                  ]
+                },
+                "relations": [],
+                "ablation": {
+                  "entity_id": "ent_entity_1",
+                  "entity_name": "测试",
+                  "impact_level": "high",
+                  "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+                  "system_risk": "unknown"
+                },
+                "precheck": {
+                  "entity_id": "ent_entity_1",
+                  "entity_name": "测试",
+                  "precheck_probability": "",
+                  "precheck_reason": "",
+                  "raw": {
+                    "model": "gpt-5.4",
+                    "text": "{\"probability\":\"64%\",\"reason\":\"从name看，对象名称为“测试”，这是一个高度泛化的过程性词汇，既可以指真实存在的测试活动，也可能只是占位或示例名称，因此名称本身会降低其作为明确真实本体的确定性。结合abilities看，abilities为空，说明没有提供可执行能力、功能边界或可验证特征，因此无法通过能力特征来强化其独立存在性，这会进一步削弱真实性判断。再结合interactions看，relations为空，说明该对象缺少与其他实体的交互链条，真实本体通常会在系统中表现出输入、输出、依赖或约束关系，而这里缺乏这种关系证据，所以其真实本体性不能被强力支撑。不过，summary明确说明其为“文档中提到的测试活动或测试过程”，citation又给出“这是一个测试”，ablation中还指出其为核心环节、消融后会直接影响质量验证流程，这形成了“被文档提及→在流程中承担作用→删除后产生系统影响”的因果链，因此说明它并非完全虚构，而是至少在该工作流语境中被当作有效对象处理。综合来看，存在流程角色与消融影响这一正向证据，但名称过于泛化、能力缺失、交互缺失又显著降低了其作为稳定真实本体的可信度，所以判断为中等偏上的概率。\"}",
+                    "raw": null
+                  }
+                },
+                "ontology_summary": {
+                  "entity_count": 6,
+                  "relation_count": 2,
+                  "ablation_count": 6
+                },
+                "probability": "66%"
+              }
+            }
+          },
+          {
+            "entity_id": "ent_entity_2",
+            "entity_name": "测试人员",
+            "filename": "测试人员.json",
+            "status": "success",
+            "commit_id": "1b1db972a2bcc0c7bba3ee4036f9090dafaaf8dd",
+            "version_id": 1,
+            "raw": {
+              "status": "success",
+              "write_result": {
+                "status": "success",
+                "commit_id": "1b1db972a2bcc0c7bba3ee4036f9090dafaaf8dd",
+                "version_id": 1,
+                "basevision": 0,
+                "currvision": 1
+              },
+              "inference_result": {
+                "probability": "96%",
+                "reason": "因为名称“测试人员”是现实组织中高度常见且语义稳定的角色称谓，所以其本体指向明确；又因为summary直接说明其是“负责测试的人员”，名称与职责形成直接对应，所以不是随意拼接的抽象标签。虽然abilities为空，但这更可能是工作流建模时对角色信息的简化记录，因为角色类实体常以职责和关系而非技能清单呈现，所以不能据此显著降低真实性判断。进一步看interactions中存在其与“运营人员”的“协作”关系，且有明确证据文本支撑，因为真实业务流程中的岗位通常通过协作关系嵌入系统，所以这种外部关联增强了其作为真实流程角色的可信度。再结合ablation信息显示其缺失会导致“测试无法实施”，因为只有在流程中承担关键功能的实体才会在删除后产生高影响，所以反向证明该对象并非虚设节点。综合名称、职责、协作关系与缺失影响形成完整因果链，因此该对象作为真实本体的概率很高。",
+                "status": "success"
+              },
+              "probability_update_result": {
+                "status": "success",
+                "filename": "测试人员.json",
+                "version_id": 1,
+                "commit_id": "1b1db972a2bcc0c7bba3ee4036f9090dafaaf8dd",
+                "updated_fields": [
+                  "probability"
+                ]
+              },
+              "data": {
+                "source": "linear-workflow",
+                "ontology": {
+                  "workflow_version": "v1-linear-file-workflow",
+                  "generated_at": "2026-04-27T00:12:26.365Z",
+                  "project_id": "demo",
+                  "scope": "entity",
+                  "entity_id": "ent_entity_2",
+                  "entity_name": "测试人员",
+                  "system_summary": {
+                    "entity_count": 6,
+                    "relation_count": 2,
+                    "ablation_count": 6
+                  },
+                  "entity": {
+                    "id": "ent_entity_2",
+                    "name": "测试人员",
+                    "summary": "负责测试的人员",
+                    "type": "workflow-entity",
+                    "level": 1,
+                    "source": "linear-workflow",
+                    "properties": {},
+                    "abilities": [],
+                    "citations": [
+                      "测试人员和运营人员有协作关系"
+                    ]
+                  },
+                  "relations": [
+                    {
+                      "source_entity_id": "ent_entity_2",
+                      "source_name": "测试人员",
+                      "target_entity_id": "ent_entity_3",
+                      "target_name": "运营人员",
+                      "relation_type": "协作",
+                      "evidence": "测试人员和运营人员有协作关系"
+                    }
+                  ],
+                  "ablation": [
+                    {
+                      "entity_id": "ent_entity_2",
+                      "entity_name": "测试人员",
+                      "impact_level": "high",
+                      "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+                      "system_risk": "unknown"
+                    }
+                  ]
+                },
+                "entity": {
+                  "id": "ent_entity_2",
+                  "name": "测试人员",
+                  "summary": "负责测试的人员",
+                  "type": "workflow-entity",
+                  "level": 1,
+                  "source": "linear-workflow",
+                  "properties": {},
+                  "abilities": [],
+                  "citations": [
+                    "测试人员和运营人员有协作关系"
+                  ]
+                },
+                "relations": [
+                  {
+                    "source_entity_id": "ent_entity_2",
+                    "source_name": "测试人员",
+                    "target_entity_id": "ent_entity_3",
+                    "target_name": "运营人员",
+                    "relation_type": "协作",
+                    "evidence": "测试人员和运营人员有协作关系"
+                  }
+                ],
+                "ablation": {
+                  "entity_id": "ent_entity_2",
+                  "entity_name": "测试人员",
+                  "impact_level": "high",
+                  "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+                  "system_risk": "unknown"
+                },
+                "precheck": {
+                  "entity_id": "ent_entity_2",
+                  "entity_name": "测试人员",
+                  "precheck_probability": "",
+                  "precheck_reason": "",
+                  "raw": {
+                    "model": "gpt-5.4",
+                    "text": "{\"probability\":\"95%\",\"reason\":\"名称为“测试人员”，属于现实组织中常见且语义明确的角色称谓；因为其summary直接说明“负责测试的人员”，所以名称与职能描述高度一致，具备稳定的现实指向。abilities虽为空，但这并不直接削弱真实性，因为在工作流抽取中角色常被简化记录为职责节点；反而ablation指出其缺失会导致“测试无法实施”，说明该对象在流程中具有不可替代的功能位置，因此更像真实本体而非随意生成的标签。interactions方面，存在与“运营人员”的明确“协作”关系，且有对应证据文本支撑；因为真实工作角色通常通过协作关系嵌入业务流程，所以这种可验证的外部联系进一步增强其真实性。综合来看，名称清晰、职责闭环、关系可落地、缺失影响显著，因此该对象作为真实本体的概率很高。\"}",
+                    "raw": null
+                  }
+                },
+                "ontology_summary": {
+                  "entity_count": 6,
+                  "relation_count": 2,
+                  "ablation_count": 6
+                },
+                "probability": "96%"
+              }
+            }
+          },
+          {
+            "entity_id": "ent_entity_3",
+            "entity_name": "运营人员",
+            "filename": "运营人员.json",
+            "status": "success",
+            "commit_id": "c2517c77b9a54897eaffa88644b075fe3b0d6b85",
+            "version_id": 1,
+            "raw": {
+              "status": "success",
+              "write_result": {
+                "status": "success",
+                "commit_id": "c2517c77b9a54897eaffa88644b075fe3b0d6b85",
+                "version_id": 1,
+                "basevision": 0,
+                "currvision": 1
+              },
+              "inference_result": {
+                "probability": "95%",
+                "reason": "因为name为“运营人员”，这是现实组织中高度常见且语义清晰的岗位称谓，所以该对象首先具备明确的现实指向；因为summary写明“负责运营的人员”，名称与职责描述直接一致，所以形成了“岗位名称明确→职责范围可解释→对象不是随意虚构标签”的因果链；因为abilities虽然为空，导致其具体能力细节不足，所以会降低一部分确定性，但这只是信息缺失，不会直接推翻其岗位本体真实性；因为interactions中存在与“测试人员”的“协作”关系，且有证据句“测试人员和运营人员有协作关系”支撑，所以说明该对象不是孤立词项，而是被嵌入到工作流中的实际角色节点；因为真实流程中的岗位通常通过协作关系体现分工，所以“存在协作关系→符合组织运行规律→真实本体概率上升”；又因为ablation显示其移除后影响为medium，且说明“部分影响流程但非核心”，所以这与现实企业中运营岗位常见的“重要但非唯一核心”位置相符，进一步增强真实性。综合来看，名称真实、职责闭环、关系可验证、流程影响合理，因此其作为真实本体的概率很高；只是由于abilities为空、关系样本较少，所以仍保留少量不确定性。",
+                "status": "success"
+              },
+              "probability_update_result": {
+                "status": "success",
+                "filename": "运营人员.json",
+                "version_id": 1,
+                "commit_id": "c2517c77b9a54897eaffa88644b075fe3b0d6b85",
+                "updated_fields": [
+                  "probability"
+                ]
+              },
+              "data": {
+                "source": "linear-workflow",
+                "ontology": {
+                  "workflow_version": "v1-linear-file-workflow",
+                  "generated_at": "2026-04-27T00:12:26.365Z",
+                  "project_id": "demo",
+                  "scope": "entity",
+                  "entity_id": "ent_entity_3",
+                  "entity_name": "运营人员",
+                  "system_summary": {
+                    "entity_count": 6,
+                    "relation_count": 2,
+                    "ablation_count": 6
+                  },
+                  "entity": {
+                    "id": "ent_entity_3",
+                    "name": "运营人员",
+                    "summary": "负责运营的人员",
+                    "type": "workflow-entity",
+                    "level": 1,
+                    "source": "linear-workflow",
+                    "properties": {},
+                    "abilities": [],
+                    "citations": [
+                      "测试人员和运营人员有协作关系"
+                    ]
+                  },
+                  "relations": [
+                    {
+                      "source_entity_id": "ent_entity_2",
+                      "source_name": "测试人员",
+                      "target_entity_id": "ent_entity_3",
+                      "target_name": "运营人员",
+                      "relation_type": "协作",
+                      "evidence": "测试人员和运营人员有协作关系"
+                    }
+                  ],
+                  "ablation": [
+                    {
+                      "entity_id": "ent_entity_3",
+                      "entity_name": "运营人员",
+                      "impact_level": "medium",
+                      "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+                      "system_risk": "unknown"
+                    }
+                  ]
+                },
+                "entity": {
+                  "id": "ent_entity_3",
+                  "name": "运营人员",
+                  "summary": "负责运营的人员",
+                  "type": "workflow-entity",
+                  "level": 1,
+                  "source": "linear-workflow",
+                  "properties": {},
+                  "abilities": [],
+                  "citations": [
+                    "测试人员和运营人员有协作关系"
+                  ]
+                },
+                "relations": [
+                  {
+                    "source_entity_id": "ent_entity_2",
+                    "source_name": "测试人员",
+                    "target_entity_id": "ent_entity_3",
+                    "target_name": "运营人员",
+                    "relation_type": "协作",
+                    "evidence": "测试人员和运营人员有协作关系"
+                  }
+                ],
+                "ablation": {
+                  "entity_id": "ent_entity_3",
+                  "entity_name": "运营人员",
+                  "impact_level": "medium",
+                  "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+                  "system_risk": "unknown"
+                },
+                "precheck": {
+                  "entity_id": "ent_entity_3",
+                  "entity_name": "运营人员",
+                  "precheck_probability": "",
+                  "precheck_reason": "",
+                  "raw": {
+                    "model": "gpt-5.4",
+                    "text": "{\"probability\":\"94%\",\"reason\":\"从name看，“运营人员”是标准、常见且语义稳定的岗位称谓，能够明确指向现实组织中的一类真实角色，因此名称层面具备较强本体指向性；从abilities看，虽然未列出具体能力，信息存在缺失，但summary中给出“负责运营的人员”，这说明其职能定义与名称一致，形成了“岗位名称—职责描述”之间的因果闭环，因此不像随机拼接或虚构概念；从interactions看，该对象与“测试人员”存在明确的“协作”关系，并且有证据句支撑，这表明它不仅被单独命名，还被嵌入到实际流程关系网络中，因为真实工作流实体通常会与其他岗位产生稳定交互，所以关系存在会提升其作为真实本体的概率；同时，ablation中显示移除该实体会产生“medium”级影响，说明它对系统有实际作用但并非唯一核心，这种“有作用但非绝对核心”的特征更符合真实组织岗位的分工状态。综合来看，名称真实、职责可解释、关系可验证、影响程度合理，因此判断其作为真实本体的概率较高；但由于abilities字段为空、证据较少，仍保留少量不确定性。\"}",
+                    "raw": null
+                  }
+                },
+                "ontology_summary": {
+                  "entity_count": 6,
+                  "relation_count": 2,
+                  "ablation_count": 6
+                },
+                "probability": "95%"
+              }
+            }
+          },
+          {
+            "entity_id": "ent_entity_4",
+            "entity_name": "协作关系",
+            "filename": "协作关系.json",
+            "status": "success",
+            "commit_id": "767aeba47f9020e444fc2f2ee371366099b85659",
+            "version_id": 1,
+            "raw": {
+              "status": "success",
+              "write_result": {
+                "status": "success",
+                "commit_id": "767aeba47f9020e444fc2f2ee371366099b85659",
+                "version_id": 1,
+                "basevision": 0,
+                "currvision": 1
+              },
+              "inference_result": {
+                "probability": "22%",
+                "reason": "因为name是“协作关系”，首先直接指向一种连接性、描述性的抽象概念，而不是具有清晰边界的独立对象；既然其summary进一步定义为“测试人员和运营人员之间的协作关系”，就说明它的存在依赖“测试人员”和“运营人员”两个主体，因而更像主体之间的关系表述，而不像可单独存在的真实本体。又因为abilities为空，所以看不到该对象自身具有可执行能力、状态变化或独立行为；缺少这些可观察特征，就难以证明它具备独立本体的自足性。再因为interactions即relations为空，只有一条citation说明“测试人员和运营人员有协作关系”，这表明当前证据只证明有一种关联被命名，并没有展示该对象作为独立节点与外界形成稳定交互网络；交互结构不足，就进一步削弱其真实本体概率。最后，ablation提到移除后会降低协同效率，这只能因果上说明它在建模中有组织和连接价值，不能反向推出它必然是独立存在的客观实体；因此综合name的抽象性、abilities缺失、interactions不足以及ablation仅体现功能性而非实体性，可以判断其作为真实本体的概率较低。",
+                "status": "success"
+              },
+              "probability_update_result": {
+                "status": "success",
+                "filename": "协作关系.json",
+                "version_id": 1,
+                "commit_id": "767aeba47f9020e444fc2f2ee371366099b85659",
+                "updated_fields": [
+                  "probability"
+                ]
+              },
+              "data": {
+                "source": "linear-workflow",
+                "ontology": {
+                  "workflow_version": "v1-linear-file-workflow",
+                  "generated_at": "2026-04-27T00:12:26.365Z",
+                  "project_id": "demo",
+                  "scope": "entity",
+                  "entity_id": "ent_entity_4",
+                  "entity_name": "协作关系",
+                  "system_summary": {
+                    "entity_count": 6,
+                    "relation_count": 2,
+                    "ablation_count": 6
+                  },
+                  "entity": {
+                    "id": "ent_entity_4",
+                    "name": "协作关系",
+                    "summary": "测试人员和运营人员之间的协作关系",
+                    "type": "workflow-entity",
+                    "level": 1,
+                    "source": "linear-workflow",
+                    "properties": {},
+                    "abilities": [],
+                    "citations": [
+                      "测试人员和运营人员有协作关系"
+                    ]
+                  },
+                  "relations": [],
+                  "ablation": [
+                    {
+                      "entity_id": "ent_entity_4",
+                      "entity_name": "协作关系",
+                      "impact_level": "medium",
+                      "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+                      "system_risk": "unknown"
+                    }
+                  ]
+                },
+                "entity": {
+                  "id": "ent_entity_4",
+                  "name": "协作关系",
+                  "summary": "测试人员和运营人员之间的协作关系",
+                  "type": "workflow-entity",
+                  "level": 1,
+                  "source": "linear-workflow",
+                  "properties": {},
+                  "abilities": [],
+                  "citations": [
+                    "测试人员和运营人员有协作关系"
+                  ]
+                },
+                "relations": [],
+                "ablation": {
+                  "entity_id": "ent_entity_4",
+                  "entity_name": "协作关系",
+                  "impact_level": "medium",
+                  "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+                  "system_risk": "unknown"
+                },
+                "precheck": {
+                  "entity_id": "ent_entity_4",
+                  "entity_name": "协作关系",
+                  "precheck_probability": "",
+                  "precheck_reason": "",
+                  "raw": {
+                    "model": "gpt-5.4",
+                    "text": "{\"probability\":\"24%\",\"reason\":\"该对象的name是“协作关系”，首先表明它更像一种抽象关系而不是可独立存在的真实本体；因为真实本体通常具有相对稳定的边界、属性或可识别载体，而这里的summary仅说明“测试人员和运营人员之间的协作关系”，所以其定义依赖于两个主体而不能独立成立。其次，abilities为空，说明该对象没有表现出自身可执行能力；因为若是高概率真实本体，通常会有可观察功能、状态或行为特征，而这里缺少这类证据，所以本体性被进一步削弱。再次，interactions对应的relations为空，仅有一条citation“测试人员和运营人员有协作关系”，这意味着系统只确认存在一种连接描述，而没有展示该对象与其他对象的独立交互网络；因为缺少可验证的交互结构，所以更像语义标签或关系占位符。最后，ablation中指出移除后会“降低协同效率”，这说明它在流程建模中具有功能价值；但这种价值来自其作为连接概念的作用，而不是证明其是独立客观实体。因此，综合name的抽象性、abilities的缺失、interactions的不足以及ablation仅证明建模必要性，可以判断它作为真实本体的概率较低。\"}",
+                    "raw": null
+                  }
+                },
+                "ontology_summary": {
+                  "entity_count": 6,
+                  "relation_count": 2,
+                  "ablation_count": 6
+                },
+                "probability": "22%"
+              }
+            }
+          },
+          {
+            "entity_id": "ent_entity_5",
+            "entity_name": "公司",
+            "filename": "公司.json",
+            "status": "success",
+            "commit_id": "988f31e07e35b83c3e8b333fcc345818dd52af4e",
+            "version_id": 1,
+            "raw": {
+              "status": "success",
+              "write_result": {
+                "status": "success",
+                "commit_id": "988f31e07e35b83c3e8b333fcc345818dd52af4e",
+                "version_id": 1,
+                "basevision": 0,
+                "currvision": 1
+              },
+              "inference_result": {
+                "probability": "95%",
+                "reason": "因为name为“公司”，该名称对应现实世界中稳定存在且可被独立识别的组织类型，所以其作为真实本体具有很强的先验真实性；因为abilities虽然为空，但这更像是信息抽取不完整，而不是说明该对象不存在，再结合文本中“公司发展就会越来越好”，可反推出该主体至少承载经营与发展的组织属性，所以空能力字段未显著削弱本体真实性；因为interactions中“公司”与“发展”形成明确关系，且证据句呈现出“公司作为主体→发生发展过程→结果越来越好”的因果链，所以“公司”不是孤立词汇而是在语义中承担行动主体与结果承接者；又因为ablation指出删除“公司”后会失去发展方向和上下文，说明该实体一旦移除，整体关系结构会受损，所以它在当前语境中是核心承载对象。虽然该名称是泛称而非具体公司名，导致特指性略弱，但泛称组织实体依然可以构成真实本体，因此综合判断其作为真实本体的概率很高。",
+                "status": "success"
+              },
+              "probability_update_result": {
+                "status": "success",
+                "filename": "公司.json",
+                "version_id": 1,
+                "commit_id": "988f31e07e35b83c3e8b333fcc345818dd52af4e",
+                "updated_fields": [
+                  "probability"
+                ]
+              },
+              "data": {
+                "source": "linear-workflow",
+                "ontology": {
+                  "workflow_version": "v1-linear-file-workflow",
+                  "generated_at": "2026-04-27T00:12:26.366Z",
+                  "project_id": "demo",
+                  "scope": "entity",
+                  "entity_id": "ent_entity_5",
+                  "entity_name": "公司",
+                  "system_summary": {
+                    "entity_count": 6,
+                    "relation_count": 2,
+                    "ablation_count": 6
+                  },
+                  "entity": {
+                    "id": "ent_entity_5",
+                    "name": "公司",
+                    "summary": "文档中提到的公司",
+                    "type": "workflow-entity",
+                    "level": 1,
+                    "source": "linear-workflow",
+                    "properties": {},
+                    "abilities": [],
+                    "citations": [
+                      "公司发展就会越来越好"
+                    ]
+                  },
+                  "relations": [
+                    {
+                      "source_entity_id": "ent_entity_5",
+                      "source_name": "公司",
+                      "target_entity_id": "ent_entity_6",
+                      "target_name": "发展",
+                      "relation_type": "发展",
+                      "evidence": "公司发展就会越来越好"
+                    }
+                  ],
+                  "ablation": [
+                    {
+                      "entity_id": "ent_entity_5",
+                      "entity_name": "公司",
+                      "impact_level": "high",
+                      "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+                      "system_risk": "unknown"
+                    }
+                  ]
+                },
+                "entity": {
+                  "id": "ent_entity_5",
+                  "name": "公司",
+                  "summary": "文档中提到的公司",
+                  "type": "workflow-entity",
+                  "level": 1,
+                  "source": "linear-workflow",
+                  "properties": {},
+                  "abilities": [],
+                  "citations": [
+                    "公司发展就会越来越好"
+                  ]
+                },
+                "relations": [
+                  {
+                    "source_entity_id": "ent_entity_5",
+                    "source_name": "公司",
+                    "target_entity_id": "ent_entity_6",
+                    "target_name": "发展",
+                    "relation_type": "发展",
+                    "evidence": "公司发展就会越来越好"
+                  }
+                ],
+                "ablation": {
+                  "entity_id": "ent_entity_5",
+                  "entity_name": "公司",
+                  "impact_level": "high",
+                  "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+                  "system_risk": "unknown"
+                },
+                "precheck": {
+                  "entity_id": "ent_entity_5",
+                  "entity_name": "公司",
+                  "precheck_probability": "",
+                  "precheck_reason": "",
+                  "raw": {
+                    "model": "gpt-5.4",
+                    "text": "{\"probability\":\"96%\",\"reason\":\"从name看，“公司”是现实世界中高度常见且边界清晰的组织实体称谓，因此其作为真实本体的先验概率较高；从abilities看，虽然未显式给出能力列表，但这不会直接削弱真实性，因为公司作为组织通常以经营、管理、发展等活动存在，而文中至少隐含其具备可发展这一组织属性；从interactions看，存在与“发展”的明确关系，且证据“公司发展就会越来越好”表明该实体不仅被单独提及，还参与了因果语义链，即先有公司这一主体，随后发生发展过程，进而导向“越来越好”的结果，因此它不是随机词汇而是承担主体作用的对象；再结合ablation信息，消融后会“失去发展方向和上下文”，说明在系统中“公司”是核心承载实体，因为删除它会破坏关系结构，所以反向证明其本体性较强。虽然名称较泛化、缺少具体公司名，导致无法判定是某一家特定公司，但泛称组织实体依然可以是真实本体，因此综合判断其作为真实本体的概率很高。\"}",
+                    "raw": null
+                  }
+                },
+                "ontology_summary": {
+                  "entity_count": 6,
+                  "relation_count": 2,
+                  "ablation_count": 6
+                },
+                "probability": "95%"
+              }
+            }
+          },
+          {
+            "entity_id": "ent_entity_6",
+            "entity_name": "发展",
+            "filename": "发展.json",
+            "status": "success",
+            "commit_id": "5997a8b28a909a900b7b7628a67482a0561b7cbb",
+            "version_id": 1,
+            "raw": {
+              "status": "success",
+              "write_result": {
+                "status": "success",
+                "commit_id": "5997a8b28a909a900b7b7628a67482a0561b7cbb",
+                "version_id": 1,
+                "basevision": 0,
+                "currvision": 1
+              },
+              "inference_result": {
+                "probability": "20%",
+                "reason": "因为 name 是“发展”，其语义本身指向过程、趋势或结果状态，而不是边界清晰、可独立存在的具体对象，所以作为真实本体的先验稳定性较低；因为 abilities 为空，说明系统没有为它定义任何可执行能力、功能表现或可观察行为，所以无法从功能层面支撑其独立实体性；因为 interactions 中仅存在“公司→发展”这一条关系，且关系类型和证据“公司发展就会越来越好”都在表达公司的一种变化结果与描述性属性，所以可推知“发展”更像依附于“公司”的状态概念，而非能独立参与多方交互的本体；再因为 ablation 显示其 impact_level 为 low，且明确指出它是抽象概念、对具体工作流执行影响较小，所以进一步说明移除它不会显著破坏系统结构，这通常意味着它不是核心真实实体。综合因果链来看：名称抽象→缺少能力定义→交互关系单一且依附他物→移除影响低，因此“发展”更接近语义标签或结果描述，作为真实本体的概率较低。",
+                "status": "success"
+              },
+              "probability_update_result": {
+                "status": "success",
+                "filename": "发展.json",
+                "version_id": 1,
+                "commit_id": "5997a8b28a909a900b7b7628a67482a0561b7cbb",
+                "updated_fields": [
+                  "probability"
+                ]
+              },
+              "data": {
+                "source": "linear-workflow",
+                "ontology": {
+                  "workflow_version": "v1-linear-file-workflow",
+                  "generated_at": "2026-04-27T00:12:26.366Z",
+                  "project_id": "demo",
+                  "scope": "entity",
+                  "entity_id": "ent_entity_6",
+                  "entity_name": "发展",
+                  "system_summary": {
+                    "entity_count": 6,
+                    "relation_count": 2,
+                    "ablation_count": 6
+                  },
+                  "entity": {
+                    "id": "ent_entity_6",
+                    "name": "发展",
+                    "summary": "公司的发展或进步",
+                    "type": "workflow-entity",
+                    "level": 1,
+                    "source": "linear-workflow",
+                    "properties": {},
+                    "abilities": [],
+                    "citations": [
+                      "公司发展就会越来越好"
+                    ]
+                  },
+                  "relations": [
+                    {
+                      "source_entity_id": "ent_entity_5",
+                      "source_name": "公司",
+                      "target_entity_id": "ent_entity_6",
+                      "target_name": "发展",
+                      "relation_type": "发展",
+                      "evidence": "公司发展就会越来越好"
+                    }
+                  ],
+                  "ablation": [
+                    {
+                      "entity_id": "ent_entity_6",
+                      "entity_name": "发展",
+                      "impact_level": "low",
+                      "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+                      "system_risk": "unknown"
+                    }
+                  ]
+                },
+                "entity": {
+                  "id": "ent_entity_6",
+                  "name": "发展",
+                  "summary": "公司的发展或进步",
+                  "type": "workflow-entity",
+                  "level": 1,
+                  "source": "linear-workflow",
+                  "properties": {},
+                  "abilities": [],
+                  "citations": [
+                    "公司发展就会越来越好"
+                  ]
+                },
+                "relations": [
+                  {
+                    "source_entity_id": "ent_entity_5",
+                    "source_name": "公司",
+                    "target_entity_id": "ent_entity_6",
+                    "target_name": "发展",
+                    "relation_type": "发展",
+                    "evidence": "公司发展就会越来越好"
+                  }
+                ],
+                "ablation": {
+                  "entity_id": "ent_entity_6",
+                  "entity_name": "发展",
+                  "impact_level": "low",
+                  "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+                  "system_risk": "unknown"
+                },
+                "precheck": {
+                  "entity_id": "ent_entity_6",
+                  "entity_name": "发展",
+                  "precheck_probability": "",
+                  "precheck_reason": "",
+                  "raw": {
+                    "model": "gpt-5.4",
+                    "text": "{\"probability\":\"22%\",\"reason\":\"从 name 看，“发展”是表示过程或状态变化的抽象概念，而不是边界清晰、可独立存在的具体本体，因此先天作为真实本体的确定性较弱；从 abilities 看，该对象没有任何 abilities，说明系统中没有为其定义可执行能力或可观察功能，因而难以支持其作为独立实体存在；从 interactions 看，唯一关系是“公司→发展”，且证据仅为“公司发展就会越来越好”，这更像是在描述公司的一种结果属性或趋势，而不是一个能与其他对象稳定交互的独立对象；再结合 ablation 中“移除影响低”，可推出该对象对工作流结构和执行不是核心节点，因此更接近语义标签或状态描述。综合这些因果链条：因为名称抽象、能力缺失、交互单薄且依附于“公司”、删除影响又低，所以“发展”作为真实本体的概率较低。\"}",
+                    "raw": null
+                  }
+                },
+                "ontology_summary": {
+                  "entity_count": 6,
+                  "relation_count": 2,
+                  "ablation_count": 6
+                },
+                "probability": "20%"
+              }
+            }
+          }
+        ]
+      },
+      "error": null
+    }
+  ],
+  "entity_files": [
+    {
+      "entity_id": "ent_entity_1",
+      "entity_name": "测试",
+      "filename": "测试.json",
+      "data": {
+        "source": "linear-workflow",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_1",
+          "entity_name": "测试",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_1",
+            "name": "测试",
+            "summary": "文档中提到的测试活动或测试过程",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "这是一个测试"
+            ]
+          },
+          "relations": [],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_1",
+              "entity_name": "测试",
+              "impact_level": "high",
+              "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "entity": {
+          "id": "ent_entity_1",
+          "name": "测试",
+          "summary": "文档中提到的测试活动或测试过程",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "这是一个测试"
+          ]
+        },
+        "relations": [],
+        "ablation": {
+          "entity_id": "ent_entity_1",
+          "entity_name": "测试",
+          "impact_level": "high",
+          "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+          "system_risk": "unknown"
+        },
+        "precheck": {
+          "entity_id": "ent_entity_1",
+          "entity_name": "测试",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"64%\",\"reason\":\"从name看，对象名称为“测试”，这是一个高度泛化的过程性词汇，既可以指真实存在的测试活动，也可能只是占位或示例名称，因此名称本身会降低其作为明确真实本体的确定性。结合abilities看，abilities为空，说明没有提供可执行能力、功能边界或可验证特征，因此无法通过能力特征来强化其独立存在性，这会进一步削弱真实性判断。再结合interactions看，relations为空，说明该对象缺少与其他实体的交互链条，真实本体通常会在系统中表现出输入、输出、依赖或约束关系，而这里缺乏这种关系证据，所以其真实本体性不能被强力支撑。不过，summary明确说明其为“文档中提到的测试活动或测试过程”，citation又给出“这是一个测试”，ablation中还指出其为核心环节、消融后会直接影响质量验证流程，这形成了“被文档提及→在流程中承担作用→删除后产生系统影响”的因果链，因此说明它并非完全虚构，而是至少在该工作流语境中被当作有效对象处理。综合来看，存在流程角色与消融影响这一正向证据，但名称过于泛化、能力缺失、交互缺失又显著降低了其作为稳定真实本体的可信度，所以判断为中等偏上的概率。\"}",
+            "raw": null
+          }
+        },
+        "ontology_summary": {
+          "entity_count": 6,
+          "relation_count": 2,
+          "ablation_count": 6
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_2",
+      "entity_name": "测试人员",
+      "filename": "测试人员.json",
+      "data": {
+        "source": "linear-workflow",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_2",
+          "entity_name": "测试人员",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_2",
+            "name": "测试人员",
+            "summary": "负责测试的人员",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_2",
+              "source_name": "测试人员",
+              "target_entity_id": "ent_entity_3",
+              "target_name": "运营人员",
+              "relation_type": "协作",
+              "evidence": "测试人员和运营人员有协作关系"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_2",
+              "entity_name": "测试人员",
+              "impact_level": "high",
+              "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "entity": {
+          "id": "ent_entity_2",
+          "name": "测试人员",
+          "summary": "负责测试的人员",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "测试人员和运营人员有协作关系"
+          ]
+        },
+        "relations": [
+          {
+            "source_entity_id": "ent_entity_2",
+            "source_name": "测试人员",
+            "target_entity_id": "ent_entity_3",
+            "target_name": "运营人员",
+            "relation_type": "协作",
+            "evidence": "测试人员和运营人员有协作关系"
+          }
+        ],
+        "ablation": {
+          "entity_id": "ent_entity_2",
+          "entity_name": "测试人员",
+          "impact_level": "high",
+          "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+          "system_risk": "unknown"
+        },
+        "precheck": {
+          "entity_id": "ent_entity_2",
+          "entity_name": "测试人员",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"95%\",\"reason\":\"名称为“测试人员”，属于现实组织中常见且语义明确的角色称谓；因为其summary直接说明“负责测试的人员”，所以名称与职能描述高度一致，具备稳定的现实指向。abilities虽为空，但这并不直接削弱真实性，因为在工作流抽取中角色常被简化记录为职责节点；反而ablation指出其缺失会导致“测试无法实施”，说明该对象在流程中具有不可替代的功能位置，因此更像真实本体而非随意生成的标签。interactions方面，存在与“运营人员”的明确“协作”关系，且有对应证据文本支撑；因为真实工作角色通常通过协作关系嵌入业务流程，所以这种可验证的外部联系进一步增强其真实性。综合来看，名称清晰、职责闭环、关系可落地、缺失影响显著，因此该对象作为真实本体的概率很高。\"}",
+            "raw": null
+          }
+        },
+        "ontology_summary": {
+          "entity_count": 6,
+          "relation_count": 2,
+          "ablation_count": 6
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_3",
+      "entity_name": "运营人员",
+      "filename": "运营人员.json",
+      "data": {
+        "source": "linear-workflow",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_3",
+          "entity_name": "运营人员",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_3",
+            "name": "运营人员",
+            "summary": "负责运营的人员",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_2",
+              "source_name": "测试人员",
+              "target_entity_id": "ent_entity_3",
+              "target_name": "运营人员",
+              "relation_type": "协作",
+              "evidence": "测试人员和运营人员有协作关系"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_3",
+              "entity_name": "运营人员",
+              "impact_level": "medium",
+              "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "entity": {
+          "id": "ent_entity_3",
+          "name": "运营人员",
+          "summary": "负责运营的人员",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "测试人员和运营人员有协作关系"
+          ]
+        },
+        "relations": [
+          {
+            "source_entity_id": "ent_entity_2",
+            "source_name": "测试人员",
+            "target_entity_id": "ent_entity_3",
+            "target_name": "运营人员",
+            "relation_type": "协作",
+            "evidence": "测试人员和运营人员有协作关系"
+          }
+        ],
+        "ablation": {
+          "entity_id": "ent_entity_3",
+          "entity_name": "运营人员",
+          "impact_level": "medium",
+          "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+          "system_risk": "unknown"
+        },
+        "precheck": {
+          "entity_id": "ent_entity_3",
+          "entity_name": "运营人员",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"94%\",\"reason\":\"从name看，“运营人员”是标准、常见且语义稳定的岗位称谓，能够明确指向现实组织中的一类真实角色，因此名称层面具备较强本体指向性；从abilities看，虽然未列出具体能力，信息存在缺失，但summary中给出“负责运营的人员”，这说明其职能定义与名称一致，形成了“岗位名称—职责描述”之间的因果闭环，因此不像随机拼接或虚构概念；从interactions看，该对象与“测试人员”存在明确的“协作”关系，并且有证据句支撑，这表明它不仅被单独命名，还被嵌入到实际流程关系网络中，因为真实工作流实体通常会与其他岗位产生稳定交互，所以关系存在会提升其作为真实本体的概率；同时，ablation中显示移除该实体会产生“medium”级影响，说明它对系统有实际作用但并非唯一核心，这种“有作用但非绝对核心”的特征更符合真实组织岗位的分工状态。综合来看，名称真实、职责可解释、关系可验证、影响程度合理，因此判断其作为真实本体的概率较高；但由于abilities字段为空、证据较少，仍保留少量不确定性。\"}",
+            "raw": null
+          }
+        },
+        "ontology_summary": {
+          "entity_count": 6,
+          "relation_count": 2,
+          "ablation_count": 6
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_4",
+      "entity_name": "协作关系",
+      "filename": "协作关系.json",
+      "data": {
+        "source": "linear-workflow",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_4",
+          "entity_name": "协作关系",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_4",
+            "name": "协作关系",
+            "summary": "测试人员和运营人员之间的协作关系",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_4",
+              "entity_name": "协作关系",
+              "impact_level": "medium",
+              "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "entity": {
+          "id": "ent_entity_4",
+          "name": "协作关系",
+          "summary": "测试人员和运营人员之间的协作关系",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "测试人员和运营人员有协作关系"
+          ]
+        },
+        "relations": [],
+        "ablation": {
+          "entity_id": "ent_entity_4",
+          "entity_name": "协作关系",
+          "impact_level": "medium",
+          "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+          "system_risk": "unknown"
+        },
+        "precheck": {
+          "entity_id": "ent_entity_4",
+          "entity_name": "协作关系",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"24%\",\"reason\":\"该对象的name是“协作关系”，首先表明它更像一种抽象关系而不是可独立存在的真实本体；因为真实本体通常具有相对稳定的边界、属性或可识别载体，而这里的summary仅说明“测试人员和运营人员之间的协作关系”，所以其定义依赖于两个主体而不能独立成立。其次，abilities为空，说明该对象没有表现出自身可执行能力；因为若是高概率真实本体，通常会有可观察功能、状态或行为特征，而这里缺少这类证据，所以本体性被进一步削弱。再次，interactions对应的relations为空，仅有一条citation“测试人员和运营人员有协作关系”，这意味着系统只确认存在一种连接描述，而没有展示该对象与其他对象的独立交互网络；因为缺少可验证的交互结构，所以更像语义标签或关系占位符。最后，ablation中指出移除后会“降低协同效率”，这说明它在流程建模中具有功能价值；但这种价值来自其作为连接概念的作用，而不是证明其是独立客观实体。因此，综合name的抽象性、abilities的缺失、interactions的不足以及ablation仅证明建模必要性，可以判断它作为真实本体的概率较低。\"}",
+            "raw": null
+          }
+        },
+        "ontology_summary": {
+          "entity_count": 6,
+          "relation_count": 2,
+          "ablation_count": 6
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_5",
+      "entity_name": "公司",
+      "filename": "公司.json",
+      "data": {
+        "source": "linear-workflow",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.366Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_5",
+          "entity_name": "公司",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_5",
+            "name": "公司",
+            "summary": "文档中提到的公司",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_5",
+              "source_name": "公司",
+              "target_entity_id": "ent_entity_6",
+              "target_name": "发展",
+              "relation_type": "发展",
+              "evidence": "公司发展就会越来越好"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_5",
+              "entity_name": "公司",
+              "impact_level": "high",
+              "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "entity": {
+          "id": "ent_entity_5",
+          "name": "公司",
+          "summary": "文档中提到的公司",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "公司发展就会越来越好"
+          ]
+        },
+        "relations": [
+          {
+            "source_entity_id": "ent_entity_5",
+            "source_name": "公司",
+            "target_entity_id": "ent_entity_6",
+            "target_name": "发展",
+            "relation_type": "发展",
+            "evidence": "公司发展就会越来越好"
+          }
+        ],
+        "ablation": {
+          "entity_id": "ent_entity_5",
+          "entity_name": "公司",
+          "impact_level": "high",
+          "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+          "system_risk": "unknown"
+        },
+        "precheck": {
+          "entity_id": "ent_entity_5",
+          "entity_name": "公司",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"96%\",\"reason\":\"从name看，“公司”是现实世界中高度常见且边界清晰的组织实体称谓，因此其作为真实本体的先验概率较高；从abilities看，虽然未显式给出能力列表，但这不会直接削弱真实性，因为公司作为组织通常以经营、管理、发展等活动存在，而文中至少隐含其具备可发展这一组织属性；从interactions看，存在与“发展”的明确关系，且证据“公司发展就会越来越好”表明该实体不仅被单独提及，还参与了因果语义链，即先有公司这一主体，随后发生发展过程，进而导向“越来越好”的结果，因此它不是随机词汇而是承担主体作用的对象；再结合ablation信息，消融后会“失去发展方向和上下文”，说明在系统中“公司”是核心承载实体，因为删除它会破坏关系结构，所以反向证明其本体性较强。虽然名称较泛化、缺少具体公司名，导致无法判定是某一家特定公司，但泛称组织实体依然可以是真实本体，因此综合判断其作为真实本体的概率很高。\"}",
+            "raw": null
+          }
+        },
+        "ontology_summary": {
+          "entity_count": 6,
+          "relation_count": 2,
+          "ablation_count": 6
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_6",
+      "entity_name": "发展",
+      "filename": "发展.json",
+      "data": {
+        "source": "linear-workflow",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.366Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_6",
+          "entity_name": "发展",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_6",
+            "name": "发展",
+            "summary": "公司的发展或进步",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_5",
+              "source_name": "公司",
+              "target_entity_id": "ent_entity_6",
+              "target_name": "发展",
+              "relation_type": "发展",
+              "evidence": "公司发展就会越来越好"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_6",
+              "entity_name": "发展",
+              "impact_level": "low",
+              "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "entity": {
+          "id": "ent_entity_6",
+          "name": "发展",
+          "summary": "公司的发展或进步",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "公司发展就会越来越好"
+          ]
+        },
+        "relations": [
+          {
+            "source_entity_id": "ent_entity_5",
+            "source_name": "公司",
+            "target_entity_id": "ent_entity_6",
+            "target_name": "发展",
+            "relation_type": "发展",
+            "evidence": "公司发展就会越来越好"
+          }
+        ],
+        "ablation": {
+          "entity_id": "ent_entity_6",
+          "entity_name": "发展",
+          "impact_level": "low",
+          "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+          "system_risk": "unknown"
+        },
+        "precheck": {
+          "entity_id": "ent_entity_6",
+          "entity_name": "发展",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"22%\",\"reason\":\"从 name 看，“发展”是表示过程或状态变化的抽象概念，而不是边界清晰、可独立存在的具体本体，因此先天作为真实本体的确定性较弱；从 abilities 看，该对象没有任何 abilities，说明系统中没有为其定义可执行能力或可观察功能，因而难以支持其作为独立实体存在；从 interactions 看，唯一关系是“公司→发展”，且证据仅为“公司发展就会越来越好”，这更像是在描述公司的一种结果属性或趋势，而不是一个能与其他对象稳定交互的独立对象；再结合 ablation 中“移除影响低”，可推出该对象对工作流结构和执行不是核心节点，因此更接近语义标签或状态描述。综合这些因果链条：因为名称抽象、能力缺失、交互单薄且依附于“公司”、删除影响又低，所以“发展”作为真实本体的概率较低。\"}",
+            "raw": null
+          }
+        },
+        "ontology_summary": {
+          "entity_count": 6,
+          "relation_count": 2,
+          "ablation_count": 6
+        }
+      }
+    }
+  ],
+  "ingest_results": [
+    {
+      "entity_id": "ent_entity_1",
+      "entity_name": "测试",
+      "filename": "测试.json",
+      "status": "success",
+      "commit_id": "115812adccd5ee754d8b996f80263629f18c4a21",
+      "version_id": 1,
+      "raw": {
+        "status": "success",
+        "write_result": {
+          "status": "success",
+          "commit_id": "115812adccd5ee754d8b996f80263629f18c4a21",
+          "version_id": 1,
+          "basevision": 0,
+          "currvision": 1
+        },
+        "inference_result": {
+          "probability": "66%",
+          "reason": "从name看，该对象名称为“测试”，属于高度通用的过程性概念，因为它不是具有强辨识度的专有名称，所以先天上更像流程环节而非边界清晰的独立本体，这会压低真实性判断。结合abilities看，abilities为空，因为没有给出功能、输入输出能力或稳定属性，所以无法通过可执行特征证明其具备独立存在性，导致本体证据不足。再结合interactions看，relations为空，因为缺少与其他实体的依赖、调用或约束关系，所以无法形成完整交互链条，而真实本体通常会在系统中留下关系痕迹，这进一步削弱了确定性。但同时，summary明确说明其是“文档中提到的测试活动或测试过程”，citation写有“这是一个测试”，ablation又指出其为工作流核心环节且消融后会直接影响质量验证流程，因此形成了“被文档明确指称→在流程中承担关键作用→移除后引发系统性影响”的因果逻辑链，这说明它在该语境下并非随意虚构对象，而是被当作有效流程实体处理。综合而言，正向证据来自文档指称和消融影响，负向证据来自名称泛化、能力缺失、交互缺失，因此其作为真实本体的概率应判断为中等偏上。",
+          "status": "success"
+        },
+        "probability_update_result": {
+          "status": "success",
+          "filename": "测试.json",
+          "version_id": 1,
+          "commit_id": "115812adccd5ee754d8b996f80263629f18c4a21",
+          "updated_fields": [
+            "probability"
+          ]
+        },
+        "data": {
+          "source": "linear-workflow",
+          "ontology": {
+            "workflow_version": "v1-linear-file-workflow",
+            "generated_at": "2026-04-27T00:12:26.365Z",
+            "project_id": "demo",
+            "scope": "entity",
+            "entity_id": "ent_entity_1",
+            "entity_name": "测试",
+            "system_summary": {
+              "entity_count": 6,
+              "relation_count": 2,
+              "ablation_count": 6
+            },
+            "entity": {
+              "id": "ent_entity_1",
+              "name": "测试",
+              "summary": "文档中提到的测试活动或测试过程",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "这是一个测试"
+              ]
+            },
+            "relations": [],
+            "ablation": [
+              {
+                "entity_id": "ent_entity_1",
+                "entity_name": "测试",
+                "impact_level": "high",
+                "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+                "system_risk": "unknown"
+              }
+            ]
+          },
+          "entity": {
+            "id": "ent_entity_1",
+            "name": "测试",
+            "summary": "文档中提到的测试活动或测试过程",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "这是一个测试"
+            ]
+          },
+          "relations": [],
+          "ablation": {
+            "entity_id": "ent_entity_1",
+            "entity_name": "测试",
+            "impact_level": "high",
+            "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+            "system_risk": "unknown"
+          },
+          "precheck": {
+            "entity_id": "ent_entity_1",
+            "entity_name": "测试",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"64%\",\"reason\":\"从name看，对象名称为“测试”，这是一个高度泛化的过程性词汇，既可以指真实存在的测试活动，也可能只是占位或示例名称，因此名称本身会降低其作为明确真实本体的确定性。结合abilities看，abilities为空，说明没有提供可执行能力、功能边界或可验证特征，因此无法通过能力特征来强化其独立存在性，这会进一步削弱真实性判断。再结合interactions看，relations为空，说明该对象缺少与其他实体的交互链条，真实本体通常会在系统中表现出输入、输出、依赖或约束关系，而这里缺乏这种关系证据，所以其真实本体性不能被强力支撑。不过，summary明确说明其为“文档中提到的测试活动或测试过程”，citation又给出“这是一个测试”，ablation中还指出其为核心环节、消融后会直接影响质量验证流程，这形成了“被文档提及→在流程中承担作用→删除后产生系统影响”的因果链，因此说明它并非完全虚构，而是至少在该工作流语境中被当作有效对象处理。综合来看，存在流程角色与消融影响这一正向证据，但名称过于泛化、能力缺失、交互缺失又显著降低了其作为稳定真实本体的可信度，所以判断为中等偏上的概率。\"}",
+              "raw": null
+            }
+          },
+          "ontology_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "probability": "66%"
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_2",
+      "entity_name": "测试人员",
+      "filename": "测试人员.json",
+      "status": "success",
+      "commit_id": "1b1db972a2bcc0c7bba3ee4036f9090dafaaf8dd",
+      "version_id": 1,
+      "raw": {
+        "status": "success",
+        "write_result": {
+          "status": "success",
+          "commit_id": "1b1db972a2bcc0c7bba3ee4036f9090dafaaf8dd",
+          "version_id": 1,
+          "basevision": 0,
+          "currvision": 1
+        },
+        "inference_result": {
+          "probability": "96%",
+          "reason": "因为名称“测试人员”是现实组织中高度常见且语义稳定的角色称谓，所以其本体指向明确；又因为summary直接说明其是“负责测试的人员”，名称与职责形成直接对应，所以不是随意拼接的抽象标签。虽然abilities为空，但这更可能是工作流建模时对角色信息的简化记录，因为角色类实体常以职责和关系而非技能清单呈现，所以不能据此显著降低真实性判断。进一步看interactions中存在其与“运营人员”的“协作”关系，且有明确证据文本支撑，因为真实业务流程中的岗位通常通过协作关系嵌入系统，所以这种外部关联增强了其作为真实流程角色的可信度。再结合ablation信息显示其缺失会导致“测试无法实施”，因为只有在流程中承担关键功能的实体才会在删除后产生高影响，所以反向证明该对象并非虚设节点。综合名称、职责、协作关系与缺失影响形成完整因果链，因此该对象作为真实本体的概率很高。",
+          "status": "success"
+        },
+        "probability_update_result": {
+          "status": "success",
+          "filename": "测试人员.json",
+          "version_id": 1,
+          "commit_id": "1b1db972a2bcc0c7bba3ee4036f9090dafaaf8dd",
+          "updated_fields": [
+            "probability"
+          ]
+        },
+        "data": {
+          "source": "linear-workflow",
+          "ontology": {
+            "workflow_version": "v1-linear-file-workflow",
+            "generated_at": "2026-04-27T00:12:26.365Z",
+            "project_id": "demo",
+            "scope": "entity",
+            "entity_id": "ent_entity_2",
+            "entity_name": "测试人员",
+            "system_summary": {
+              "entity_count": 6,
+              "relation_count": 2,
+              "ablation_count": 6
+            },
+            "entity": {
+              "id": "ent_entity_2",
+              "name": "测试人员",
+              "summary": "负责测试的人员",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "测试人员和运营人员有协作关系"
+              ]
+            },
+            "relations": [
+              {
+                "source_entity_id": "ent_entity_2",
+                "source_name": "测试人员",
+                "target_entity_id": "ent_entity_3",
+                "target_name": "运营人员",
+                "relation_type": "协作",
+                "evidence": "测试人员和运营人员有协作关系"
+              }
+            ],
+            "ablation": [
+              {
+                "entity_id": "ent_entity_2",
+                "entity_name": "测试人员",
+                "impact_level": "high",
+                "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+                "system_risk": "unknown"
+              }
+            ]
+          },
+          "entity": {
+            "id": "ent_entity_2",
+            "name": "测试人员",
+            "summary": "负责测试的人员",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_2",
+              "source_name": "测试人员",
+              "target_entity_id": "ent_entity_3",
+              "target_name": "运营人员",
+              "relation_type": "协作",
+              "evidence": "测试人员和运营人员有协作关系"
+            }
+          ],
+          "ablation": {
+            "entity_id": "ent_entity_2",
+            "entity_name": "测试人员",
+            "impact_level": "high",
+            "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+            "system_risk": "unknown"
+          },
+          "precheck": {
+            "entity_id": "ent_entity_2",
+            "entity_name": "测试人员",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"95%\",\"reason\":\"名称为“测试人员”，属于现实组织中常见且语义明确的角色称谓；因为其summary直接说明“负责测试的人员”，所以名称与职能描述高度一致，具备稳定的现实指向。abilities虽为空，但这并不直接削弱真实性，因为在工作流抽取中角色常被简化记录为职责节点；反而ablation指出其缺失会导致“测试无法实施”，说明该对象在流程中具有不可替代的功能位置，因此更像真实本体而非随意生成的标签。interactions方面，存在与“运营人员”的明确“协作”关系，且有对应证据文本支撑；因为真实工作角色通常通过协作关系嵌入业务流程，所以这种可验证的外部联系进一步增强其真实性。综合来看，名称清晰、职责闭环、关系可落地、缺失影响显著，因此该对象作为真实本体的概率很高。\"}",
+              "raw": null
+            }
+          },
+          "ontology_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "probability": "96%"
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_3",
+      "entity_name": "运营人员",
+      "filename": "运营人员.json",
+      "status": "success",
+      "commit_id": "c2517c77b9a54897eaffa88644b075fe3b0d6b85",
+      "version_id": 1,
+      "raw": {
+        "status": "success",
+        "write_result": {
+          "status": "success",
+          "commit_id": "c2517c77b9a54897eaffa88644b075fe3b0d6b85",
+          "version_id": 1,
+          "basevision": 0,
+          "currvision": 1
+        },
+        "inference_result": {
+          "probability": "95%",
+          "reason": "因为name为“运营人员”，这是现实组织中高度常见且语义清晰的岗位称谓，所以该对象首先具备明确的现实指向；因为summary写明“负责运营的人员”，名称与职责描述直接一致，所以形成了“岗位名称明确→职责范围可解释→对象不是随意虚构标签”的因果链；因为abilities虽然为空，导致其具体能力细节不足，所以会降低一部分确定性，但这只是信息缺失，不会直接推翻其岗位本体真实性；因为interactions中存在与“测试人员”的“协作”关系，且有证据句“测试人员和运营人员有协作关系”支撑，所以说明该对象不是孤立词项，而是被嵌入到工作流中的实际角色节点；因为真实流程中的岗位通常通过协作关系体现分工，所以“存在协作关系→符合组织运行规律→真实本体概率上升”；又因为ablation显示其移除后影响为medium，且说明“部分影响流程但非核心”，所以这与现实企业中运营岗位常见的“重要但非唯一核心”位置相符，进一步增强真实性。综合来看，名称真实、职责闭环、关系可验证、流程影响合理，因此其作为真实本体的概率很高；只是由于abilities为空、关系样本较少，所以仍保留少量不确定性。",
+          "status": "success"
+        },
+        "probability_update_result": {
+          "status": "success",
+          "filename": "运营人员.json",
+          "version_id": 1,
+          "commit_id": "c2517c77b9a54897eaffa88644b075fe3b0d6b85",
+          "updated_fields": [
+            "probability"
+          ]
+        },
+        "data": {
+          "source": "linear-workflow",
+          "ontology": {
+            "workflow_version": "v1-linear-file-workflow",
+            "generated_at": "2026-04-27T00:12:26.365Z",
+            "project_id": "demo",
+            "scope": "entity",
+            "entity_id": "ent_entity_3",
+            "entity_name": "运营人员",
+            "system_summary": {
+              "entity_count": 6,
+              "relation_count": 2,
+              "ablation_count": 6
+            },
+            "entity": {
+              "id": "ent_entity_3",
+              "name": "运营人员",
+              "summary": "负责运营的人员",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "测试人员和运营人员有协作关系"
+              ]
+            },
+            "relations": [
+              {
+                "source_entity_id": "ent_entity_2",
+                "source_name": "测试人员",
+                "target_entity_id": "ent_entity_3",
+                "target_name": "运营人员",
+                "relation_type": "协作",
+                "evidence": "测试人员和运营人员有协作关系"
+              }
+            ],
+            "ablation": [
+              {
+                "entity_id": "ent_entity_3",
+                "entity_name": "运营人员",
+                "impact_level": "medium",
+                "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+                "system_risk": "unknown"
+              }
+            ]
+          },
+          "entity": {
+            "id": "ent_entity_3",
+            "name": "运营人员",
+            "summary": "负责运营的人员",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_2",
+              "source_name": "测试人员",
+              "target_entity_id": "ent_entity_3",
+              "target_name": "运营人员",
+              "relation_type": "协作",
+              "evidence": "测试人员和运营人员有协作关系"
+            }
+          ],
+          "ablation": {
+            "entity_id": "ent_entity_3",
+            "entity_name": "运营人员",
+            "impact_level": "medium",
+            "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+            "system_risk": "unknown"
+          },
+          "precheck": {
+            "entity_id": "ent_entity_3",
+            "entity_name": "运营人员",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"94%\",\"reason\":\"从name看，“运营人员”是标准、常见且语义稳定的岗位称谓，能够明确指向现实组织中的一类真实角色，因此名称层面具备较强本体指向性；从abilities看，虽然未列出具体能力，信息存在缺失，但summary中给出“负责运营的人员”，这说明其职能定义与名称一致，形成了“岗位名称—职责描述”之间的因果闭环，因此不像随机拼接或虚构概念；从interactions看，该对象与“测试人员”存在明确的“协作”关系，并且有证据句支撑，这表明它不仅被单独命名，还被嵌入到实际流程关系网络中，因为真实工作流实体通常会与其他岗位产生稳定交互，所以关系存在会提升其作为真实本体的概率；同时，ablation中显示移除该实体会产生“medium”级影响，说明它对系统有实际作用但并非唯一核心，这种“有作用但非绝对核心”的特征更符合真实组织岗位的分工状态。综合来看，名称真实、职责可解释、关系可验证、影响程度合理，因此判断其作为真实本体的概率较高；但由于abilities字段为空、证据较少，仍保留少量不确定性。\"}",
+              "raw": null
+            }
+          },
+          "ontology_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "probability": "95%"
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_4",
+      "entity_name": "协作关系",
+      "filename": "协作关系.json",
+      "status": "success",
+      "commit_id": "767aeba47f9020e444fc2f2ee371366099b85659",
+      "version_id": 1,
+      "raw": {
+        "status": "success",
+        "write_result": {
+          "status": "success",
+          "commit_id": "767aeba47f9020e444fc2f2ee371366099b85659",
+          "version_id": 1,
+          "basevision": 0,
+          "currvision": 1
+        },
+        "inference_result": {
+          "probability": "22%",
+          "reason": "因为name是“协作关系”，首先直接指向一种连接性、描述性的抽象概念，而不是具有清晰边界的独立对象；既然其summary进一步定义为“测试人员和运营人员之间的协作关系”，就说明它的存在依赖“测试人员”和“运营人员”两个主体，因而更像主体之间的关系表述，而不像可单独存在的真实本体。又因为abilities为空，所以看不到该对象自身具有可执行能力、状态变化或独立行为；缺少这些可观察特征，就难以证明它具备独立本体的自足性。再因为interactions即relations为空，只有一条citation说明“测试人员和运营人员有协作关系”，这表明当前证据只证明有一种关联被命名，并没有展示该对象作为独立节点与外界形成稳定交互网络；交互结构不足，就进一步削弱其真实本体概率。最后，ablation提到移除后会降低协同效率，这只能因果上说明它在建模中有组织和连接价值，不能反向推出它必然是独立存在的客观实体；因此综合name的抽象性、abilities缺失、interactions不足以及ablation仅体现功能性而非实体性，可以判断其作为真实本体的概率较低。",
+          "status": "success"
+        },
+        "probability_update_result": {
+          "status": "success",
+          "filename": "协作关系.json",
+          "version_id": 1,
+          "commit_id": "767aeba47f9020e444fc2f2ee371366099b85659",
+          "updated_fields": [
+            "probability"
+          ]
+        },
+        "data": {
+          "source": "linear-workflow",
+          "ontology": {
+            "workflow_version": "v1-linear-file-workflow",
+            "generated_at": "2026-04-27T00:12:26.365Z",
+            "project_id": "demo",
+            "scope": "entity",
+            "entity_id": "ent_entity_4",
+            "entity_name": "协作关系",
+            "system_summary": {
+              "entity_count": 6,
+              "relation_count": 2,
+              "ablation_count": 6
+            },
+            "entity": {
+              "id": "ent_entity_4",
+              "name": "协作关系",
+              "summary": "测试人员和运营人员之间的协作关系",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "测试人员和运营人员有协作关系"
+              ]
+            },
+            "relations": [],
+            "ablation": [
+              {
+                "entity_id": "ent_entity_4",
+                "entity_name": "协作关系",
+                "impact_level": "medium",
+                "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+                "system_risk": "unknown"
+              }
+            ]
+          },
+          "entity": {
+            "id": "ent_entity_4",
+            "name": "协作关系",
+            "summary": "测试人员和运营人员之间的协作关系",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [],
+          "ablation": {
+            "entity_id": "ent_entity_4",
+            "entity_name": "协作关系",
+            "impact_level": "medium",
+            "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+            "system_risk": "unknown"
+          },
+          "precheck": {
+            "entity_id": "ent_entity_4",
+            "entity_name": "协作关系",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"24%\",\"reason\":\"该对象的name是“协作关系”，首先表明它更像一种抽象关系而不是可独立存在的真实本体；因为真实本体通常具有相对稳定的边界、属性或可识别载体，而这里的summary仅说明“测试人员和运营人员之间的协作关系”，所以其定义依赖于两个主体而不能独立成立。其次，abilities为空，说明该对象没有表现出自身可执行能力；因为若是高概率真实本体，通常会有可观察功能、状态或行为特征，而这里缺少这类证据，所以本体性被进一步削弱。再次，interactions对应的relations为空，仅有一条citation“测试人员和运营人员有协作关系”，这意味着系统只确认存在一种连接描述，而没有展示该对象与其他对象的独立交互网络；因为缺少可验证的交互结构，所以更像语义标签或关系占位符。最后，ablation中指出移除后会“降低协同效率”，这说明它在流程建模中具有功能价值；但这种价值来自其作为连接概念的作用，而不是证明其是独立客观实体。因此，综合name的抽象性、abilities的缺失、interactions的不足以及ablation仅证明建模必要性，可以判断它作为真实本体的概率较低。\"}",
+              "raw": null
+            }
+          },
+          "ontology_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "probability": "22%"
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_5",
+      "entity_name": "公司",
+      "filename": "公司.json",
+      "status": "success",
+      "commit_id": "988f31e07e35b83c3e8b333fcc345818dd52af4e",
+      "version_id": 1,
+      "raw": {
+        "status": "success",
+        "write_result": {
+          "status": "success",
+          "commit_id": "988f31e07e35b83c3e8b333fcc345818dd52af4e",
+          "version_id": 1,
+          "basevision": 0,
+          "currvision": 1
+        },
+        "inference_result": {
+          "probability": "95%",
+          "reason": "因为name为“公司”，该名称对应现实世界中稳定存在且可被独立识别的组织类型，所以其作为真实本体具有很强的先验真实性；因为abilities虽然为空，但这更像是信息抽取不完整，而不是说明该对象不存在，再结合文本中“公司发展就会越来越好”，可反推出该主体至少承载经营与发展的组织属性，所以空能力字段未显著削弱本体真实性；因为interactions中“公司”与“发展”形成明确关系，且证据句呈现出“公司作为主体→发生发展过程→结果越来越好”的因果链，所以“公司”不是孤立词汇而是在语义中承担行动主体与结果承接者；又因为ablation指出删除“公司”后会失去发展方向和上下文，说明该实体一旦移除，整体关系结构会受损，所以它在当前语境中是核心承载对象。虽然该名称是泛称而非具体公司名，导致特指性略弱，但泛称组织实体依然可以构成真实本体，因此综合判断其作为真实本体的概率很高。",
+          "status": "success"
+        },
+        "probability_update_result": {
+          "status": "success",
+          "filename": "公司.json",
+          "version_id": 1,
+          "commit_id": "988f31e07e35b83c3e8b333fcc345818dd52af4e",
+          "updated_fields": [
+            "probability"
+          ]
+        },
+        "data": {
+          "source": "linear-workflow",
+          "ontology": {
+            "workflow_version": "v1-linear-file-workflow",
+            "generated_at": "2026-04-27T00:12:26.366Z",
+            "project_id": "demo",
+            "scope": "entity",
+            "entity_id": "ent_entity_5",
+            "entity_name": "公司",
+            "system_summary": {
+              "entity_count": 6,
+              "relation_count": 2,
+              "ablation_count": 6
+            },
+            "entity": {
+              "id": "ent_entity_5",
+              "name": "公司",
+              "summary": "文档中提到的公司",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "公司发展就会越来越好"
+              ]
+            },
+            "relations": [
+              {
+                "source_entity_id": "ent_entity_5",
+                "source_name": "公司",
+                "target_entity_id": "ent_entity_6",
+                "target_name": "发展",
+                "relation_type": "发展",
+                "evidence": "公司发展就会越来越好"
+              }
+            ],
+            "ablation": [
+              {
+                "entity_id": "ent_entity_5",
+                "entity_name": "公司",
+                "impact_level": "high",
+                "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+                "system_risk": "unknown"
+              }
+            ]
+          },
+          "entity": {
+            "id": "ent_entity_5",
+            "name": "公司",
+            "summary": "文档中提到的公司",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_5",
+              "source_name": "公司",
+              "target_entity_id": "ent_entity_6",
+              "target_name": "发展",
+              "relation_type": "发展",
+              "evidence": "公司发展就会越来越好"
+            }
+          ],
+          "ablation": {
+            "entity_id": "ent_entity_5",
+            "entity_name": "公司",
+            "impact_level": "high",
+            "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+            "system_risk": "unknown"
+          },
+          "precheck": {
+            "entity_id": "ent_entity_5",
+            "entity_name": "公司",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"96%\",\"reason\":\"从name看，“公司”是现实世界中高度常见且边界清晰的组织实体称谓，因此其作为真实本体的先验概率较高；从abilities看，虽然未显式给出能力列表，但这不会直接削弱真实性，因为公司作为组织通常以经营、管理、发展等活动存在，而文中至少隐含其具备可发展这一组织属性；从interactions看，存在与“发展”的明确关系，且证据“公司发展就会越来越好”表明该实体不仅被单独提及，还参与了因果语义链，即先有公司这一主体，随后发生发展过程，进而导向“越来越好”的结果，因此它不是随机词汇而是承担主体作用的对象；再结合ablation信息，消融后会“失去发展方向和上下文”，说明在系统中“公司”是核心承载实体，因为删除它会破坏关系结构，所以反向证明其本体性较强。虽然名称较泛化、缺少具体公司名，导致无法判定是某一家特定公司，但泛称组织实体依然可以是真实本体，因此综合判断其作为真实本体的概率很高。\"}",
+              "raw": null
+            }
+          },
+          "ontology_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "probability": "95%"
+        }
+      }
+    },
+    {
+      "entity_id": "ent_entity_6",
+      "entity_name": "发展",
+      "filename": "发展.json",
+      "status": "success",
+      "commit_id": "5997a8b28a909a900b7b7628a67482a0561b7cbb",
+      "version_id": 1,
+      "raw": {
+        "status": "success",
+        "write_result": {
+          "status": "success",
+          "commit_id": "5997a8b28a909a900b7b7628a67482a0561b7cbb",
+          "version_id": 1,
+          "basevision": 0,
+          "currvision": 1
+        },
+        "inference_result": {
+          "probability": "20%",
+          "reason": "因为 name 是“发展”，其语义本身指向过程、趋势或结果状态，而不是边界清晰、可独立存在的具体对象，所以作为真实本体的先验稳定性较低；因为 abilities 为空，说明系统没有为它定义任何可执行能力、功能表现或可观察行为，所以无法从功能层面支撑其独立实体性；因为 interactions 中仅存在“公司→发展”这一条关系，且关系类型和证据“公司发展就会越来越好”都在表达公司的一种变化结果与描述性属性，所以可推知“发展”更像依附于“公司”的状态概念，而非能独立参与多方交互的本体；再因为 ablation 显示其 impact_level 为 low，且明确指出它是抽象概念、对具体工作流执行影响较小，所以进一步说明移除它不会显著破坏系统结构，这通常意味着它不是核心真实实体。综合因果链来看：名称抽象→缺少能力定义→交互关系单一且依附他物→移除影响低，因此“发展”更接近语义标签或结果描述，作为真实本体的概率较低。",
+          "status": "success"
+        },
+        "probability_update_result": {
+          "status": "success",
+          "filename": "发展.json",
+          "version_id": 1,
+          "commit_id": "5997a8b28a909a900b7b7628a67482a0561b7cbb",
+          "updated_fields": [
+            "probability"
+          ]
+        },
+        "data": {
+          "source": "linear-workflow",
+          "ontology": {
+            "workflow_version": "v1-linear-file-workflow",
+            "generated_at": "2026-04-27T00:12:26.366Z",
+            "project_id": "demo",
+            "scope": "entity",
+            "entity_id": "ent_entity_6",
+            "entity_name": "发展",
+            "system_summary": {
+              "entity_count": 6,
+              "relation_count": 2,
+              "ablation_count": 6
+            },
+            "entity": {
+              "id": "ent_entity_6",
+              "name": "发展",
+              "summary": "公司的发展或进步",
+              "type": "workflow-entity",
+              "level": 1,
+              "source": "linear-workflow",
+              "properties": {},
+              "abilities": [],
+              "citations": [
+                "公司发展就会越来越好"
+              ]
+            },
+            "relations": [
+              {
+                "source_entity_id": "ent_entity_5",
+                "source_name": "公司",
+                "target_entity_id": "ent_entity_6",
+                "target_name": "发展",
+                "relation_type": "发展",
+                "evidence": "公司发展就会越来越好"
+              }
+            ],
+            "ablation": [
+              {
+                "entity_id": "ent_entity_6",
+                "entity_name": "发展",
+                "impact_level": "low",
+                "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+                "system_risk": "unknown"
+              }
+            ]
+          },
+          "entity": {
+            "id": "ent_entity_6",
+            "name": "发展",
+            "summary": "公司的发展或进步",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_5",
+              "source_name": "公司",
+              "target_entity_id": "ent_entity_6",
+              "target_name": "发展",
+              "relation_type": "发展",
+              "evidence": "公司发展就会越来越好"
+            }
+          ],
+          "ablation": {
+            "entity_id": "ent_entity_6",
+            "entity_name": "发展",
+            "impact_level": "low",
+            "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+            "system_risk": "unknown"
+          },
+          "precheck": {
+            "entity_id": "ent_entity_6",
+            "entity_name": "发展",
+            "precheck_probability": "",
+            "precheck_reason": "",
+            "raw": {
+              "model": "gpt-5.4",
+              "text": "{\"probability\":\"22%\",\"reason\":\"从 name 看，“发展”是表示过程或状态变化的抽象概念，而不是边界清晰、可独立存在的具体本体，因此先天作为真实本体的确定性较弱；从 abilities 看，该对象没有任何 abilities，说明系统中没有为其定义可执行能力或可观察功能，因而难以支持其作为独立实体存在；从 interactions 看，唯一关系是“公司→发展”，且证据仅为“公司发展就会越来越好”，这更像是在描述公司的一种结果属性或趋势，而不是一个能与其他对象稳定交互的独立对象；再结合 ablation 中“移除影响低”，可推出该对象对工作流结构和执行不是核心节点，因此更接近语义标签或状态描述。综合这些因果链条：因为名称抽象、能力缺失、交互单薄且依附于“公司”、删除影响又低，所以“发展”作为真实本体的概率较低。\"}",
+              "raw": null
+            }
+          },
+          "ontology_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "probability": "20%"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "runtime_root": "/Users/qiuboyu/CodeLearning/new_fjy/fjy/kimi-agent-knowledge-base-collab/.workflow-runtime/.workflow-runs/conversation-file-workflow-mogfzos5-i0gkcz",
+  "started_at": "2026-04-27T00:11:56.839Z",
+  "finished_at": "2026-04-27T00:14:09.822Z",
+  "state": {
+    "entities": [
+      {
+        "id": "ent_entity_1",
+        "name": "测试",
+        "summary": "文档中提到的测试活动或测试过程",
+        "type": "workflow-entity",
+        "level": 1,
+        "source": "linear-workflow",
+        "properties": {},
+        "abilities": [],
+        "citations": [
+          "这是一个测试"
+        ]
+      },
+      {
+        "id": "ent_entity_2",
+        "name": "测试人员",
+        "summary": "负责测试的人员",
+        "type": "workflow-entity",
+        "level": 1,
+        "source": "linear-workflow",
+        "properties": {},
+        "abilities": [],
+        "citations": [
+          "测试人员和运营人员有协作关系"
+        ]
+      },
+      {
+        "id": "ent_entity_3",
+        "name": "运营人员",
+        "summary": "负责运营的人员",
+        "type": "workflow-entity",
+        "level": 1,
+        "source": "linear-workflow",
+        "properties": {},
+        "abilities": [],
+        "citations": [
+          "测试人员和运营人员有协作关系"
+        ]
+      },
+      {
+        "id": "ent_entity_4",
+        "name": "协作关系",
+        "summary": "测试人员和运营人员之间的协作关系",
+        "type": "workflow-entity",
+        "level": 1,
+        "source": "linear-workflow",
+        "properties": {},
+        "abilities": [],
+        "citations": [
+          "测试人员和运营人员有协作关系"
+        ]
+      },
+      {
+        "id": "ent_entity_5",
+        "name": "公司",
+        "summary": "文档中提到的公司",
+        "type": "workflow-entity",
+        "level": 1,
+        "source": "linear-workflow",
+        "properties": {},
+        "abilities": [],
+        "citations": [
+          "公司发展就会越来越好"
+        ]
+      },
+      {
+        "id": "ent_entity_6",
+        "name": "发展",
+        "summary": "公司的发展或进步",
+        "type": "workflow-entity",
+        "level": 1,
+        "source": "linear-workflow",
+        "properties": {},
+        "abilities": [],
+        "citations": [
+          "公司发展就会越来越好"
+        ]
+      }
+    ],
+    "relations": [
+      {
+        "source_entity_id": "ent_entity_2",
+        "source_name": "测试人员",
+        "target_entity_id": "ent_entity_3",
+        "target_name": "运营人员",
+        "relation_type": "协作",
+        "evidence": "测试人员和运营人员有协作关系"
+      },
+      {
+        "source_entity_id": "ent_entity_5",
+        "source_name": "公司",
+        "target_entity_id": "ent_entity_6",
+        "target_name": "发展",
+        "relation_type": "发展",
+        "evidence": "公司发展就会越来越好"
+      }
+    ],
+    "ablation": [
+      {
+        "entity_id": "ent_entity_1",
+        "entity_name": "测试",
+        "impact_level": "high",
+        "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+        "system_risk": "unknown"
+      },
+      {
+        "entity_id": "ent_entity_2",
+        "entity_name": "测试人员",
+        "impact_level": "high",
+        "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+        "system_risk": "unknown"
+      },
+      {
+        "entity_id": "ent_entity_3",
+        "entity_name": "运营人员",
+        "impact_level": "medium",
+        "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+        "system_risk": "unknown"
+      },
+      {
+        "entity_id": "ent_entity_4",
+        "entity_name": "协作关系",
+        "impact_level": "medium",
+        "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+        "system_risk": "unknown"
+      },
+      {
+        "entity_id": "ent_entity_5",
+        "entity_name": "公司",
+        "impact_level": "high",
+        "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+        "system_risk": "unknown"
+      },
+      {
+        "entity_id": "ent_entity_6",
+        "entity_name": "发展",
+        "impact_level": "low",
+        "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+        "system_risk": "unknown"
+      }
+    ],
+    "ontology": {
+      "workflow_version": "v1-linear-file-workflow",
+      "generated_at": "2026-04-27T00:12:26.365Z",
+      "project_id": "demo",
+      "system_summary": {
+        "entity_count": 6,
+        "relation_count": 2,
+        "ablation_count": 6
+      },
+      "entities": [
+        {
+          "id": "ent_entity_1",
+          "name": "测试",
+          "summary": "文档中提到的测试活动或测试过程",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "这是一个测试"
+          ]
+        },
+        {
+          "id": "ent_entity_2",
+          "name": "测试人员",
+          "summary": "负责测试的人员",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "测试人员和运营人员有协作关系"
+          ]
+        },
+        {
+          "id": "ent_entity_3",
+          "name": "运营人员",
+          "summary": "负责运营的人员",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "测试人员和运营人员有协作关系"
+          ]
+        },
+        {
+          "id": "ent_entity_4",
+          "name": "协作关系",
+          "summary": "测试人员和运营人员之间的协作关系",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "测试人员和运营人员有协作关系"
+          ]
+        },
+        {
+          "id": "ent_entity_5",
+          "name": "公司",
+          "summary": "文档中提到的公司",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "公司发展就会越来越好"
+          ]
+        },
+        {
+          "id": "ent_entity_6",
+          "name": "发展",
+          "summary": "公司的发展或进步",
+          "type": "workflow-entity",
+          "level": 1,
+          "source": "linear-workflow",
+          "properties": {},
+          "abilities": [],
+          "citations": [
+            "公司发展就会越来越好"
+          ]
+        }
+      ],
+      "relations": [
+        {
+          "source_entity_id": "ent_entity_2",
+          "source_name": "测试人员",
+          "target_entity_id": "ent_entity_3",
+          "target_name": "运营人员",
+          "relation_type": "协作",
+          "evidence": "测试人员和运营人员有协作关系"
+        },
+        {
+          "source_entity_id": "ent_entity_5",
+          "source_name": "公司",
+          "target_entity_id": "ent_entity_6",
+          "target_name": "发展",
+          "relation_type": "发展",
+          "evidence": "公司发展就会越来越好"
+        }
+      ],
+      "ablation": [
+        {
+          "entity_id": "ent_entity_1",
+          "entity_name": "测试",
+          "impact_level": "high",
+          "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+          "system_risk": "unknown"
+        },
+        {
+          "entity_id": "ent_entity_2",
+          "entity_name": "测试人员",
+          "impact_level": "high",
+          "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+          "system_risk": "unknown"
+        },
+        {
+          "entity_id": "ent_entity_3",
+          "entity_name": "运营人员",
+          "impact_level": "medium",
+          "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+          "system_risk": "unknown"
+        },
+        {
+          "entity_id": "ent_entity_4",
+          "entity_name": "协作关系",
+          "impact_level": "medium",
+          "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+          "system_risk": "unknown"
+        },
+        {
+          "entity_id": "ent_entity_5",
+          "entity_name": "公司",
+          "impact_level": "high",
+          "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+          "system_risk": "unknown"
+        },
+        {
+          "entity_id": "ent_entity_6",
+          "entity_name": "发展",
+          "impact_level": "low",
+          "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+          "system_risk": "unknown"
+        }
+      ]
+    },
+    "ontologies": [
+      {
+        "entity_id": "ent_entity_1",
+        "entity_name": "测试",
+        "filename": "测试.json",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_1",
+          "entity_name": "测试",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_1",
+            "name": "测试",
+            "summary": "文档中提到的测试活动或测试过程",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "这是一个测试"
+            ]
+          },
+          "relations": [],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_1",
+              "entity_name": "测试",
+              "impact_level": "high",
+              "impact_reason": "测试活动是该工作流的核心环节，消融后直接影响质量验证流程。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "precheck": {
+          "entity_id": "ent_entity_1",
+          "entity_name": "测试",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"64%\",\"reason\":\"从name看，对象名称为“测试”，这是一个高度泛化的过程性词汇，既可以指真实存在的测试活动，也可能只是占位或示例名称，因此名称本身会降低其作为明确真实本体的确定性。结合abilities看，abilities为空，说明没有提供可执行能力、功能边界或可验证特征，因此无法通过能力特征来强化其独立存在性，这会进一步削弱真实性判断。再结合interactions看，relations为空，说明该对象缺少与其他实体的交互链条，真实本体通常会在系统中表现出输入、输出、依赖或约束关系，而这里缺乏这种关系证据，所以其真实本体性不能被强力支撑。不过，summary明确说明其为“文档中提到的测试活动或测试过程”，citation又给出“这是一个测试”，ablation中还指出其为核心环节、消融后会直接影响质量验证流程，这形成了“被文档提及→在流程中承担作用→删除后产生系统影响”的因果链，因此说明它并非完全虚构，而是至少在该工作流语境中被当作有效对象处理。综合来看，存在流程角色与消融影响这一正向证据，但名称过于泛化、能力缺失、交互缺失又显著降低了其作为稳定真实本体的可信度，所以判断为中等偏上的概率。\"}",
+            "raw": null
+          }
+        }
+      },
+      {
+        "entity_id": "ent_entity_2",
+        "entity_name": "测试人员",
+        "filename": "测试人员.json",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_2",
+          "entity_name": "测试人员",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_2",
+            "name": "测试人员",
+            "summary": "负责测试的人员",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_2",
+              "source_name": "测试人员",
+              "target_entity_id": "ent_entity_3",
+              "target_name": "运营人员",
+              "relation_type": "协作",
+              "evidence": "测试人员和运营人员有协作关系"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_2",
+              "entity_name": "测试人员",
+              "impact_level": "high",
+              "impact_reason": "测试人员是执行测试的关键角色，缺失将导致测试无法实施。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "precheck": {
+          "entity_id": "ent_entity_2",
+          "entity_name": "测试人员",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"95%\",\"reason\":\"名称为“测试人员”，属于现实组织中常见且语义明确的角色称谓；因为其summary直接说明“负责测试的人员”，所以名称与职能描述高度一致，具备稳定的现实指向。abilities虽为空，但这并不直接削弱真实性，因为在工作流抽取中角色常被简化记录为职责节点；反而ablation指出其缺失会导致“测试无法实施”，说明该对象在流程中具有不可替代的功能位置，因此更像真实本体而非随意生成的标签。interactions方面，存在与“运营人员”的明确“协作”关系，且有对应证据文本支撑；因为真实工作角色通常通过协作关系嵌入业务流程，所以这种可验证的外部联系进一步增强其真实性。综合来看，名称清晰、职责闭环、关系可落地、缺失影响显著，因此该对象作为真实本体的概率很高。\"}",
+            "raw": null
+          }
+        }
+      },
+      {
+        "entity_id": "ent_entity_3",
+        "entity_name": "运营人员",
+        "filename": "运营人员.json",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_3",
+          "entity_name": "运营人员",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_3",
+            "name": "运营人员",
+            "summary": "负责运营的人员",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_2",
+              "source_name": "测试人员",
+              "target_entity_id": "ent_entity_3",
+              "target_name": "运营人员",
+              "relation_type": "协作",
+              "evidence": "测试人员和运营人员有协作关系"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_3",
+              "entity_name": "运营人员",
+              "impact_level": "medium",
+              "impact_reason": "运营人员与测试人员协作，部分影响流程但非核心。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "precheck": {
+          "entity_id": "ent_entity_3",
+          "entity_name": "运营人员",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"94%\",\"reason\":\"从name看，“运营人员”是标准、常见且语义稳定的岗位称谓，能够明确指向现实组织中的一类真实角色，因此名称层面具备较强本体指向性；从abilities看，虽然未列出具体能力，信息存在缺失，但summary中给出“负责运营的人员”，这说明其职能定义与名称一致，形成了“岗位名称—职责描述”之间的因果闭环，因此不像随机拼接或虚构概念；从interactions看，该对象与“测试人员”存在明确的“协作”关系，并且有证据句支撑，这表明它不仅被单独命名，还被嵌入到实际流程关系网络中，因为真实工作流实体通常会与其他岗位产生稳定交互，所以关系存在会提升其作为真实本体的概率；同时，ablation中显示移除该实体会产生“medium”级影响，说明它对系统有实际作用但并非唯一核心，这种“有作用但非绝对核心”的特征更符合真实组织岗位的分工状态。综合来看，名称真实、职责可解释、关系可验证、影响程度合理，因此判断其作为真实本体的概率较高；但由于abilities字段为空、证据较少，仍保留少量不确定性。\"}",
+            "raw": null
+          }
+        }
+      },
+      {
+        "entity_id": "ent_entity_4",
+        "entity_name": "协作关系",
+        "filename": "协作关系.json",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.365Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_4",
+          "entity_name": "协作关系",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_4",
+            "name": "协作关系",
+            "summary": "测试人员和运营人员之间的协作关系",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "测试人员和运营人员有协作关系"
+            ]
+          },
+          "relations": [],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_4",
+              "entity_name": "协作关系",
+              "impact_level": "medium",
+              "impact_reason": "协作关系是连接测试与运营的纽带，移除后降低协同效率。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "precheck": {
+          "entity_id": "ent_entity_4",
+          "entity_name": "协作关系",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"24%\",\"reason\":\"该对象的name是“协作关系”，首先表明它更像一种抽象关系而不是可独立存在的真实本体；因为真实本体通常具有相对稳定的边界、属性或可识别载体，而这里的summary仅说明“测试人员和运营人员之间的协作关系”，所以其定义依赖于两个主体而不能独立成立。其次，abilities为空，说明该对象没有表现出自身可执行能力；因为若是高概率真实本体，通常会有可观察功能、状态或行为特征，而这里缺少这类证据，所以本体性被进一步削弱。再次，interactions对应的relations为空，仅有一条citation“测试人员和运营人员有协作关系”，这意味着系统只确认存在一种连接描述，而没有展示该对象与其他对象的独立交互网络；因为缺少可验证的交互结构，所以更像语义标签或关系占位符。最后，ablation中指出移除后会“降低协同效率”，这说明它在流程建模中具有功能价值；但这种价值来自其作为连接概念的作用，而不是证明其是独立客观实体。因此，综合name的抽象性、abilities的缺失、interactions的不足以及ablation仅证明建模必要性，可以判断它作为真实本体的概率较低。\"}",
+            "raw": null
+          }
+        }
+      },
+      {
+        "entity_id": "ent_entity_5",
+        "entity_name": "公司",
+        "filename": "公司.json",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.366Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_5",
+          "entity_name": "公司",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_5",
+            "name": "公司",
+            "summary": "文档中提到的公司",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_5",
+              "source_name": "公司",
+              "target_entity_id": "ent_entity_6",
+              "target_name": "发展",
+              "relation_type": "发展",
+              "evidence": "公司发展就会越来越好"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_5",
+              "entity_name": "公司",
+              "impact_level": "high",
+              "impact_reason": "公司作为整体目标实体，消融后失去发展方向和上下文。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "precheck": {
+          "entity_id": "ent_entity_5",
+          "entity_name": "公司",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"96%\",\"reason\":\"从name看，“公司”是现实世界中高度常见且边界清晰的组织实体称谓，因此其作为真实本体的先验概率较高；从abilities看，虽然未显式给出能力列表，但这不会直接削弱真实性，因为公司作为组织通常以经营、管理、发展等活动存在，而文中至少隐含其具备可发展这一组织属性；从interactions看，存在与“发展”的明确关系，且证据“公司发展就会越来越好”表明该实体不仅被单独提及，还参与了因果语义链，即先有公司这一主体，随后发生发展过程，进而导向“越来越好”的结果，因此它不是随机词汇而是承担主体作用的对象；再结合ablation信息，消融后会“失去发展方向和上下文”，说明在系统中“公司”是核心承载实体，因为删除它会破坏关系结构，所以反向证明其本体性较强。虽然名称较泛化、缺少具体公司名，导致无法判定是某一家特定公司，但泛称组织实体依然可以是真实本体，因此综合判断其作为真实本体的概率很高。\"}",
+            "raw": null
+          }
+        }
+      },
+      {
+        "entity_id": "ent_entity_6",
+        "entity_name": "发展",
+        "filename": "发展.json",
+        "ontology": {
+          "workflow_version": "v1-linear-file-workflow",
+          "generated_at": "2026-04-27T00:12:26.366Z",
+          "project_id": "demo",
+          "scope": "entity",
+          "entity_id": "ent_entity_6",
+          "entity_name": "发展",
+          "system_summary": {
+            "entity_count": 6,
+            "relation_count": 2,
+            "ablation_count": 6
+          },
+          "entity": {
+            "id": "ent_entity_6",
+            "name": "发展",
+            "summary": "公司的发展或进步",
+            "type": "workflow-entity",
+            "level": 1,
+            "source": "linear-workflow",
+            "properties": {},
+            "abilities": [],
+            "citations": [
+              "公司发展就会越来越好"
+            ]
+          },
+          "relations": [
+            {
+              "source_entity_id": "ent_entity_5",
+              "source_name": "公司",
+              "target_entity_id": "ent_entity_6",
+              "target_name": "发展",
+              "relation_type": "发展",
+              "evidence": "公司发展就会越来越好"
+            }
+          ],
+          "ablation": [
+            {
+              "entity_id": "ent_entity_6",
+              "entity_name": "发展",
+              "impact_level": "low",
+              "impact_reason": "发展是一个抽象概念，对具体工作流执行影响较小。",
+              "system_risk": "unknown"
+            }
+          ]
+        },
+        "precheck": {
+          "entity_id": "ent_entity_6",
+          "entity_name": "发展",
+          "precheck_probability": "",
+          "precheck_reason": "",
+          "raw": {
+            "model": "gpt-5.4",
+            "text": "{\"probability\":\"22%\",\"reason\":\"从 name 看，“发展”是表示过程或状态变化的抽象概念，而不是边界清晰、可独立存在的具体本体，因此先天作为真实本体的确定性较弱；从 abilities 看，该对象没有任何 abilities，说明系统中没有为其定义可执行能力或可观察功能，因而难以支持其作为独立实体存在；从 interactions 看，唯一关系是“公司→发展”，且证据仅为“公司发展就会越来越好”，这更像是在描述公司的一种结果属性或趋势，而不是一个能与其他对象稳定交互的独立对象；再结合 ablation 中“移除影响低”，可推出该对象对工作流结构和执行不是核心节点，因此更接近语义标签或状态描述。综合这些因果链条：因为名称抽象、能力缺失、交互单薄且依附于“公司”、删除影响又低，所以“发展”作为真实本体的概率较低。\"}",
+            "raw": null
+          }
+        }
+      }
+    ],
+    "probabilityPrecheck": [
+      {
+        "entity_id": "ent_entity_1",
+        "entity_name": "测试",
+        "precheck_probability": "",
+        "precheck_reason": "",
+        "raw": {
+          "model": "gpt-5.4",
+          "text": "{\"probability\":\"64%\",\"reason\":\"从name看，对象名称为“测试”，这是一个高度泛化的过程性词汇，既可以指真实存在的测试活动，也可能只是占位或示例名称，因此名称本身会降低其作为明确真实本体的确定性。结合abilities看，abilities为空，说明没有提供可执行能力、功能边界或可验证特征，因此无法通过能力特征来强化其独立存在性，这会进一步削弱真实性判断。再结合interactions看，relations为空，说明该对象缺少与其他实体的交互链条，真实本体通常会在系统中表现出输入、输出、依赖或约束关系，而这里缺乏这种关系证据，所以其真实本体性不能被强力支撑。不过，summary明确说明其为“文档中提到的测试活动或测试过程”，citation又给出“这是一个测试”，ablation中还指出其为核心环节、消融后会直接影响质量验证流程，这形成了“被文档提及→在流程中承担作用→删除后产生系统影响”的因果链，因此说明它并非完全虚构，而是至少在该工作流语境中被当作有效对象处理。综合来看，存在流程角色与消融影响这一正向证据，但名称过于泛化、能力缺失、交互缺失又显著降低了其作为稳定真实本体的可信度，所以判断为中等偏上的概率。\"}",
+          "raw": null
+        }
+      },
+      {
+        "entity_id": "ent_entity_2",
+        "entity_name": "测试人员",
+        "precheck_probability": "",
+        "precheck_reason": "",
+        "raw": {
+          "model": "gpt-5.4",
+          "text": "{\"probability\":\"95%\",\"reason\":\"名称为“测试人员”，属于现实组织中常见且语义明确的角色称谓；因为其summary直接说明“负责测试的人员”，所以名称与职能描述高度一致，具备稳定的现实指向。abilities虽为空，但这并不直接削弱真实性，因为在工作流抽取中角色常被简化记录为职责节点；反而ablation指出其缺失会导致“测试无法实施”，说明该对象在流程中具有不可替代的功能位置，因此更像真实本体而非随意生成的标签。interactions方面，存在与“运营人员”的明确“协作”关系，且有对应证据文本支撑；因为真实工作角色通常通过协作关系嵌入业务流程，所以这种可验证的外部联系进一步增强其真实性。综合来看，名称清晰、职责闭环、关系可落地、缺失影响显著，因此该对象作为真实本体的概率很高。\"}",
+          "raw": null
+        }
+      },
+      {
+        "entity_id": "ent_entity_3",
+        "entity_name": "运营人员",
+        "precheck_probability": "",
+        "precheck_reason": "",
+        "raw": {
+          "model": "gpt-5.4",
+          "text": "{\"probability\":\"94%\",\"reason\":\"从name看，“运营人员”是标准、常见且语义稳定的岗位称谓，能够明确指向现实组织中的一类真实角色，因此名称层面具备较强本体指向性；从abilities看，虽然未列出具体能力，信息存在缺失，但summary中给出“负责运营的人员”，这说明其职能定义与名称一致，形成了“岗位名称—职责描述”之间的因果闭环，因此不像随机拼接或虚构概念；从interactions看，该对象与“测试人员”存在明确的“协作”关系，并且有证据句支撑，这表明它不仅被单独命名，还被嵌入到实际流程关系网络中，因为真实工作流实体通常会与其他岗位产生稳定交互，所以关系存在会提升其作为真实本体的概率；同时，ablation中显示移除该实体会产生“medium”级影响，说明它对系统有实际作用但并非唯一核心，这种“有作用但非绝对核心”的特征更符合真实组织岗位的分工状态。综合来看，名称真实、职责可解释、关系可验证、影响程度合理，因此判断其作为真实本体的概率较高；但由于abilities字段为空、证据较少，仍保留少量不确定性。\"}",
+          "raw": null
+        }
+      },
+      {
+        "entity_id": "ent_entity_4",
+        "entity_name": "协作关系",
+        "precheck_probability": "",
+        "precheck_reason": "",
+        "raw": {
+          "model": "gpt-5.4",
+          "text": "{\"probability\":\"24%\",\"reason\":\"该对象的name是“协作关系”，首先表明它更像一种抽象关系而不是可独立存在的真实本体；因为真实本体通常具有相对稳定的边界、属性或可识别载体，而这里的summary仅说明“测试人员和运营人员之间的协作关系”，所以其定义依赖于两个主体而不能独立成立。其次，abilities为空，说明该对象没有表现出自身可执行能力；因为若是高概率真实本体，通常会有可观察功能、状态或行为特征，而这里缺少这类证据，所以本体性被进一步削弱。再次，interactions对应的relations为空，仅有一条citation“测试人员和运营人员有协作关系”，这意味着系统只确认存在一种连接描述，而没有展示该对象与其他对象的独立交互网络；因为缺少可验证的交互结构，所以更像语义标签或关系占位符。最后，ablation中指出移除后会“降低协同效率”，这说明它在流程建模中具有功能价值；但这种价值来自其作为连接概念的作用，而不是证明其是独立客观实体。因此，综合name的抽象性、abilities的缺失、interactions的不足以及ablation仅证明建模必要性，可以判断它作为真实本体的概率较低。\"}",
+          "raw": null
+        }
+      },
+      {
+        "entity_id": "ent_entity_5",
+        "entity_name": "公司",
+        "precheck_probability": "",
+        "precheck_reason": "",
+        "raw": {
+          "model": "gpt-5.4",
+          "text": "{\"probability\":\"96%\",\"reason\":\"从name看，“公司”是现实世界中高度常见且边界清晰的组织实体称谓，因此其作为真实本体的先验概率较高；从abilities看，虽然未显式给出能力列表，但这不会直接削弱真实性，因为公司作为组织通常以经营、管理、发展等活动存在，而文中至少隐含其具备可发展这一组织属性；从interactions看，存在与“发展”的明确关系，且证据“公司发展就会越来越好”表明该实体不仅被单独提及，还参与了因果语义链，即先有公司这一主体，随后发生发展过程，进而导向“越来越好”的结果，因此它不是随机词汇而是承担主体作用的对象；再结合ablation信息，消融后会“失去发展方向和上下文”，说明在系统中“公司”是核心承载实体，因为删除它会破坏关系结构，所以反向证明其本体性较强。虽然名称较泛化、缺少具体公司名，导致无法判定是某一家特定公司，但泛称组织实体依然可以是真实本体，因此综合判断其作为真实本体的概率很高。\"}",
+          "raw": null
+        }
+      },
+      {
+        "entity_id": "ent_entity_6",
+        "entity_name": "发展",
+        "precheck_probability": "",
+        "precheck_reason": "",
+        "raw": {
+          "model": "gpt-5.4",
+          "text": "{\"probability\":\"22%\",\"reason\":\"从 name 看，“发展”是表示过程或状态变化的抽象概念，而不是边界清晰、可独立存在的具体本体，因此先天作为真实本体的确定性较弱；从 abilities 看，该对象没有任何 abilities，说明系统中没有为其定义可执行能力或可观察功能，因而难以支持其作为独立实体存在；从 interactions 看，唯一关系是“公司→发展”，且证据仅为“公司发展就会越来越好”，这更像是在描述公司的一种结果属性或趋势，而不是一个能与其他对象稳定交互的独立对象；再结合 ablation 中“移除影响低”，可推出该对象对工作流结构和执行不是核心节点，因此更接近语义标签或状态描述。综合这些因果链条：因为名称抽象、能力缺失、交互单薄且依附于“公司”、删除影响又低，所以“发展”作为真实本体的概率较低。\"}",
+          "raw": null
+        }
+      }
+    ],
+    "projectId": "demo",
+    "documentText": "这是一个测试，测试人员和运营人员有协作关系，公司发展就会越来越好。"
+  },
+  "updated_at": "2026-04-27T00:14:09.822Z"
+}

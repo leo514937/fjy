@@ -1,5 +1,7 @@
 import { WorkspaceDashboard } from '@/features/workspace/WorkspaceDashboard';
+import { useWorkspaceState } from '@/features/workspace/useWorkspaceState';
 
 export function XiaoGuGitDashboard() {
-  return <WorkspaceDashboard />;
+  const workspace = useWorkspaceState();
+  return <WorkspaceDashboard workspace={workspace} />;
 }

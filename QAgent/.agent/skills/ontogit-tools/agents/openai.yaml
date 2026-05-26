@@ -1,7 +1,0 @@
-interface:
-  display_name: "OntoGit Tools CLI"
-  short_description: "Guide qagent to use OntoGit CLI reliably"
-  default_prompt: "Use $ontogit-tools-cli when the user asks about OntoGit project lists, reads, writes, or OntoGit-linked probability inference; if the user only wants a standalone probability judgment, prefer $probability-cli instead. Resolve `..\\OntoGit\\ontogit_tools.sh` from the QAgent repo root and choose `list/read/write/infer` before continuing."
-
-policy:
-  allow_implicit_invocation: true

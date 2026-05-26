@@ -1,19 +1,24 @@
-import { useState } from 'react';
+import { lazy, Suspense, useEffect, useEffectEvent, useState } from 'react';
 import {
   BookOpen,
   Blocks,
+  ChevronDown,
   GitBranch,
+  Plus,
   Menu,
   MessageSquareText,
   Network,
+  Loader2,
   Sparkles,
   Sun,
   Moon,
+  RefreshCcw,
   Zap,
   Layers,
   Atom,
   Link2,
   TreePine,
+  FileUp,
 } from 'lucide-react';
 
 import { Separator } from '@/components/ui/separator';
@@ -22,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sidebar as AssistantSidebar } from '@/components/assistant/Sidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
@@ -29,13 +35,82 @@ import { useOntologyAssistantState } from '@/hooks/useOntologyAssistantState';
 import { OntologyProvider } from '@/features/ontology/context';
 import { LAYER_FILTERS } from '@/features/ontology/layerFilters';
 import { useOntologyContext } from '@/features/ontology/useOntologyContext';
-import { ExplorerPage } from '@/app/pages/ExplorerPage';
-import { AssistantPage } from '@/app/pages/AssistantPage';
-import { LabPage } from '@/app/pages/LabPage';
-import { WorkspacePage } from '@/app/pages/WorkspacePage';
 import { EnterGateIntro } from '@/components/EnterGateIntro';
 import { SearchPanel } from '@/components/SearchPanel';
+import { NewProjectDialog } from '@/features/workspace/components/NewProjectDialog';
+import { fetchXgProjects, initXgProject, type XgProject } from '@/features/workspace/api';
+import { getStoredSelectedProjectId, setStoredSelectedProjectId, subscribeSelectedProjectIdChange } from '@/features/workspace/selectedProject';
+import { subscribeRepositorySync } from '@/shared/events/repositorySync';
 import type { Entity } from '@/types/ontology';
+import { toast } from 'sonner';
+
+const loadAssistantPage = () => import('@/app/pages/AssistantPage').then((module) => ({ default: module.AssistantPage }));
+const loadExplorerPage = () => import('@/app/pages/ExplorerPage').then((module) => ({ default: module.ExplorerPage }));
+const loadFileWorkflowPage = () => import('@/app/pages/FileWorkflowPage').then((module) => ({ default: module.FileWorkflowPage }));
+const loadFileWorkflowV2Page = () => import('@/app/pages/FileWorkflowV2Page').then((module) => ({ default: module.FileWorkflowV2Page }));
+const loadLabPage = () => import('@/app/pages/LabPage').then((module) => ({ default: module.LabPage }));
+const loadWorkspacePage = () => import('@/app/pages/WorkspacePage').then((module) => ({ default: module.WorkspacePage }));
+
+const AssistantPage = lazy(loadAssistantPage);
+const ExplorerPage = lazy(loadExplorerPage);
+const FileWorkflowPage = lazy(loadFileWorkflowPage);
+const FileWorkflowV2Page = lazy(loadFileWorkflowV2Page);
+const LabPage = lazy(loadLabPage);
+const WorkspacePage = lazy(loadWorkspacePage);
+
+function PageLoader({ label }: { label: string }) {
+  return (
+    <div className="h-full w-full flex items-center justify-center bg-background">
+      <div className="text-center space-y-3">
+        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <p className="text-sm text-muted-foreground">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function formatRefreshTime(value: string | null): string {
+  if (!value) {
+    return '最后刷新：暂无';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '最后刷新：暂无';
+  }
+
+  return `最后刷新：${new Intl.DateTimeFormat('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(date)}`;
+}
+
+function formatProjectLabel(fallbackProjectId: string): string {
+  if (fallbackProjectId.trim()) {
+    return fallbackProjectId.trim();
+  }
+  return 'demo';
+}
+
+type OntologyTabKey = 'assistant' | 'lab' | 'explorer';
+
+function prefetchOntologyTab(tab: OntologyTabKey) {
+  switch (tab) {
+    case 'assistant':
+      void loadAssistantPage();
+      break;
+    case 'lab':
+      void loadLabPage();
+      break;
+    case 'explorer':
+      void loadExplorerPage();
+      break;
+    default:
+      break;
+  }
+}
 
 const GlobalSidebar = ({
   domainCount,
@@ -164,9 +239,19 @@ const GlobalSidebar = ({
   </div>
 );
 
-function AppShellContent() {
-  const [activeTab, setActiveTab] = useState('lab');
+interface AppShellContentProps {
+  activeTab: string;
+  setActiveTab: (value: string) => void;
+}
+
+function AppShellContent({ activeTab, setActiveTab }: AppShellContentProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [workspaceProjects, setWorkspaceProjects] = useState<XgProject[]>([]);
+  const [workspaceProjectsLoading, setWorkspaceProjectsLoading] = useState(false);
+  const [selectedWorkspaceProjectId, setSelectedWorkspaceProjectId] = useState<string>(() => getStoredSelectedProjectId());
+  const [newProjectId, setNewProjectId] = useState('');
+  const [newProjectName, setNewProjectName] = useState('');
+  const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
@@ -187,6 +272,8 @@ function AppShellContent() {
 
   const {
     loading,
+    refreshing,
+    lastRefreshAt,
     error,
     filteredEntities,
     filteredCrossReferences,
@@ -195,13 +282,74 @@ function AppShellContent() {
     setSelectedLayer,
     selectEntity,
     searchInLayer,
+    refreshKnowledgeGraph,
   } = useOntologyContext();
   const assistantState = useOntologyAssistantState(selectedEntity);
+  const shouldLoadOntologyData = activeTab === 'lab' || activeTab === 'explorer';
+
+  useEffect(() => subscribeSelectedProjectIdChange((projectId) => {
+    setSelectedWorkspaceProjectId(projectId);
+  }), []);
+
+  useEffect(() => {
+    const selectedProject = workspaceProjects.find((project) => project.id === selectedWorkspaceProjectId);
+    if (!selectedProject && workspaceProjects.length > 0) {
+      setSelectedWorkspaceProjectId(workspaceProjects[0].id);
+    }
+  }, [selectedWorkspaceProjectId, workspaceProjects]);
+
+  const loadWorkspaceProjects = useEffectEvent(async () => {
+    setWorkspaceProjectsLoading(true);
+    try {
+      const data = await fetchXgProjects();
+      setWorkspaceProjects(data);
+    } catch {
+      setWorkspaceProjects([]);
+    } finally {
+      setWorkspaceProjectsLoading(false);
+    }
+  });
+
+  useEffect(() => subscribeRepositorySync(() => {
+    void loadWorkspaceProjects();
+  }), []);
 
   const handleSelectEntity = (entity: Entity) => {
     selectEntity(entity);
     setSidebarOpen(false);
     setActiveTab('explorer');
+  };
+
+  const handleWorkspaceProjectChange = (projectId: string) => {
+    const nextProjectId = projectId.trim();
+    if (!nextProjectId || nextProjectId === selectedWorkspaceProjectId) {
+      return;
+    }
+    setSelectedWorkspaceProjectId(nextProjectId);
+    setStoredSelectedProjectId(nextProjectId);
+  };
+
+  const handleGlobalInitProject = async () => {
+    const nextProjectId = newProjectId.trim();
+    if (!nextProjectId) {
+      return;
+    }
+
+    try {
+      await initXgProject({
+        project_id: nextProjectId,
+        name: newProjectName.trim() || nextProjectId,
+      });
+      toast.success('项目初始化完成');
+      setSelectedWorkspaceProjectId(nextProjectId);
+      setStoredSelectedProjectId(nextProjectId);
+      setIsNewProjectOpen(false);
+      setNewProjectId('');
+      setNewProjectName('');
+      await loadWorkspaceProjects();
+    } catch (error) {
+      toast.error('初始化失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    }
   };
 
   const commonSidebarProps = {
@@ -216,30 +364,21 @@ function AppShellContent() {
     onSearch: searchInLayer,
     onSelectEntity: handleSelectEntity,
   };
-
-  // 只有在完全没有数据（初次启动）且正在加载时，才显示全屏 Loading
-  // 之后的后台刷新（refreshKnowledgeGraph）将不再导致整页闪烁
-  if (loading && !filteredEntities?.length) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">正在加载 本体知识库 多层知识图谱...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center text-destructive">
-          <p className="text-lg font-semibold mb-2">加载失败</p>
-          <p className="text-muted-foreground">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const showLoadingBadge = loading && !filteredEntities?.length;
+  const statusBadge = showLoadingBadge
+    ? '图谱加载中'
+    : refreshing
+      ? '图谱刷新中'
+      : error
+        ? '数据更新失败'
+        : null;
+  const refreshTimeLabel = formatRefreshTime(lastRefreshAt);
+  const handleGlobalRefresh = () => {
+    if (!shouldLoadOntologyData) {
+      return;
+    }
+    void refreshKnowledgeGraph({ silent: true, forceRefresh: true });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground overflow-y-auto lg:h-screen lg:overflow-hidden">
@@ -265,6 +404,92 @@ function AppShellContent() {
                 onSelectEntity={handleSelectEntity}
               />
             </div>
+            <DropdownMenu onOpenChange={(open) => {
+              if (open && !workspaceProjectsLoading) {
+                void loadWorkspaceProjects();
+              }
+            }}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="hidden h-9 min-w-[180px] justify-between rounded-xl border-border/40 bg-background/70 px-3 text-left text-[10px] font-bold text-foreground/80 sm:inline-flex"
+                  title="切换工作区项目"
+                >
+                  <span className="min-w-0 truncate">
+                    {formatProjectLabel(selectedWorkspaceProjectId)}
+                  </span>
+                  <ChevronDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 rounded-2xl border-border/40 p-2">
+                <DropdownMenuLabel className="px-2 pb-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">
+                  工作区项目
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="max-h-80 space-y-1 overflow-y-auto pt-2">
+                  {workspaceProjectsLoading && workspaceProjects.length === 0 ? (
+                    <div className="px-3 py-4 text-sm text-muted-foreground">正在加载项目列表...</div>
+                  ) : workspaceProjects.length === 0 ? (
+                    <div className="px-3 py-4 text-sm text-muted-foreground">暂无可切换项目</div>
+                  ) : workspaceProjects.map((project) => {
+                    const active = project.id === selectedWorkspaceProjectId;
+                    return (
+                      <DropdownMenuItem
+                        key={project.id}
+                        className={cn(
+                          'cursor-pointer rounded-xl border px-3 py-2.5 text-left transition-all',
+                          active
+                            ? 'border-primary/25 bg-primary/10 text-primary'
+                            : 'border-border/40 bg-background/70 hover:bg-muted/60',
+                        )}
+                        onSelect={() => handleWorkspaceProjectChange(project.id)}
+                      >
+                        <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                          <div className="min-w-0 truncate text-sm font-bold">{project.id}</div>
+                          {active && (
+                            <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/10 px-2 py-0 text-[10px] font-black text-primary">
+                              当前
+                            </Badge>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {statusBadge && (
+              <Badge
+                variant={error ? 'destructive' : 'outline'}
+                className={cn(
+                  "hidden h-9 rounded-xl px-3 text-[10px] font-black uppercase tracking-widest sm:inline-flex",
+                  !error && "border-primary/20 bg-primary/5 text-primary",
+                )}
+              >
+                {showLoadingBadge || refreshing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                {statusBadge}
+              </Badge>
+            )}
+            <Badge
+              variant="outline"
+              className={cn(
+                "hidden h-9 rounded-xl border-border/40 bg-background/70 px-3 text-[10px] font-bold text-muted-foreground sm:inline-flex",
+                refreshing && "border-primary/20 text-primary",
+              )}
+            >
+              {refreshing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              {refreshTimeLabel}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleGlobalRefresh}
+              disabled={!shouldLoadOntologyData || loading || refreshing}
+              className="h-9 w-9 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all ml-1 relative overflow-hidden"
+              title="刷新图谱与概念速览"
+            >
+              {refreshing ? <Loader2 className="h-[1.05rem] w-[1.05rem] animate-spin" /> : <RefreshCcw className="h-[1.05rem] w-[1.05rem]" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -283,6 +508,25 @@ function AppShellContent() {
                 )} />
               </div>
             </Button>
+            <NewProjectDialog
+              open={isNewProjectOpen}
+              onOpenChange={setIsNewProjectOpen}
+              newProjectId={newProjectId}
+              onProjectIdChange={setNewProjectId}
+              newProjectName={newProjectName}
+              onProjectNameChange={setNewProjectName}
+              onSubmit={handleGlobalInitProject}
+              trigger={(
+                <Button
+                  size="sm"
+                  className="h-9 rounded-xl px-4 font-black tracking-wide shadow-sm"
+                  title="新建项目"
+                >
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  新建项目
+                </Button>
+              )}
+            />
 
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
               <SheetTrigger asChild>
@@ -321,21 +565,40 @@ function AppShellContent() {
           <div className="flex w-full shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r bg-muted/10 lg:h-full lg:w-[208px] xl:w-[240px]">
             <div className="p-3 sm:p-4 flex flex-col min-h-full gap-4">
               <TabsList className="flex h-auto w-full flex-col gap-1 rounded-3xl border bg-card/10 p-2 shadow-sm shrink-0 min-h-0">
-                <TabsTrigger value="lab" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+                <TabsTrigger
+                  value="lab"
+                  className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all"
+                  onMouseEnter={() => prefetchOntologyTab('lab')}
+                  onFocus={() => prefetchOntologyTab('lab')}
+                >
                   <BookOpen className="mr-3 h-5 w-5 text-primary" />
                   <span className="font-black text-sm uppercase tracking-tight">本体库</span>
                 </TabsTrigger>
-                <TabsTrigger value="assistant" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+                <TabsTrigger
+                  value="assistant"
+                  className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all"
+                  onMouseEnter={() => prefetchOntologyTab('assistant')}
+                  onFocus={() => prefetchOntologyTab('assistant')}
+                >
                   <MessageSquareText className="mr-3 h-5 w-5 text-primary" />
                   <span className="font-black text-sm uppercase tracking-tight">问答助手</span>
                 </TabsTrigger>
-                <TabsTrigger value="explorer" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+                <TabsTrigger
+                  value="explorer"
+                  className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all"
+                  onMouseEnter={() => prefetchOntologyTab('explorer')}
+                  onFocus={() => prefetchOntologyTab('explorer')}
+                >
                   <Zap className="mr-3 h-5 w-5 text-primary" />
                   <span className="font-black text-sm uppercase tracking-tight">本体图谱</span>
                 </TabsTrigger>
-                <TabsTrigger value="workspace" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
-                  <GitBranch className="mr-3 h-5 w-5 text-primary" />
-                  <span className="font-black text-sm uppercase tracking-tight">小故Git</span>
+                <TabsTrigger value="file-workflow" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+                  <FileUp className="mr-3 h-5 w-5 text-primary" />
+                  <span className="font-black text-sm uppercase tracking-tight">文件工作流</span>
+                </TabsTrigger>
+                <TabsTrigger value="file-workflow-v2" className="w-full justify-start rounded-2xl px-3 py-4 data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
+                  <Blocks className="mr-3 h-5 w-5 text-primary" />
+                  <span className="font-black text-sm uppercase tracking-tight">文件工作流 V2</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -359,29 +622,47 @@ function AppShellContent() {
 
 
           <TabsContent value="assistant" className="mt-0 h-full min-h-0 min-w-0 flex-1 animate-in fade-in duration-300">
-            <AssistantPage
-              activeSession={assistantState.activeSession}
-              businessPrompt={assistantState.businessPrompt}
-              executionStages={assistantState.currentExecutionStages}
-              isBusy={assistantState.isBusy}
-              modelName={assistantState.modelName}
-              onAsk={assistantState.onAsk}
-              onBusinessPromptChange={assistantState.setBusinessPrompt}
-              onDraftChange={assistantState.onDraftChange}
-              onModelNameChange={assistantState.setModelName}
-              onUploadFile={assistantState.onUploadFile}
-              onStop={assistantState.onStop}
-              selectedEntityName={selectedEntity?.name}
-            />
+            <Suspense fallback={<PageLoader label="正在加载问答助手..." />}>
+              <AssistantPage
+                activeSession={assistantState.activeSession}
+                businessPrompt={assistantState.businessPrompt}
+                executionStages={assistantState.currentExecutionStages}
+                isBusy={assistantState.isBusy}
+                modelName={assistantState.modelName}
+                onAsk={assistantState.onAsk}
+                onBusinessPromptChange={assistantState.setBusinessPrompt}
+                onDraftChange={assistantState.onDraftChange}
+                onModelNameChange={assistantState.setModelName}
+                onUploadFile={assistantState.onUploadFile}
+                onStop={assistantState.onStop}
+                selectedEntityName={selectedEntity?.name}
+              />
+            </Suspense>
           </TabsContent>
           <TabsContent value="lab" className="mt-0 h-full flex-1 min-h-0 animate-in fade-in duration-300">
-            <LabPage onSelectEntity={(e) => selectEntity(e)} />
+            <Suspense fallback={<PageLoader label="正在加载本体实验室..." />}>
+              <LabPage onSelectEntity={(e) => selectEntity(e)} />
+            </Suspense>
           </TabsContent>
           <TabsContent value="explorer" className="mt-0 h-full flex-1 min-h-0 animate-in fade-in duration-300">
-            <ExplorerPage onSelectEntity={handleSelectEntity} />
+            <Suspense fallback={<PageLoader label="正在加载本体图谱..." />}>
+              <ExplorerPage onSelectEntity={handleSelectEntity} isActive={activeTab === 'explorer'} />
+            </Suspense>
           </TabsContent>
           <TabsContent value="workspace" className="mt-0 h-full flex-1 min-h-0 animate-in fade-in duration-300">
-            <WorkspacePage />
+            <Suspense fallback={<PageLoader label="正在加载工作台..." />}>
+              <WorkspacePage />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="file-workflow" className="mt-0 h-full flex-1 min-h-0 animate-in fade-in duration-300">
+            <Suspense fallback={<PageLoader label="正在加载文件工作流..." />}>
+              <FileWorkflowPage />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="file-workflow-v2" className="mt-0 h-full flex-1 min-h-0 animate-in fade-in duration-300">
+            <Suspense fallback={<PageLoader label="正在加载文件工作流 V2..." />}>
+              <FileWorkflowV2Page />
+            </Suspense>
           </TabsContent>
         </Tabs>
       </main>
@@ -392,11 +673,12 @@ function AppShellContent() {
 }
 
 export function AppShell() {
+  const [activeTab, setActiveTab] = useState('assistant');
+  const shouldLoadOntologyData = activeTab === 'lab' || activeTab === 'explorer';
+
   return (
-    <OntologyProvider>
-      <AppShellContent />
+    <OntologyProvider enabled={shouldLoadOntologyData}>
+      <AppShellContent activeTab={activeTab} setActiveTab={setActiveTab} />
     </OntologyProvider>
   );
 }
-
-

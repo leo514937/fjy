@@ -28,7 +28,7 @@ import {
   MODEL_PRESETS,
 } from '@/hooks/useOntologyAssistantState';
 import {
-  fetchKnowledgeGraphSlice,
+  prefetchKnowledgeGraphSlice,
   type KnowledgeGraphSliceResponse,
 } from '@/features/ontology/api';
 import {
@@ -36,6 +36,7 @@ import {
   saveAssistantGraphOverlay,
   type AssistantGraphOverlay,
 } from '@/features/assistant/api';
+import { getStoredSelectedProjectId, subscribeSelectedProjectIdChange } from '@/features/workspace/selectedProject';
 import { cn } from '@/lib/utils';
 import type { CrossReference, Entity } from '@/types/ontology';
 
@@ -43,7 +44,7 @@ import { ChatArea } from './assistant/ChatArea';
 import { ExecutionFlow } from './assistant/ExecutionFlow';
 import { stopPointerEventPropagation } from './assistant/pointerGuards';
 import type { ConversationExecutionStage, ConversationSession } from './assistant/types';
-import { collectWikimgShowRefs } from './assistant/wikimgGraph';
+import { collectGraphShowRefs } from './assistant/graphRefs';
 import { buildAssistantGraphOverlay } from './assistant/toolGraph';
 
 function rawGraphEntityToEntity(node: AssistantGraphOverlay['nodes'][number]): Entity {
@@ -157,6 +158,7 @@ export function OntologyAssistant({
 }: AssistantProps) {
   const [showFlow, setShowFlow] = useState(false);
   const [draftModelName, setDraftModelName] = useState(modelName);
+  const [selectedProjectId, setSelectedProjectId] = useState(getStoredSelectedProjectId);
   const lastPersistedGraphSignatureRef = useRef<string>('');
   const pendingGraphSignatureRef = useRef<string>('');
   const lastLoadedGraphSignatureRef = useRef<string>('');
@@ -165,8 +167,12 @@ export function OntologyAssistant({
     setDraftModelName(modelName);
   }, [modelName]);
 
+  useEffect(() => subscribeSelectedProjectIdChange((projectId) => {
+    setSelectedProjectId(projectId);
+  }), []);
+
   const viewedRefs = useMemo(
-    () => collectWikimgShowRefs(activeSession?.messages),
+    () => collectGraphShowRefs(activeSession?.messages),
     [activeSession?.messages],
   );
   const [graphSlice, setGraphSlice] = useState<KnowledgeGraphSliceResponse | null>(null);
@@ -186,7 +192,7 @@ export function OntologyAssistant({
       }
 
       try {
-        const slice = await fetchKnowledgeGraphSlice(viewedRefs);
+        const slice = await prefetchKnowledgeGraphSlice(viewedRefs, selectedProjectId);
         if (!cancelled) {
           setGraphSlice(slice);
         }
@@ -207,7 +213,7 @@ export function OntologyAssistant({
     return () => {
       cancelled = true;
     };
-  }, [viewedRefs]);
+  }, [selectedProjectId, viewedRefs]);
 
   useEffect(() => {
     let cancelled = false;
@@ -514,7 +520,7 @@ export function OntologyAssistant({
                     知识图谱
                   </div>
                   <div className="truncate text-[11px] text-muted-foreground">
-                    命中 `./wikimg.sh show`，共 {baseGraphViewedRefs.length} 个节点
+                    命中图谱 `show` 命令，共 {baseGraphViewedRefs.length} 个节点
                   </div>
                 </div>
               </div>
@@ -541,11 +547,11 @@ export function OntologyAssistant({
             </div>
             <div className="space-y-1">
               <div className="text-sm font-semibold text-foreground/90">
-                已识别 `./wikimg.sh show`
+                已识别图谱 `show`
               </div>
               <div className="text-xs leading-5 text-muted-foreground">
                 {graphSlice?.missingRefs?.length
-                  ? `这些引用在当前 markdown 源中未找到：${graphSlice.missingRefs.join('、')}`
+                  ? `这些引用在当前 JSON 源中未找到：${graphSlice.missingRefs.join('、')}`
                   : '但当前知识库里没找到可展示的节点。'}
               </div>
             </div>

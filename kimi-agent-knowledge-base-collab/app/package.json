@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "server": "node ./server.mjs",
-    "server:wikimg": "bash ./start-wikimg-backend.sh",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "tsx --test ./tests/**/*.test.* ./src/**/*.test.*",
     "test:server": "node --test ./server/tests/*.test.mjs",
+    "migrate:entity-ids": "node ./server/scripts/migrateDuplicateEntityIds.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -86,4 +86,3 @@
     "vite": "^7.2.4"
   }
 }
-
