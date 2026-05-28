@@ -1,11 +1,12 @@
 const runtimeImportMeta = import.meta as ImportMeta & { env?: { VITE_API_BASE_URL?: string } };
 const ENV_API_BASE = runtimeImportMeta.env?.VITE_API_BASE_URL ?? '';
-const DEV_FALLBACK_API_BASE = typeof window !== 'undefined' && (
-  window.location.port === '5173'
-  || window.location.port === '4173'
-)
-  ? 'http://localhost:8787'
-  : '';
+export function getDevFallbackApiBase(port = typeof window !== 'undefined' ? window.location.port : ''): string {
+  if (port === '5173' || port === '5174' || port === '4173') {
+    return 'http://localhost:8787';
+  }
+  return '';
+}
+const DEV_FALLBACK_API_BASE = getDevFallbackApiBase();
 const API_BASE = ENV_API_BASE || DEV_FALLBACK_API_BASE;
 const AUTH_TOKEN_STORAGE_KEY = 'xg_access_token';
 const AUTH_USERNAME = 'mogong';

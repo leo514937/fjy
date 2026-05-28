@@ -5,6 +5,12 @@
 - 已将最新代码推送至 GitHub 仓库。
 
 ## 已完成
+- [x] 为 Workflow V2 的 Ablation 面板添加「全屏」查看功能，方便放大查看消融分析详细信息。
+- [x] **性能优化：** 彻底重构 Workflow V2 中 DAG 图的鼠标拖动平移逻辑，通过绕过 React 状态直接修改底层 DOM 的 `transform`，解决了由于高频鼠标事件导致整个巨型页面每秒 60 次重绘带来的极其卡顿的问题，实现 60fps 丝滑拖动。
+- [x] 为 Workflow V2 的 DAG 图添加「全屏」查看按钮，支持沉浸式交互体验。
+- [x] 将 Workflow V2 中 DAG 图的显示改为类似本体图谱的固定大小幕布形式，支持鼠标拖动画布平移视野和缩放操作。
+- [x] 修复 Workflow V2 弹窗过程视图（DialogContent）因默认 `sm:max-w-lg` 导致的宽度挤压问题，修改为大图自适应宽度。
+- [x] 优化工作流 v2 (FileWorkflowV2Page) 中 Ablation 面板的 UI 渲染，调整 Grid 列宽比例以防止内部表格挤压过小。
 - [x] 实现 `gatewayAuth.mjs` 及其配套测试，增强系统安全性。
 - [x] 实现 `knowledgeGraphSpatialIndex.ts` 及其配套测试，优化知识图谱查询性能。
 - [x] 更新本体数据 Hook `useOntologyData.ts` 以支持新的空间 binning 逻辑。

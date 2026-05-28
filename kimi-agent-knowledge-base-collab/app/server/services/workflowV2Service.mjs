@@ -1732,6 +1732,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
     retryHint = "",
     modelOverride = "",
     temperature = 0,
+    signal = null,
   }) {
     if (!this.workflowLlmApiKey || !this.workflowLlmBaseUrl) {
       await this.refreshWorkflowConfigFromResolver();
@@ -1771,6 +1772,17 @@ export class WorkflowV2Service extends LinearWorkflowService {
     }
 
     const controller = new AbortController();
+    const externalSignal = signal && typeof signal === "object" ? signal : null;
+    const abortFromExternalSignal = () => {
+      controller.abort(externalSignal?.reason || new Error("workflow V2 aborted"));
+    };
+    if (externalSignal) {
+      if (externalSignal.aborted) {
+        abortFromExternalSignal();
+      } else {
+        externalSignal.addEventListener("abort", abortFromExternalSignal, { once: true });
+      }
+    }
     const timeoutId = setTimeout(() => controller.abort(new Error(`workflow V2 LLM request timed out after ${this.workflowLlmTimeoutMs}ms`)), this.workflowLlmTimeoutMs);
     let response;
     try {
@@ -1784,12 +1796,18 @@ export class WorkflowV2Service extends LinearWorkflowService {
         signal: controller.signal,
       });
     } catch (error) {
+      if (externalSignal?.aborted) {
+        throw externalSignal.reason instanceof Error ? externalSignal.reason : new Error("workflow V2 aborted");
+      }
       if (error?.name === "AbortError") {
         throw new Error(`workflow V2 LLM request timed out after ${this.workflowLlmTimeoutMs}ms`);
       }
       throw error;
     } finally {
       clearTimeout(timeoutId);
+      if (externalSignal) {
+        externalSignal.removeEventListener("abort", abortFromExternalSignal);
+      }
     }
     if (!response.ok) {
       const text = await response.text();
@@ -1828,6 +1846,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
     const payload = input?.payload;
     const responseSchema = input?.responseSchema ?? null;
     const retryHint = asText(input?.retryHint);
+    const signal = input?.signal ?? null;
     const modelRuns = [
       { key: "model_a", model: this.workflowModelA || this.workflowModel },
       { key: "model_b", model: this.workflowModelB || this.workflowModelA || this.workflowModel },
@@ -1865,6 +1884,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
           retryHint,
           temperature: 0,
           modelOverride: modelRun.model,
+          signal,
           ensembleRole: "dual_run",
           ensembleModelKey: modelRun.key,
         });
@@ -1965,6 +1985,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
             retryHint: "",
             temperature: 0,
             modelOverride: reviewer.model,
+            signal,
             ensembleRole: "cross_round",
             ensembleModelKey: reviewer.key,
           });
@@ -2032,6 +2053,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
           retryHint: "",
           temperature: 0,
           modelOverride: this.workflowJudgeModel || this.workflowModelA,
+          signal,
           ensembleRole: "judge_pick",
           ensembleModelKey: "judge",
         });
@@ -2365,6 +2387,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
           instruction: prompt.instruction,
           payload: prompt.payload,
           responseSchema: prompt.responseSchema,
+          signal: options?.signal ?? null,
         });
         const payload = asRecord(llmResult.data);
         const objects = Array.isArray(payload.objects) ? payload.objects.map((item) => {
@@ -2427,7 +2450,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
     return overlap > 0 && overlap >= Math.min(existingTokens.size, nextTokens.size);
   }
 
-  async objectFusionStage(windowResults) {
+  async objectFusionStage(windowResults, options = {}) {
     const candidates = [];
     for (const windowResult of windowResults) {
       for (const object of Array.isArray(windowResult.objects) ? windowResult.objects : []) {
@@ -2462,6 +2485,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
           instruction: prompt.instruction,
           payload: prompt.payload,
           responseSchema: prompt.responseSchema,
+          signal: options?.signal ?? null,
         });
         const judge = asRecord(judgeResult.data);
         if (judge.should_merge === true) {
@@ -2534,6 +2558,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
           instruction: prompt.instruction,
           payload: prompt.payload,
           responseSchema: prompt.responseSchema,
+          signal: options?.signal ?? null,
         });
         const payload = asRecord(llmResult.data);
         const nextObject = {
@@ -2609,6 +2634,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
               payload: prompt.payload,
               responseSchema: prompt.responseSchema,
               retryHint: buildObjectDecomposeRetryHint(attempt),
+              signal: options?.signal ?? null,
             });
             successPayload = {
               data: asRecord(llmResult.data),
@@ -2726,7 +2752,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
     return map;
   }
 
-  async graphBuildStage(objects, decompositionResults) {
+  async graphBuildStage(objects, decompositionResults, options = {}) {
     const objectIdMap = this.mapObjectNameToId(objects);
     const edgeMap = new Map();
 
@@ -2790,6 +2816,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
           instruction: prompt.instruction,
           payload: prompt.payload,
           responseSchema: prompt.responseSchema,
+          signal: options?.signal ?? null,
         });
         const judge = asRecord(cycleJudgeResult.data);
         if (asText(judge.remove_edge_id) === weakest.edge_id) {
@@ -2900,6 +2927,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
                 instruction: siblingPrompt.instruction,
                 payload: siblingPrompt.payload,
                 responseSchema: siblingPrompt.responseSchema,
+                signal: options?.signal ?? null,
               });
               const siblingPayload = asRecord(siblingResult.data);
               const impacts = Array.isArray(siblingPayload.sibling_impacts) ? siblingPayload.sibling_impacts : [];
@@ -2922,6 +2950,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
               instruction: parentPrompt.instruction,
               payload: parentPrompt.payload,
               responseSchema: parentPrompt.responseSchema,
+              signal: options?.signal ?? null,
             });
             const parentPayload = asRecord(parentResult.data);
             const impact = asRecord(parentPayload.impact_on_parent);
@@ -3119,19 +3148,23 @@ export class WorkflowV2Service extends LinearWorkflowService {
       if (stageStartIndex <= 1) {
         await runStage("window_extract", async () => this.windowExtractStage(state.document, state.chunks, {
           onProgress: (progressPayload) => handlers.onStatus?.(progressPayload),
+          signal: input?.signal ?? null,
         }), (output) => {
           state.windows = output.windows;
           state.window_results = output.window_results;
         });
       }
       if (stageStartIndex <= 2) {
-        await runStage("object_fusion", async () => this.objectFusionStage(state.window_results), (output) => {
+        await runStage("object_fusion", async () => this.objectFusionStage(state.window_results, {
+          signal: input?.signal ?? null,
+        }), (output) => {
           state.fused_objects = output.fused_objects;
         });
       }
       if (stageStartIndex <= 3) {
         await runStage("function_analysis", async () => this.functionAnalysisStage(state.fused_objects, {
           onProgress: (progressPayload) => handlers.onStatus?.(progressPayload),
+          signal: input?.signal ?? null,
         }), (output) => {
           state.function_objects = output.function_objects;
           state.fused_objects = output.updated_objects;
@@ -3140,12 +3173,15 @@ export class WorkflowV2Service extends LinearWorkflowService {
       if (stageStartIndex <= 4) {
         await runStage("object_decompose", async () => this.objectDecomposeStage(state.fused_objects, {
           onProgress: (progressPayload) => handlers.onStatus?.(progressPayload),
+          signal: input?.signal ?? null,
         }), (output) => {
           state.decomposition_results = output.decomposition_results;
         });
       }
       if (stageStartIndex <= 5) {
-        await runStage("graph_build", async () => this.graphBuildStage(state.fused_objects, state.decomposition_results), (output) => {
+        await runStage("graph_build", async () => this.graphBuildStage(state.fused_objects, state.decomposition_results, {
+          signal: input?.signal ?? null,
+        }), (output) => {
           state.fused_objects = Array.isArray(output.objects) ? output.objects : state.fused_objects;
           state.edges = output.edges;
           state.removed_cycle_edges = output.removed_cycle_edges;
@@ -3154,6 +3190,7 @@ export class WorkflowV2Service extends LinearWorkflowService {
       if (stageStartIndex <= 6) {
         await runStage("ablation_analysis", async () => this.ablationAnalysisStage(state.fused_objects, state.edges, {
           onProgress: (progressPayload) => handlers.onStatus?.(progressPayload),
+          signal: input?.signal ?? null,
         }), (output) => {
           state.parent_summaries = output.parent_summaries;
         });

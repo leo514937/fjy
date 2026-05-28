@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import {
   Activity,
   Blocks,
@@ -7,6 +7,7 @@ import {
   BrainCircuit,
   Check,
   Copy,
+  CircleHelp,
   FileJson,
   FileSearch,
   Gavel,
@@ -20,6 +21,8 @@ import {
   Trash2,
   ZoomIn,
   ZoomOut,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 
 import { copyCodeToClipboard } from '@/components/assistant/AssistantMarkdown';
@@ -150,7 +153,7 @@ function WorkflowTrioPane({
         </div>
         <Badge variant="outline" className="rounded-full">{streamStatusLabel(status)}</Badge>
       </div>
-      <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap break-all bg-slate-950/95 p-4 text-xs leading-6 text-slate-100">
+      <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap break-all bg-background/60 p-4 text-xs leading-6 text-foreground/90">
         {data !== null && data !== undefined ? formatJson(data) : (rawText || '暂无数据')}
       </pre>
     </div>
@@ -238,12 +241,12 @@ function WorkflowTrioPreview({
         <div className="min-w-0 overflow-hidden rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
           <div className="flex items-center justify-between gap-3 border-b border-emerald-500/15 bg-emerald-500/10 px-4 py-3">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-800/80">Final</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700/80">Final</div>
               <div className="mt-1 text-sm font-black">最终保留结果</div>
             </div>
             <Badge variant="outline" className="rounded-full">{view.finalResult.source || 'final'}</Badge>
           </div>
-          <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap break-all bg-slate-950/95 p-4 text-xs leading-6 text-slate-100">
+          <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap break-all bg-background/60 p-4 text-xs leading-6 text-foreground/90">
             {view.finalResult.data !== null && view.finalResult.data !== undefined
               ? formatJson(view.finalResult.data)
               : (view.finalResult.rawText || '暂无数据')}
@@ -277,7 +280,7 @@ function WorkflowTrioPreview({
           </div>
         </div>
       </div>
-      <DialogContent className="grid h-[min(90vh,960px)] w-[min(96vw,1400px)] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-[28px] border-border/60 bg-background/95 p-0 shadow-2xl">
+      <DialogContent className="grid h-[90vh] sm:h-[min(90vh,960px)] w-[96vw] sm:max-w-[96vw] xl:max-w-[1400px] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-[28px] border-border/60 bg-background/95 p-0 shadow-2xl">
         <DialogHeader className="border-b border-border/50 px-6 py-5">
           <DialogTitle className="text-2xl font-black tracking-tight">{title}</DialogTitle>
           <DialogDescription className="text-sm leading-6">
@@ -353,6 +356,37 @@ function SectionCard({
   );
 }
 
+function LegendLine({
+  stroke,
+  strokeWidth,
+  strokeDasharray,
+  label,
+  markerEnd,
+}: {
+  stroke: string;
+  strokeWidth: number;
+  strokeDasharray?: string;
+  label: string;
+  markerEnd?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <svg className="h-4 w-10 shrink-0" viewBox="0 0 40 16" aria-hidden="true">
+        <path
+          d="M 2 8 L 30 8"
+          fill="none"
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
+          strokeLinecap="round"
+          markerEnd={markerEnd}
+        />
+      </svg>
+      <div className="min-w-0 text-[11px] leading-4 text-foreground/80">{label}</div>
+    </div>
+  );
+}
+
 export function FileWorkflowV2Page() {
   const [projects, setProjects] = useState<XgProject[]>([]);
   const [selectedProjectId, setSelectedProjectIdState] = useState(() => getStoredSelectedProjectId() || 'demo');
@@ -375,8 +409,80 @@ export function FileWorkflowV2Page() {
   const [configDirty, setConfigDirty] = useState(false);
   const [hideIsolatedNodes, setHideIsolatedNodes] = useState(true);
   const [graphZoom, setGraphZoom] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isAblationDialogOpen, setIsAblationDialogOpen] = useState(false);
+  const [graphTranslate, setGraphTranslate] = useState({ x: 0, y: 0 });
+  const graphTranslateRef = useRef({ x: 0, y: 0 });
+  const graphGroupRef = useRef<SVGGElement>(null);
+  const [isGraphPanning, setIsGraphPanning] = useState(false);
+  const graphPanStartRef = useRef<{ clientX: number; clientY: number; translateX: number; translateY: number; } | null>(null);
+  const graphContainerRef = useRef<HTMLDivElement>(null);
   const [mermaidCopied, setMermaidCopied] = useState(false);
   const configDirtyRef = useRef(false);
+
+  const handleGraphPanMouseDown = (e: MouseEvent<SVGSVGElement | SVGRectElement>) => {
+    if (e.button !== 0) return;
+    setIsGraphPanning(true);
+    graphPanStartRef.current = {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      translateX: graphTranslateRef.current.x,
+      translateY: graphTranslateRef.current.y,
+    };
+  };
+
+  const handleGraphMouseMove = (e: MouseEvent<SVGSVGElement>) => {
+    if (isGraphPanning && graphPanStartRef.current) {
+      const deltaX = e.clientX - graphPanStartRef.current.clientX;
+      const deltaY = e.clientY - graphPanStartRef.current.clientY;
+      const nextX = graphPanStartRef.current.translateX + deltaX;
+      const nextY = graphPanStartRef.current.translateY + deltaY;
+      
+      graphTranslateRef.current = { x: nextX, y: nextY };
+      
+      if (graphGroupRef.current) {
+        graphGroupRef.current.setAttribute('transform', `translate(${nextX}, ${nextY}) scale(${graphZoom})`);
+      }
+    }
+  };
+
+  const handleGraphMouseUp = () => {
+    if (isGraphPanning) {
+      setIsGraphPanning(false);
+      setGraphTranslate(graphTranslateRef.current);
+    }
+    graphPanStartRef.current = null;
+  };
+
+  const handleGraphZoom = (factor: number) => {
+    setGraphZoom((currentScale) => {
+      const nextScale = Math.min(Math.max(currentScale * factor, 0.3), 3);
+      if (graphContainerRef.current) {
+        const width = graphContainerRef.current.clientWidth;
+        const height = graphContainerRef.current.clientHeight;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        setGraphTranslate((currentTranslate) => {
+          const nextTranslate = {
+            x: centerX - (nextScale / currentScale) * (centerX - currentTranslate.x),
+            y: centerY - (nextScale / currentScale) * (centerY - currentTranslate.y),
+          };
+          graphTranslateRef.current = nextTranslate;
+          return nextTranslate;
+        });
+      }
+      return nextScale;
+    });
+  };
+
+  const handleGraphZoomIn = () => handleGraphZoom(1.2);
+  const handleGraphZoomOut = () => handleGraphZoom(1 / 1.2);
+  const handleGraphReset = () => {
+    setGraphZoom(1);
+    const resetTranslate = { x: 0, y: 0 };
+    setGraphTranslate(resetTranslate);
+    graphTranslateRef.current = resetTranslate;
+  };
 
   useEffect(() => {
     configDirtyRef.current = configDirty;
@@ -582,11 +688,25 @@ export function FileWorkflowV2Page() {
   const failedObjectTotalCount = asCount(decomposeOutput.total_failed_objects, failedObjectItems.length);
   const graphNodeTotalCount = Math.max(summary.objectCount, fusedObjectTotalCount);
   const graphEdgeTotalCount = asCount(graphOutput.total_edges, summary.edgeCount);
-  const removedCycleEdgeTotalCount = asCount(graphOutput.total_removed_cycle_edges, removedCycleEdgeItems.length);
-  const ablationTotalCount = ablationAnalysisProgress?.total ?? asCount(ablationOutput.total_parent_summaries, ablationItems.length);
-  const siblingImpactEdges = useMemo(() => extractWorkflowV2SiblingImpactEdges(ablationItems), [ablationItems]);
+    const removedCycleEdgeTotalCount = asCount(graphOutput.total_removed_cycle_edges, removedCycleEdgeItems.length);
+    const ablationTotalCount = ablationAnalysisProgress?.total ?? asCount(ablationOutput.total_parent_summaries, ablationItems.length);
+    const siblingImpactEdges = useMemo(() => extractWorkflowV2SiblingImpactEdges(ablationItems), [ablationItems]);
+    const siblingImpactLegendItems = [
+      {
+        label: '兄弟影响边 · 低影响',
+        ...getWorkflowV2ImpactEdgeStyle('low'),
+      },
+      {
+        label: '兄弟影响边 · 中影响',
+        ...getWorkflowV2ImpactEdgeStyle('medium'),
+      },
+      {
+        label: '兄弟影响边 · 高影响',
+        ...getWorkflowV2ImpactEdgeStyle('high'),
+      },
+    ];
 
-  const handleStart = () => {
+    const handleStart = () => {
     if (!selectedFile) {
       toast.error('请先选择文件');
       return;
@@ -662,14 +782,6 @@ export function FileWorkflowV2Page() {
     }
   };
 
-  const graphCanvasWidth = graphLayout.nodes.length > 0
-    ? Math.max(720, ...graphLayout.nodes.map((node) => node.x + 160))
-    : 720;
-  const graphCanvasHeight = graphLayout.nodes.length > 0
-    ? Math.max(420, ...graphLayout.nodes.map((node) => node.y + 80))
-    : 420;
-  const graphScaledWidth = Math.round(graphCanvasWidth * graphZoom);
-  const graphScaledHeight = Math.round(graphCanvasHeight * graphZoom);
 
   return (
     <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.08),transparent_32%),radial-gradient(circle_at_top_right,rgba(16,185,129,0.08),transparent_28%),linear-gradient(180deg,rgba(250,250,249,0.96),rgba(255,255,255,0.98))] p-6">
@@ -1079,8 +1191,8 @@ export function FileWorkflowV2Page() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <SectionCard title="DAG 图" description="仅渲染 contains 主边；若发生环，会在右侧单独列出被删除的弱边。">
-            <div className="rounded-3xl border border-border/60 bg-muted/15 p-4">
+          <SectionCard title="DAG 图" description="工作流图谱视图。">
+            <div className={isFullscreen ? "fixed inset-0 z-50 flex flex-col bg-background/95 p-6 backdrop-blur-xl" : "rounded-3xl border border-border/60 bg-muted/15 p-4"}>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">节点总数 {graphNodeTotalCount}</Badge>
@@ -1102,7 +1214,7 @@ export function FileWorkflowV2Page() {
                     variant="outline"
                     size="sm"
                     className="rounded-full"
-                    onClick={() => setGraphZoom((current) => Math.max(0.6, Number((current - 0.2).toFixed(2))))}
+                    onClick={handleGraphZoomOut}
                     disabled={graphLayout.nodes.length === 0}
                   >
                     <ZoomOut className="mr-2 h-4 w-4" />
@@ -1116,7 +1228,7 @@ export function FileWorkflowV2Page() {
                     variant="outline"
                     size="sm"
                     className="rounded-full"
-                    onClick={() => setGraphZoom((current) => Math.min(2.4, Number((current + 0.2).toFixed(2))))}
+                    onClick={handleGraphZoomIn}
                     disabled={graphLayout.nodes.length === 0}
                   >
                     <ZoomIn className="mr-2 h-4 w-4" />
@@ -1127,10 +1239,29 @@ export function FileWorkflowV2Page() {
                     variant="outline"
                     size="sm"
                     className="rounded-full"
-                    onClick={() => setGraphZoom(1)}
+                    onClick={handleGraphReset}
                     disabled={graphLayout.nodes.length === 0}
                   >
                     还原
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => setIsFullscreen(!isFullscreen)}
+                  >
+                    {isFullscreen ? (
+                      <>
+                        <Minimize className="mr-2 h-4 w-4" />
+                        退出全屏
+                      </>
+                    ) : (
+                      <>
+                        <Maximize className="mr-2 h-4 w-4" />
+                        全屏
+                      </>
+                    )}
                   </Button>
                   <Button
                     type="button"
@@ -1145,152 +1276,198 @@ export function FileWorkflowV2Page() {
                   </Button>
                 </div>
               </div>
-              {graphLayout.nodes.length > 0 ? (
-                <div className="overflow-auto rounded-2xl border border-border/50 bg-background/60">
-                  <svg
-                    viewBox={`0 0 ${graphCanvasWidth} ${graphCanvasHeight}`}
-                    className="block"
-                    style={{
-                      width: `${graphScaledWidth}px`,
-                      height: `${graphScaledHeight}px`,
-                      minWidth: `${graphScaledWidth}px`,
-                      minHeight: `${graphScaledHeight}px`,
-                    }}
-                  >
-                    <defs>
-                      <marker
-                        id="workflow-v2-dag-arrow"
-                        viewBox="0 0 10 10"
-                        refX="8"
-                        refY="5"
-                        markerWidth="7"
-                        markerHeight="7"
-                        orient="auto-start-reverse"
-                      >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(14,165,233,0.75)" />
-                      </marker>
-                      <marker
-                        id="workflow-v2-impact-arrow-high"
-                        viewBox="0 0 10 10"
-                        refX="8"
-                        refY="5"
-                        markerWidth="8"
-                        markerHeight="8"
-                        orient="auto-start-reverse"
-                      >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(239,68,68,0.9)" />
-                      </marker>
-                      <marker
-                        id="workflow-v2-impact-arrow-medium"
-                        viewBox="0 0 10 10"
-                        refX="8"
-                        refY="5"
-                        markerWidth="8"
-                        markerHeight="8"
-                        orient="auto-start-reverse"
-                      >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(245,158,11,0.9)" />
-                      </marker>
-                      <marker
-                        id="workflow-v2-impact-arrow-low"
-                        viewBox="0 0 10 10"
-                        refX="8"
-                        refY="5"
-                        markerWidth="8"
-                        markerHeight="8"
-                        orient="auto-start-reverse"
-                      >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(14,165,233,0.82)" />
-                      </marker>
-                      <marker
-                        id="workflow-v2-impact-arrow-none"
-                        viewBox="0 0 10 10"
-                        refX="8"
-                        refY="5"
-                        markerWidth="8"
-                        markerHeight="8"
-                        orient="auto-start-reverse"
-                      >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(148,163,184,0.72)" />
-                      </marker>
-                    </defs>
-                    {graphLayout.edges.map((edge) => {
-                      const source = graphLayout.nodes.find((node) => node.id === edge.sourceId);
-                      const target = graphLayout.nodes.find((node) => node.id === edge.targetId);
-                      if (!source || !target) return null;
-                      return (
-                        <path
-                          key={edge.id}
-                          d={`M ${source.x + 90} ${source.y + 24} C ${source.x + 150} ${source.y + 24}, ${target.x - 60} ${target.y + 24}, ${target.x} ${target.y + 24}`}
-                          fill="none"
+                <div ref={graphContainerRef} className={`relative overflow-hidden rounded-2xl border border-border/50 bg-background/60 w-full ${isFullscreen ? 'flex-1 min-h-[420px]' : 'h-[500px]'}`}>
+                  <div className="group absolute right-3 top-3 z-30">
+                    <button
+                      type="button"
+                      aria-label="查看 DAG 图例"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-background/90 text-muted-foreground shadow-lg backdrop-blur-md transition hover:border-primary/40 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      <CircleHelp className="h-4 w-4" />
+                    </button>
+                    <div className="pointer-events-none absolute right-0 top-11 w-[286px] rounded-2xl border border-border/60 bg-background/95 p-3 opacity-0 shadow-xl backdrop-blur-md transition duration-150 ease-out group-hover:opacity-100 group-focus-within:opacity-100">
+                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">图例</div>
+                      <div className="mt-2 space-y-2">
+                        <LegendLine
+                          label="主边：业务流程中的 contains 依赖，蓝色实线箭头"
                           stroke="rgba(14,165,233,0.45)"
-                          strokeWidth="2.5"
+                          strokeWidth={2.5}
                           markerEnd="url(#workflow-v2-dag-arrow)"
                         />
-                      );
-                    })}
-                    {siblingImpactEdges.map((edge) => {
-                      const source = graphLayout.nodes.find((node) => node.id === edge.sourceId);
-                      const target = graphLayout.nodes.find((node) => node.id === edge.targetId);
-                      if (!source || !target) return null;
-                      const style = getWorkflowV2ImpactEdgeStyle(edge.impactLevel);
-                      const impactArrowId = `workflow-v2-impact-arrow-${edge.impactLevel}`;
-                      return (
-                        <path
-                          key={`impact-${edge.id}`}
-                          d={`M ${source.x + 90} ${source.y + 24} C ${source.x + 150} ${source.y + 24}, ${target.x - 60} ${target.y + 24}, ${target.x} ${target.y + 24}`}
-                          fill="none"
-                          stroke={style.stroke}
-                          strokeWidth={style.strokeWidth}
-                          strokeDasharray={style.strokeDasharray}
-                          strokeLinecap="round"
-                          opacity="0.95"
-                          markerEnd={`url(#${impactArrowId})`}
-                        />
-                      );
-                    })}
-                    {graphLayout.nodes.map((node) => (
-                      <g key={node.id}>
-                        <rect
-                          x={node.x}
-                          y={node.y}
-                          rx="18"
-                          width="120"
-                          height="48"
-                          fill={node.isIsolated ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.96)'}
-                          stroke={node.isIsolated ? 'rgba(148,163,184,0.38)' : 'rgba(15,23,42,0.12)'}
-                          strokeDasharray={node.isIsolated ? '6 6' : undefined}
-                        />
-                        <text
-                          x={node.x + 60}
-                          y={node.y + 26}
-                          textAnchor="middle"
-                          fontSize="14"
-                          fontWeight="700"
-                          fill={node.isIsolated ? 'rgba(71,85,105,0.72)' : '#0f172a'}
-                        >
-                          {node.label}
-                        </text>
-                        {node.isIsolated ? (
-                          <text
-                            x={node.x + 60}
-                            y={node.y + 39}
-                            textAnchor="middle"
-                            fontSize="9"
-                            fontWeight="700"
-                            letterSpacing="0.08em"
-                            fill="rgba(100,116,139,0.82)"
+                        {siblingImpactLegendItems.map((item) => (
+                          <LegendLine
+                            key={item.label}
+                            label={item.label}
+                            stroke={item.stroke}
+                            strokeWidth={item.strokeWidth}
+                            strokeDasharray={item.strokeDasharray}
+                            markerEnd={`url(#workflow-v2-impact-arrow-${item.label.includes('低影响') ? 'low' : item.label.includes('中影响') ? 'medium' : 'high'})`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {graphLayout.nodes.length > 0 ? (
+                    <>
+                      <svg
+                        className={`block w-full h-full ${isGraphPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+                        onMouseDown={handleGraphPanMouseDown}
+                        onMouseMove={handleGraphMouseMove}
+                        onMouseUp={handleGraphMouseUp}
+                        onMouseLeave={handleGraphMouseUp}
+                      >
+                        <defs>
+                          <pattern id="workflow-v2-dag-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                            <circle cx="1" cy="1" r="1" className="fill-border/40" />
+                          </pattern>
+                          <marker
+                            id="workflow-v2-dag-arrow"
+                            viewBox="0 0 10 10"
+                            refX="8"
+                            refY="5"
+                            markerWidth="7"
+                            markerHeight="7"
+                            orient="auto-start-reverse"
                           >
-                            孤立
-                          </text>
-                        ) : null}
-                      </g>
-                    ))}
-                  </svg>
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(14,165,233,0.75)" />
+                          </marker>
+                          <marker
+                            id="workflow-v2-impact-arrow-high"
+                            viewBox="0 0 10 10"
+                            refX="8"
+                            refY="5"
+                            markerWidth="8"
+                            markerHeight="8"
+                            orient="auto-start-reverse"
+                          >
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(239,68,68,0.9)" />
+                          </marker>
+                          <marker
+                            id="workflow-v2-impact-arrow-medium"
+                            viewBox="0 0 10 10"
+                            refX="8"
+                            refY="5"
+                            markerWidth="8"
+                            markerHeight="8"
+                            orient="auto-start-reverse"
+                          >
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(245,158,11,0.9)" />
+                          </marker>
+                          <marker
+                            id="workflow-v2-impact-arrow-low"
+                            viewBox="0 0 10 10"
+                            refX="8"
+                            refY="5"
+                            markerWidth="8"
+                            markerHeight="8"
+                            orient="auto-start-reverse"
+                          >
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(14,165,233,0.82)" />
+                          </marker>
+                          <marker
+                            id="workflow-v2-impact-arrow-none"
+                            viewBox="0 0 10 10"
+                            refX="8"
+                            refY="5"
+                            markerWidth="8"
+                            markerHeight="8"
+                            orient="auto-start-reverse"
+                          >
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(148,163,184,0.72)" />
+                          </marker>
+                        </defs>
+                        <g ref={graphGroupRef} transform={`translate(${graphTranslate.x}, ${graphTranslate.y}) scale(${graphZoom})`}>
+                          <rect
+                            x={-50000}
+                            y={-50000}
+                            width={100000}
+                            height={100000}
+                            fill="url(#workflow-v2-dag-grid)"
+                          />
+                          {graphLayout.edges.map((edge) => {
+                            const source = graphLayout.nodes.find((node) => node.id === edge.sourceId);
+                            const target = graphLayout.nodes.find((node) => node.id === edge.targetId);
+                            if (!source || !target) return null;
+                            return (
+                              <path
+                                key={edge.id}
+                                d={`M ${source.x + 90} ${source.y + 24} C ${source.x + 150} ${source.y + 24}, ${target.x - 60} ${target.y + 24}, ${target.x} ${target.y + 24}`}
+                                fill="none"
+                                stroke="rgba(14,165,233,0.45)"
+                                strokeWidth="2.5"
+                                markerEnd="url(#workflow-v2-dag-arrow)"
+                              />
+                            );
+                          })}
+                          {siblingImpactEdges.map((edge) => {
+                            const source = graphLayout.nodes.find((node) => node.id === edge.sourceId);
+                            const target = graphLayout.nodes.find((node) => node.id === edge.targetId);
+                            if (!source || !target) return null;
+                            const style = getWorkflowV2ImpactEdgeStyle(edge.impactLevel);
+                            const impactArrowId = `workflow-v2-impact-arrow-${edge.impactLevel}`;
+                            return (
+                              <path
+                                key={`impact-${edge.id}`}
+                                d={`M ${source.x + 90} ${source.y + 24} C ${source.x + 150} ${source.y + 24}, ${target.x - 60} ${target.y + 24}, ${target.x} ${target.y + 24}`}
+                                fill="none"
+                                stroke={style.stroke}
+                                strokeWidth={style.strokeWidth}
+                                strokeDasharray={style.strokeDasharray}
+                                strokeLinecap="round"
+                                opacity="0.95"
+                                markerEnd={`url(#${impactArrowId})`}
+                              />
+                            );
+                          })}
+                          {graphLayout.nodes.map((node) => (
+                            <g key={node.id}>
+                              <rect
+                                x={node.x}
+                                y={node.y}
+                                rx="18"
+                                width="120"
+                                height="48"
+                                fill={node.isIsolated ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.96)'}
+                                stroke={node.isIsolated ? 'rgba(148,163,184,0.38)' : 'rgba(15,23,42,0.12)'}
+                                strokeDasharray={node.isIsolated ? '6 6' : undefined}
+                              />
+                              <text
+                                x={node.x + 60}
+                                y={node.y + 26}
+                                textAnchor="middle"
+                                fontSize="14"
+                                fontWeight="700"
+                                fill={node.isIsolated ? 'rgba(71,85,105,0.72)' : '#0f172a'}
+                              >
+                                {node.label}
+                              </text>
+                              {node.isIsolated ? (
+                                <text
+                                  x={node.x + 60}
+                                  y={node.y + 39}
+                                  textAnchor="middle"
+                                  fontSize="9"
+                                  fontWeight="700"
+                                  letterSpacing="0.08em"
+                                  fill="rgba(100,116,139,0.82)"
+                                >
+                                  孤立
+                                </text>
+                              ) : null}
+                            </g>
+                          ))}
+                        </g>
+                      </svg>
+                      <div className="pointer-events-none absolute bottom-3 left-3 rounded-full border border-border/40 bg-background/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground shadow-sm backdrop-blur-md">
+                        拖动画布可平移视野
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                      第六阶段图构建完成后会在这里立即显示 DAG。
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="flex h-[420px] items-center justify-center text-sm text-muted-foreground">第六阶段图构建完成后会在这里立即显示 DAG。</div>
-              )}
             </div>
           </SectionCard>
 
@@ -1429,6 +1606,22 @@ export function FileWorkflowV2Page() {
 
         <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
           <SectionCard title="Ablation 面板" description="聚合每个父节点的兄弟影响表和子节点重要性表。">
+            {/* 放大按钒 */}
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">总 {ablationTotalCount} / 展示 {ablationItems.length}</Badge>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                onClick={() => setIsAblationDialogOpen(true)}
+              >
+                <Maximize className="mr-2 h-4 w-4" />
+                放大查看
+              </Button>
+            </div>
             <ScrollArea className="h-[420px] rounded-3xl border border-border/60 bg-muted/15 p-4">
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
@@ -1510,7 +1703,95 @@ export function FileWorkflowV2Page() {
             </ScrollArea>
           </SectionCard>
 
+          {/* Ablation 全屏 Dialog */}
+          <Dialog open={isAblationDialogOpen} onOpenChange={setIsAblationDialogOpen}>
+            <DialogContent className="grid h-[90vh] sm:h-[min(90vh,960px)] w-[96vw] sm:max-w-[96vw] xl:max-w-[1400px] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-[28px] border-border/60 bg-background/95 p-0 shadow-2xl">
+              <DialogHeader className="border-b border-border/50 px-6 py-5">
+                <DialogTitle className="text-2xl font-black tracking-tight">Ablation 面板</DialogTitle>
+                <DialogDescription className="text-sm leading-6">
+                  展示每个父节点的兄弟影响表与子节点重要性分析表。共 {ablationTotalCount} 项，展示 {ablationItems.length} 项。
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="min-h-0 flex-1 px-6 py-5">
+                <div className="space-y-4 pb-2">
+                  {ablationAnalysisProgress ? (
+                    <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
+                      <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                        <div>
+                          已完成 {ablationAnalysisProgress.completed} / {ablationAnalysisProgress.total}
+                          {ablationAnalysisProgress.currentParentObjectName
+                            ? `，正在处理 ${ablationAnalysisProgress.currentParentObjectName}${
+                              ablationAnalysisProgress.totalChildCount > 0
+                                ? `（${ablationAnalysisProgress.processedChildCount} / ${ablationAnalysisProgress.totalChildCount}${
+                                  ablationAnalysisProgress.currentChildObjectName ? `，当前 ${ablationAnalysisProgress.currentChildObjectName}` : ''
+                                }）`
+                                : ''
+                            }`
+                            : ablationAnalysisProgress.lastParentObjectName
+                              ? `，最近完成 ${ablationAnalysisProgress.lastParentObjectName}`
+                              : ''}
+                        </div>
+                        <div>{ablationAnalysisProgressValue}%</div>
+                      </div>
+                      <Progress value={ablationAnalysisProgressValue} className="mt-2 h-2 bg-fuchsia-500/15" />
+                    </div>
+                  ) : null}
+                  {ablationItems.length > 0 ? (
+                    ablationItems.map((item) => {
+                      const record = asRecord(item);
+                      return (
+                        <div key={`dialog-${asText(record.parent_object_id)}`} className="rounded-3xl border border-border/60 bg-background/80 p-4">
+                          <div className="text-base font-black">{asText(record.parent_object_id)}</div>
+                          <div className="mt-2 text-xs text-muted-foreground">{asText(record.reason)}</div>
+                          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                            <div className="space-y-2">
+                              <div className="text-sm font-black">兄弟影响</div>
+                              {(Array.isArray(record.sibling_dependency_table) ? record.sibling_dependency_table : []).map((impact, index) => {
+                                const impactRecord = asRecord(impact);
+                                return (
+                                  <div key={`dialog-${asText(record.parent_object_id)}-sibling-${index}`} className="rounded-2xl border border-border/60 p-3 text-sm">
+                                    {asText(impactRecord.ablated_child_object_id)} {'->'} {asText(impactRecord.target_sibling_object_id)}
+                                    <div className="mt-1 text-xs text-muted-foreground">{asText(impactRecord.impact_level)} / {asText(impactRecord.reason)}</div>
+                                    <WorkflowTrioPreview
+                                      title={`${asText(impactRecord.ablated_child_object_id) || '子节点'} 对兄弟 ${asText(impactRecord.target_sibling_object_id) || '对象'} 的影响`}
+                                      ensemble={impactRecord.llm_ensemble}
+                                      summary="兄弟影响分析的 A/B/judge 三方过程。"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="space-y-2">
+                              <div className="text-sm font-black">子节点重要性</div>
+                              {(Array.isArray(record.child_importance_list) ? record.child_importance_list : []).map((impact, index) => {
+                                const impactRecord = asRecord(impact);
+                                return (
+                                  <div key={`dialog-${asText(record.parent_object_id)}-parent-${index}`} className="rounded-2xl border border-border/60 p-3 text-sm">
+                                    {asText(impactRecord.ablated_child_object_id)}
+                                    <div className="mt-1 text-xs text-muted-foreground">{asText(impactRecord.importance_level)} / {asText(impactRecord.reason)}</div>
+                                    <WorkflowTrioPreview
+                                      title={`${asText(impactRecord.ablated_child_object_id) || '子节点'} 对父节点的重要性`}
+                                      ensemble={impactRecord.llm_ensemble}
+                                      summary="父节点消融分析的 A/B/judge 三方过程。"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-sm text-muted-foreground">消融结果会显示在这里。</div>
+                  )}
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+
           <SectionCard title="Raw JSON / 历史会话" description="右侧保留原始结果与会话历史，方便排查结构化输出。">
+
             <div className="grid gap-4">
               <ScrollArea className="h-[220px] rounded-3xl border border-border/60 bg-muted/15 p-4">
                 <pre className="whitespace-pre-wrap break-words text-xs leading-6 text-foreground/80">
