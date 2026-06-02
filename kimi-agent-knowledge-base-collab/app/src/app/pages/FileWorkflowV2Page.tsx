@@ -831,7 +831,7 @@ type WorkflowV2AnalysisSectionState = {
 export function FileWorkflowV2Page() {
   const [projects, setProjects] = useState<XgProject[]>([]);
   const [selectedProjectId, setSelectedProjectIdState] = useState(() => getStoredSelectedProjectId() || 'demo');
-  const [session, setSession] = useState<WorkflowV2RunSession | null>(null);
+  const [session, setSession] = useState<WorkflowV2RunSession | null>(() => getLatestWorkflowV2Session());
   const [sessions, setSessions] = useState<WorkflowV2RunSession[]>(() => getAllWorkflowV2Sessions());
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [config, setConfig] = useState<WorkflowV2Config>({
@@ -1869,6 +1869,9 @@ export function FileWorkflowV2Page() {
                   <MetricCard title="窗口数" value={summary.windowCount || 0} hint={`chunks ${summary.chunkCount || 0}`} accent="border-emerald-500/20" />
                   <MetricCard title="结构边" value={summary.edgeCount || 0} hint={`孤点 ${summary.orphanCount || 0}`} accent="border-sky-500/20" />
                   <MetricCard title="写回状态" value={writebackSummary?.successCount ?? 0} hint={writebackSummary ? `最近 ${writebackSummary.lastCommitId}` : '尚未写回'} accent="border-violet-500/20" />
+                </div>
+                <div className="text-[11px] font-black uppercase tracking-[0.22em] text-muted-foreground">
+                  内容导航
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="outline" className="rounded-full" onClick={() => scrollToSection('overview-system')}>

@@ -100,8 +100,6 @@ type SessionsSubscriber = (sessions: WorkflowV2RunSession[]) => void;
 const STORAGE_KEY = 'kimi.fileWorkflowV2.sessions.v1';
 const MAX_LOG_ITEMS = 120;
 const MAX_PERSISTED_SESSIONS = 6;
-const RECOVERABLE_RUNNING_SESSION_MAX_AGE_MS = 15 * 60 * 1000;
-
 function trimText(value: unknown, limit = 240): string {
   const text = typeof value === 'string' ? value : '';
   if (text.length <= limit) return text;
@@ -698,60 +696,8 @@ function canUseStorage() {
   return typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
 }
 
-function getSessionFreshnessTimestamp(session: WorkflowV2RunSession | null | undefined) {
-  if (!session) {
-    return 0;
-  }
-  const candidates = [
-    session.updatedAt,
-    session.lastRunAt,
-    session.runResult?.finished_at,
-    session.runResult?.started_at,
-  ];
-  for (const candidate of candidates) {
-    const timestamp = typeof candidate === 'string' ? new Date(candidate).getTime() : NaN;
-    if (Number.isFinite(timestamp) && timestamp > 0) {
-      return timestamp;
-    }
-  }
-  return 0;
-}
-
 function isRecoverableRunningSession(session: WorkflowV2RunSession | null | undefined) {
-  if (!session?.runResult || session.runResult.workflow?.status !== 'running') {
-    return false;
-  }
-  const timestamp = getSessionFreshnessTimestamp(session);
-  if (!timestamp) {
-    return false;
-  }
-  return (Date.now() - timestamp) <= RECOVERABLE_RUNNING_SESSION_MAX_AGE_MS;
-}
-
-function demoteRecoveredRunningSnapshot(runResult: WorkflowV2RunResponse | null | undefined): WorkflowV2RunResponse | null {
-  if (!runResult || runResult.workflow?.status !== 'running') {
-    return runResult ?? null;
-  }
-  return {
-    ...runResult,
-    workflow: {
-      ...runResult.workflow,
-      status: 'failed',
-    },
-    stage_results: runResult.stage_results.map((stage) => (
-      stage.status === 'running'
-        ? {
-          ...stage,
-          status: 'failed',
-          finished_at: stage.finished_at ?? new Date().toISOString(),
-          error: stage.error || '恢复页面时未检测到可继续接管的后台 V2 任务。',
-        }
-        : stage
-    )),
-    errors: runResult.errors.length > 0
-      ? runResult.errors
-      : [{ stage: 'resume', message: '恢复页面时未检测到可继续接管的后台 V2 任务。' }],
-  };
+  return !!session?.runResult && session.runResult.workflow?.status === 'running';
 }
 
 class WorkflowRuntimeV2Manager {
@@ -760,7 +706,9 @@ class WorkflowRuntimeV2Manager {
   private sessionSubscribers = new Set<SessionsSubscriber>();
   private latestConversationId: string | null = null;
   private activeReaders = new Map<string, ReadableStreamDefaultReader>();
+  private attachingSessions = new Set<string>();
   private hydrationPromises = new Map<string, Promise<void>>();
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.restore();
@@ -783,21 +731,16 @@ class WorkflowRuntimeV2Manager {
       this.latestConversationId = parsed.latestConversationId ?? null;
       for (const session of parsed.sessions ?? []) {
         const recoverableRunning = isRecoverableRunningSession(session);
-        const restoredRunResult = recoverableRunning
-          ? session.runResult
-          : demoteRecoveredRunningSnapshot(session.runResult);
         this.sessions.set(session.conversationId, {
           ...session,
-          isRunning: false,
-          runResult: restoredRunResult,
+          isRunning: recoverableRunning,
+          runResult: session.runResult,
           windowExtractProgress: session.windowExtractProgress ?? null,
           objectDecomposeProgress: session.objectDecomposeProgress ?? null,
           ablationAnalysisProgress: session.ablationAnalysisProgress ?? null,
           statusMessage: recoverableRunning
-            ? '已恢复近期 V2 工作流快照，正在尝试重新连接后台任务...'
-            : (session.runResult?.workflow?.status === 'running'
-              ? '已恢复历史 V2 快照；旧运行任务未自动接管。'
-              : session.statusMessage),
+            ? '已恢复 V2 工作流快照，正在尝试重新连接后台任务...'
+            : session.statusMessage,
         });
       }
     } catch {
@@ -838,6 +781,17 @@ class WorkflowRuntimeV2Manager {
     }
   }
 
+  private schedulePersist() {
+    if (this.persistTimer) {
+      return;
+    }
+
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      this.persist();
+    }, 0);
+  }
+
   private getSortedSessions() {
     return Array.from(this.sessions.values()).sort((a, b) => (
       new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -852,7 +806,7 @@ class WorkflowRuntimeV2Manager {
   private emit(conversationId: string) {
     const session = this.sessions.get(conversationId);
     if (!session) return;
-    this.persist();
+    this.schedulePersist();
     this.emitSessions();
     const callbacks = this.subscribers.get(conversationId);
     callbacks?.forEach((callback) => callback(session));
@@ -912,7 +866,7 @@ class WorkflowRuntimeV2Manager {
       return;
     }
     this.latestConversationId = conversationId;
-    this.persist();
+    this.schedulePersist();
     this.emitSessions();
     const session = this.sessions.get(conversationId);
     const callbacks = this.subscribers.get(conversationId);
@@ -934,7 +888,7 @@ class WorkflowRuntimeV2Manager {
       const nextLatest = this.getSortedSessions()[0];
       this.latestConversationId = nextLatest?.conversationId ?? null;
     }
-    this.persist();
+    this.schedulePersist();
     this.emitSessions();
   }
 
@@ -1063,7 +1017,6 @@ class WorkflowRuntimeV2Manager {
         continue;
       }
       await this.hydrateSessionFromServer(session.conversationId);
-      void this.attachToRunningSession(session.conversationId);
     }
   }
 
@@ -1103,6 +1056,14 @@ class WorkflowRuntimeV2Manager {
             updatedAt: new Date().toISOString(),
           };
         });
+        const refreshedSession = this.sessions.get(conversationId);
+        if (
+          refreshedSession
+          && refreshedSession.runResult?.workflow?.status === 'running'
+          && !this.activeReaders.has(conversationId)
+        ) {
+          void this.attachToRunningSession(conversationId);
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : '';
         if (message.includes('snapshot not found') || message.includes('Request failed with status 404')) {
@@ -1120,9 +1081,15 @@ class WorkflowRuntimeV2Manager {
 
   private async attachToRunningSession(conversationId: string) {
     const session = this.sessions.get(conversationId);
-    if (!session || this.activeReaders.has(conversationId) || !isRecoverableRunningSession(session)) {
+    if (
+      !session
+      || this.activeReaders.has(conversationId)
+      || this.attachingSessions.has(conversationId)
+      || !isRecoverableRunningSession(session)
+    ) {
       return;
     }
+    this.attachingSessions.add(conversationId);
     this.update(conversationId, (current) => ({
       ...current,
       isRunning: true,
@@ -1137,6 +1104,8 @@ class WorkflowRuntimeV2Manager {
         headers: { Accept: 'text/event-stream' },
       }),
       mode: 'attach',
+    }).finally(() => {
+      this.attachingSessions.delete(conversationId);
     });
   }
 
@@ -1181,6 +1150,26 @@ class WorkflowRuntimeV2Manager {
       if (input.mode === 'attach' && error instanceof Error && error.message === '__workflow_v2_attach_not_found__') {
         this.update(input.conversationId, (current) => ({
           ...current,
+          runResult: current.runResult ? {
+            ...current.runResult,
+            workflow: {
+              ...current.runResult.workflow,
+              status: 'failed',
+            },
+            stage_results: current.runResult.stage_results.map((stage) => (
+              stage.status === 'running'
+                ? {
+                  ...stage,
+                  status: 'failed',
+                  finished_at: stage.finished_at ?? new Date().toISOString(),
+                  error: stage.error || '恢复页面时未检测到可继续接管的后台 V2 任务。',
+                }
+                : stage
+            )),
+            errors: current.runResult.errors.length > 0
+              ? current.runResult.errors
+              : [{ stage: 'resume', message: '恢复页面时未检测到可继续接管的后台 V2 任务。' }],
+          } : current.runResult,
           statusMessage: '未检测到正在运行的后台任务，当前展示的是刷新前保留的最近一次快照。',
           isRunning: false,
           logs: appendUniqueLog(current.logs, {

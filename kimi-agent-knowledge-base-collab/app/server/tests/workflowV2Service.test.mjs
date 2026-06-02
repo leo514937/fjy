@@ -1209,6 +1209,61 @@ test("WorkflowV2Service 能从成功阶段重试，并复用真实快照状态",
   assert.equal(retried.result.ablation.length, 1);
 });
 
+test("WorkflowV2Service 会把停止信号传给进行中的 LLM 调用", async () => {
+  const runtimeRoot = await mkdtemp(path.join(os.tmpdir(), "workflow-v2-abort-signal-"));
+  let observedSignal = null;
+  const service = createService({
+    runtimeRoot,
+    llmJsonInvoker: async ({ stage, signal }) => {
+      if (stage === "window_extract") {
+        observedSignal = signal ?? null;
+        return await new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            resolve({
+              data: {
+                objects: [],
+                reason: "窗口抽取完成。",
+              },
+            });
+          }, 250);
+          if (signal) {
+            signal.addEventListener("abort", () => {
+              clearTimeout(timeoutId);
+              reject(new Error("window_extract aborted by signal"));
+            }, { once: true });
+          }
+        });
+      }
+      return {
+        data: {
+          objects: [],
+          reason: `${stage} 已完成。`,
+        },
+      };
+    },
+  });
+
+  const controller = new AbortController();
+  const startedAt = Date.now();
+  setTimeout(() => controller.abort(), 20);
+
+  const result = await service.runFileWorkflow({
+    projectId: "demo",
+    fileName: "abort-signal.txt",
+    mimeType: "text/plain",
+    content: Buffer.from("电脑包含 CPU。", "utf8"),
+    conversationId: "workflow-v2-abort-signal",
+    signal: controller.signal,
+  });
+  const elapsed = Date.now() - startedAt;
+
+  assert.equal(result.ok, false);
+  assert.match(result.errors[0].message, /aborted|中断/i);
+  assert.ok(observedSignal, "LLM 调用应收到可监听的 AbortSignal");
+  assert.equal(observedSignal.aborted, true);
+  assert.equal(elapsed < 180, true, `停止应尽快生效，但实际耗时 ${elapsed}ms`);
+});
+
 test("WorkflowV2Service 禁止从 pending 阶段重试，避免生成空成功结果", async () => {
   const runtimeRoot = await mkdtemp(path.join(os.tmpdir(), "workflow-v2-retry-invalid-"));
   const service = createService({

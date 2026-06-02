@@ -259,7 +259,7 @@ function getIdReplacementValue(key: string, record: Record<string, unknown>) {
 }
 
 function shouldHideIdField(key: string, record: Record<string, unknown>) {
-  return Boolean(getIdReplacementValue(key, record));
+  return false;
 }
 
 function WorkflowStructuredPrimitive({
